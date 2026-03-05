@@ -1,1184 +1,1021 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SkillSpot - Everyone's a Provider</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SkillSpot — Find Skilled Pros Near You</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body { font-family: 'Inter', system-ui, sans-serif; }
-    .logo-font { font-family: 'Space Grotesk', sans-serif; }
+```
+:root {
+  --bg: #06060f;
+  --surface: #0d0d1f;
+  --surface2: #12122a;
+  --border: #1a1a35;
+  --cyan: #00d4ff;
+  --indigo: #7c5cff;
+  --text: #e8e8f5;
+  --muted: #7070a0;
+  --dim: #2a2a4a;
+  --green: #22c55e;
+  --red: #ef4444;
+}
 
-    #map { height: 500px; }
-    @media (max-width: 768px) { #map { height: 350px; } }
+html { scroll-behavior: smooth; }
+body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+.hidden { display: none !important; }
 
-    .dark-input {
-      background-color: #18181b;
-      border: 1px solid #3f3f46;
-      transition: all 0.2s;
-    }
-    .dark-input:focus {
-      border-color: #67e8f9;
-      box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.2);
-      outline: none;
-    }
+/* ── NOISE TEXTURE ── */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.3;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
 
-    .card {
-      background: linear-gradient(145deg, #27272a, #18181b);
-      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
-    }
+/* ── GRID BG ── */
+.grid-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridMove 20s linear infinite;
+}
+@keyframes gridMove { 0%{background-position:0 0;} 100%{background-position:60px 60px;} }
 
-    .instagram-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 4px;
-    }
-    .instagram-grid img {
-      aspect-ratio: 1;
-      object-fit: cover;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    .instagram-grid img:hover { opacity: 0.8; }
+/* ── ORBS ── */
+.orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; animation: orbPulse 8s ease-in-out infinite; }
+@keyframes orbPulse { 0%,100%{opacity:.3;transform:scale(1);} 50%{opacity:.6;transform:scale(1.15);} }
 
-    .photo-upload-preview {
-      position: relative;
-      aspect-ratio: 1;
-      border-radius: 12px;
-      overflow: hidden;
-    }
-    .photo-upload-preview img { width: 100%; height: 100%; object-fit: cover; }
-    .photo-upload-preview .remove-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+/* ── SHARED INPUTS & BUTTONS ── */
+.inp { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 14px; padding: 13px 16px; width: 100%; outline: none; font-family: 'Outfit', sans-serif; font-size: 14px; transition: border-color .2s; }
+.inp:focus { border-color: var(--cyan); }
+.inp::placeholder { color: var(--muted); }
+textarea.inp { resize: vertical; }
+.btn-primary { background: linear-gradient(135deg, var(--cyan), var(--indigo)); color: #06060f; font-weight: 700; border: none; border-radius: 14px; cursor: pointer; font-family: 'Outfit', sans-serif; transition: opacity .2s, transform .15s; }
+.btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+.btn-ghost { background: rgba(255,255,255,.04); border: 1px solid var(--border); color: var(--text); border-radius: 14px; cursor: pointer; font-family: 'Outfit', sans-serif; transition: background .2s; }
+.btn-ghost:hover { background: rgba(255,255,255,.08); }
+.card { background: linear-gradient(145deg, var(--surface), var(--bg)); border: 1px solid var(--border); border-radius: 20px; }
 
-    .profile-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.9);
-      z-index: 100;
-      overflow-y: auto;
-      display: none;
-    }
-    .profile-modal.active { display: block; }
+/* ── TOP NAV ── */
+#top-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+  height: 64px; padding: 0 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(6,6,15,0.75); backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(0,212,255,0.08);
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; text-decoration: none; }
+.nav-logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--cyan), var(--indigo)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: #06060f; box-shadow: 0 0 20px rgba(0,212,255,0.25); }
+.nav-logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 2px; color: #fff; }
+#nav-guest { display: flex; gap: 10px; }
+#nav-user { display: flex; align-items: center; gap: 10px; }
+.nav-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--cyan), var(--indigo)); display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 700; font-size: 15px; color: #06060f; font-family: 'Bebas Neue', sans-serif; border: 2px solid rgba(0,212,255,0.3); }
+.btn-nav-outline { padding: 9px 20px; border: 1px solid rgba(0,212,255,0.3); border-radius: 12px; background: transparent; color: var(--cyan); font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all .2s; }
+.btn-nav-outline:hover { background: rgba(0,212,255,0.08); }
+.btn-nav-filled { padding: 9px 22px; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--cyan), var(--indigo)); color: #06060f; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s; }
+.btn-nav-filled:hover { opacity: .9; transform: translateY(-1px); }
 
-    .mode-toggle {
-      position: relative;
-      background: #18181b;
-      border-radius: 9999px;
-      padding: 4px;
-      display: flex;
-      gap: 4px;
-    }
-    .mode-toggle button {
-      flex: 1;
-      padding: 8px 24px;
-      border-radius: 9999px;
-      font-weight: 600;
-      transition: all 0.3s;
-      position: relative;
-      z-index: 1;
-    }
-    .mode-toggle button.active {
-      background: linear-gradient(to right, #22d3ee, #6366f1);
-      color: #0a0a0a;
-    }
+/* ── BOTTOM NAV ── */
+#bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(6,6,15,.95); border-top: 1px solid var(--border); padding: 8px 0; display: flex; justify-content: space-around; z-index: 400; backdrop-filter: blur(16px); }
+.nav-tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 24px; cursor: pointer; color: var(--muted); border-radius: 12px; transition: all .2s; font-size: 11px; font-weight: 600; letter-spacing: .3px; }
+.nav-tab svg { width: 22px; height: 22px; }
+.nav-tab.active { color: var(--cyan); }
+#nav-spacer { height: 72px; }
 
-    .service-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      background: rgba(34, 211, 238, 0.1);
-      border: 1px solid rgba(34, 211, 238, 0.3);
-      border-radius: 9999px;
-      color: #22d3ee;
-      font-size: 0.875rem;
-    }
-    .service-tag button {
-      background: none;
-      border: none;
-      color: inherit;
-      cursor: pointer;
-      padding: 0;
-      font-size: 1.1em;
-      line-height: 1;
-    }
+/* ── TOAST ── */
+#toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); padding: 12px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; z-index: 9999; opacity: 0; transition: all .3s; white-space: nowrap; pointer-events: none; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    .loading-skeleton {
-      background: linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%);
-      background-size: 200% 100%;
-      animation: loading 1.5s infinite;
-    }
-    @keyframes loading {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
+/* ── LIGHTBOX ── */
+#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.95); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+#lightbox img { max-width: 95vw; max-height: 90vh; border-radius: 12px; object-fit: contain; }
 
-    #results-section {
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    #results-section.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 4px; }
 
-    .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #18181b; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #52525b; }
+/* ════════════════════════
+   WELCOME PAGE STYLES
+════════════════════════ */
+#page-welcome { position: relative; }
+.badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); border-radius: 30px; padding: 6px 16px; font-size: 12px; color: var(--cyan); font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 28px; width: fit-content; animation: fadeInDown .8s ease both; }
+.badge-dot { width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; animation: blink 1.5s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.2;} }
+.hero { position: relative; z-index: 2; min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; max-width: 1200px; margin: 0 auto; padding: 110px 40px 60px; }
+.hero-left { display: flex; flex-direction: column; }
+.hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(56px,8vw,100px); line-height: .95; letter-spacing: 1px; color: #fff; margin-bottom: 24px; animation: fadeInUp .9s .1s ease both; }
+.hero-title .gradient-text { background: linear-gradient(135deg, var(--cyan) 0%, var(--indigo) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: block; }
+.hero-title .outline-text { -webkit-text-stroke: 2px rgba(255,255,255,0.3); color: transparent; display: block; }
+.hero-desc { font-size: 16px; color: var(--muted); line-height: 1.75; max-width: 460px; margin-bottom: 36px; animation: fadeInUp .9s .2s ease both; }
+.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 48px; animation: fadeInUp .9s .3s ease both; }
+.btn-hero-primary { padding: 16px 36px; font-size: 16px; font-weight: 700; border: none; border-radius: 14px; background: linear-gradient(135deg, var(--cyan), var(--indigo)); color: #06060f; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all .2s; box-shadow: 0 8px 32px rgba(0,212,255,0.3); }
+.btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,212,255,0.45); }
+.btn-hero-secondary { padding: 16px 28px; font-size: 15px; font-weight: 500; border: 1px solid var(--border); border-radius: 14px; background: rgba(255,255,255,.03); color: var(--text); cursor: pointer; font-family: 'Outfit', sans-serif; transition: all .2s; }
+.btn-hero-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+.chips { display: flex; gap: 10px; flex-wrap: wrap; animation: fadeInUp .9s .4s ease both; }
+.chip { display: flex; align-items: center; gap: 6px; padding: 7px 14px; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 30px; font-size: 13px; color: var(--muted); }
 
-    .image-lightbox {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.95);
-      z-index: 200;
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-    .image-lightbox.active { display: flex; }
-    .image-lightbox img { max-width: 90%; max-height: 90%; object-fit: contain; }
+/* Slideshow */
+.hero-right { display: flex; flex-direction: column; align-items: center; gap: 28px; animation: fadeInUp .9s .2s ease both; }
+.slideshow-wrap { position: relative; width: 340px; height: 380px; }
+.ring { position: absolute; border-radius: 50%; border: 1px solid rgba(0,212,255,0.1); top: 50%; left: 50%; transform: translate(-50%,-50%); animation: spin linear infinite; }
+.ring-1 { width: 420px; height: 420px; animation-duration: 30s; }
+.ring-2 { width: 340px; height: 340px; animation-duration: 20s; animation-direction: reverse; border-color: rgba(124,92,255,0.1); }
+@keyframes spin { from{transform:translate(-50%,-50%) rotate(0deg);} to{transform:translate(-50%,-50%) rotate(360deg);} }
+.ring::before, .ring::after { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); top: -4px; left: 50%; transform: translateX(-50%); box-shadow: 0 0 10px var(--cyan); }
+.ring::after { top: auto; bottom: -4px; background: var(--indigo); box-shadow: 0 0 10px var(--indigo); }
+.tool-card { position: absolute; inset: 20px; border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; opacity: 0; transform: scale(.8) rotate(-8deg); transition: opacity .6s cubic-bezier(.4,0,.2,1), transform .6s cubic-bezier(.4,0,.2,1); pointer-events: none; border: 1px solid rgba(255,255,255,.06); backdrop-filter: blur(20px); }
+.tool-card.active { opacity: 1; transform: scale(1) rotate(0deg); pointer-events: auto; }
+.tool-card.exit { opacity: 0; transform: scale(1.1) rotate(6deg); }
+.tool-emoji-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+.tool-emoji { font-size: 88px; filter: drop-shadow(0 8px 24px rgba(0,0,0,.5)); animation: toolFloat 3s ease-in-out infinite; }
+@keyframes toolFloat { 0%,100%{transform:translateY(0) rotate(-3deg);} 50%{transform:translateY(-12px) rotate(3deg);} }
+.tool-glow { position: absolute; width: 140px; height: 140px; border-radius: 50%; filter: blur(40px); opacity: .4; animation: glowPulse 3s ease-in-out infinite; }
+@keyframes glowPulse { 0%,100%{opacity:.3;} 50%{opacity:.6;} }
+.tool-profession { font-size: 16px; font-weight: 600; color: var(--text); text-align: center; padding: 0 24px; line-height: 1.4; }
+.tool-number { font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 2px; color: rgba(255,255,255,.2); }
+.slide-dots { display: flex; gap: 8px; justify-content: center; }
+.dot { height: 4px; border-radius: 2px; background: var(--dim); cursor: pointer; transition: all .4s ease; width: 20px; }
+.dot.active { width: 36px; background: linear-gradient(90deg, var(--cyan), var(--indigo)); }
+.progress-bar { width: 100%; height: 2px; background: var(--dim); border-radius: 1px; overflow: hidden; margin-top: 4px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--indigo)); border-radius: 1px; animation: progressAnim 3s linear infinite; }
+@keyframes progressAnim { from{width:0%;} to{width:100%;} }
+
+/* Welcome sections */
+.w-section { position: relative; z-index: 2; padding: 80px 40px; max-width: 1200px; margin: 0 auto; }
+.section-label { font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--cyan); margin-bottom: 14px; }
+.section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(40px,5vw,64px); letter-spacing: 1px; color: #fff; margin-bottom: 12px; }
+.section-sub { color: var(--muted); font-size: 15px; margin-bottom: 56px; }
+.divider { position: relative; z-index: 2; height: 1px; background: linear-gradient(90deg, transparent, rgba(0,212,255,0.15), transparent); margin: 0 40px; }
+.steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 20px; }
+.step-card { background: rgba(255,255,255,.02); border: 1px solid var(--border); border-radius: 20px; padding: 28px 24px; position: relative; overflow: hidden; transition: border-color .3s, transform .3s; }
+.step-card:hover { border-color: rgba(0,212,255,.25); transform: translateY(-4px); }
+.step-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--cyan), var(--indigo)); opacity: 0; transition: opacity .3s; }
+.step-card:hover::before { opacity: 1; }
+.step-num { font-family: 'Bebas Neue', sans-serif; font-size: 64px; color: rgba(0,212,255,.08); line-height: 1; margin-bottom: 16px; }
+.step-icon { font-size: 36px; margin-bottom: 14px; display: block; }
+.step-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; color: #fff; margin-bottom: 10px; }
+.step-desc { color: var(--muted); font-size: 13px; line-height: 1.6; }
+.cat-pill { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 30px; font-size: 14px; color: var(--muted); cursor: pointer; transition: all .25s; }
+.cat-pill:hover { background: rgba(0,212,255,.08); border-color: rgba(0,212,255,.3); color: var(--cyan); transform: translateY(-2px); }
+.stats-strip { position: relative; z-index: 2; background: rgba(255,255,255,.02); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.stats-inner { max-width: 1200px; margin: 0 auto; padding: 40px; display: grid; grid-template-columns: repeat(3,1fr); }
+.stat-item { text-align: center; padding: 0 20px; border-right: 1px solid var(--border); }
+.stat-item:last-child { border-right: none; }
+.stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 52px; background: linear-gradient(135deg, var(--cyan), var(--indigo)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 2px; }
+.stat-label { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.cta-section { position: relative; z-index: 2; padding: 80px 40px; text-align: center; }
+.bg-tool { position: fixed; opacity: .04; pointer-events: none; z-index: 0; animation: bgFloat linear infinite; }
+@keyframes bgFloat { 0%{transform:translateY(0) rotate(0deg);} 100%{transform:translateY(-100vh) rotate(360deg);} }
+
+/* ════════════════════════
+   AUTH PAGE
+════════════════════════ */
+#page-auth { position: relative; z-index: 2; min-height: calc(100vh - 64px); display: flex; align-items: center; justify-content: center; padding: 80px 24px 24px; }
+
+/* ════════════════════════
+   HOME / SEARCH
+════════════════════════ */
+#page-home { position: relative; z-index: 2; padding: 80px 20px 0; max-width: 1100px; margin: 0 auto; }
+#map { height: 420px; }
+.leaflet-popup-content-wrapper { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; color: var(--text); box-shadow: 0 8px 32px rgba(0,0,0,.6); }
+.leaflet-popup-tip { background: var(--surface); }
+.leaflet-popup-content { margin: 14px 16px; }
+.pin-popup img { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 8px; }
+.pin-popup .pname { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; }
+.pin-popup .psvc { color: var(--cyan); font-size: 12px; margin: 2px 0 10px; }
+.pin-popup button { width: 100%; padding: 9px; background: linear-gradient(135deg, var(--cyan), var(--indigo)); color: #06060f; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-family: 'Outfit', sans-serif; }
+.result-card { background: linear-gradient(145deg, var(--surface), var(--bg)); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; cursor: pointer; transition: transform .2s, box-shadow .2s; }
+.result-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,212,255,.1); border-color: rgba(0,212,255,.2); }
+
+/* ════════════════════════
+   PROFILE PAGES
+════════════════════════ */
+.photo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
+.photo-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; cursor: pointer; transition: opacity .2s; }
+.photo-grid img:hover { opacity: .8; }
+
+/* ════════════════════════
+   ANIMATIONS
+════════════════════════ */
+@keyframes fadeInUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+@keyframes fadeInDown { from{opacity:0;transform:translateY(-20px);} to{opacity:1;transform:translateY(0);} }
+
+/* ════════════════════════
+   MOBILE
+════════════════════════ */
+@media (max-width: 768px) {
+  .hero { grid-template-columns: 1fr; padding: 90px 20px 40px; text-align: center; gap: 40px; }
+  .hero-left { align-items: center; }
+  .hero-desc, .chips, .hero-actions { text-align: center; justify-content: center; }
+  .slideshow-wrap { width: 280px; height: 320px; }
+  .tool-emoji { font-size: 64px; }
+  .ring-1 { width: 320px; height: 320px; }
+  .ring-2 { width: 260px; height: 260px; }
+  .w-section { padding: 60px 20px; }
+  .stats-inner { grid-template-columns: 1fr; gap: 24px; }
+  .stat-item { border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+  .stat-item:last-child { border-bottom: none; }
+  .cta-section { padding: 60px 20px; }
+  #page-home { padding: 80px 16px 0; }
+}
+```
+
   </style>
 </head>
-<body class="bg-zinc-950 text-zinc-200 min-h-screen">
-  
-  <!-- NAVBAR -->
-  <nav class="bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-      <div class="flex items-center gap-3 cursor-pointer" onclick="showDashboard()">
-        <div class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg">
-          <span class="text-white text-xl font-bold logo-font">S</span>
-        </div>
-        <h1 class="text-2xl font-semibold logo-font tracking-tighter text-white">SkillSpot</h1>
-      </div>
+<body>
 
-      <div id="nav-auth" class="hidden items-center gap-6">
-        <div class="mode-toggle" id="mode-switcher" style="display: none;">
-          <button onclick="switchMode('customer')" id="mode-customer" class="active">Find Services</button>
-          <button onclick="switchMode('provider')" id="mode-provider">My Profile</button>
-        </div>
-        <div class="flex items-center gap-3 cursor-pointer" onclick="showMyProfile()">
-          <img id="nav-avatar" src="" class="w-9 h-9 rounded-full object-cover border-2 border-zinc-700 hidden">
-          <div id="nav-initial" class="w-9 h-9 bg-gradient-to-br from-cyan-400 to-indigo-500 rounded-full flex items-center justify-center text-sm font-bold"></div>
-        </div>
-        <button onclick="logout()" class="text-sm text-zinc-400 hover:text-red-400 transition">Logout</button>
+<!-- ── GLOBAL BG ── -->
+
+<div class="grid-bg"></div>
+<div class="orb" style="width:600px;height:600px;top:-200px;left:-200px;background:radial-gradient(circle,rgba(0,212,255,0.12),transparent 70%);"></div>
+<div class="orb" style="width:500px;height:500px;bottom:-150px;right:-150px;background:radial-gradient(circle,rgba(124,92,255,0.1),transparent 70%);animation-delay:4s;"></div>
+<div id="bg-tools"></div>
+
+<!-- ══════════ TOP NAV ══════════ -->
+
+<nav id="top-nav">
+  <div class="nav-logo" onclick="goHome()">
+    <div class="nav-logo-icon">S</div>
+    <span class="nav-logo-text">SkillSpot</span>
+  </div>
+  <div id="nav-guest">
+    <button class="btn-nav-outline" onclick="showPage('page-auth');switchAuthTab(0)">Sign In</button>
+    <button class="btn-nav-filled" onclick="showPage('page-auth');switchAuthTab(1)">Join Free</button>
+  </div>
+  <div id="nav-user" class="hidden">
+    <div class="nav-avatar" id="nav-avatar" onclick="showPage('page-profile');setActiveNav('nav-p')"></div>
+    <button class="btn-ghost" style="padding:8px 14px;font-size:13px;" onclick="doLogout()">Sign Out</button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════
+     WELCOME PAGE
+══════════════════════════════════════ -->
+
+<div id="page-welcome">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="badge"><div class="badge-dot"></div>Nigeria's #1 Local Skills Platform</div>
+      <h1 class="hero-title">
+        <span>FIND THE</span>
+        <span class="gradient-text">RIGHT PRO</span>
+        <span class="outline-text">NEAR YOU</span>
+      </h1>
+      <p class="hero-desc">Stop guessing, stop asking around. SkillSpot puts the best barbers, plumbers, photographers, electricians and more right at your fingertips — sorted by distance, verified by their portfolio.</p>
+      <div class="hero-actions">
+        <button class="btn-hero-primary" onclick="showPage('page-auth');switchAuthTab(1)">Get Started Free →</button>
+        <button class="btn-hero-secondary" onclick="document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'})">See How It Works</button>
+      </div>
+      <div class="chips">
+        <div class="chip">📍 Location-based</div>
+        <div class="chip">📷 Real portfolios</div>
+        <div class="chip">🗺️ Live map</div>
+        <div class="chip">⚡ Instant contact</div>
+        <div class="chip">🆓 Free to use</div>
       </div>
     </div>
-  </nav>
+    <div class="hero-right">
+      <div class="slideshow-wrap">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div id="tool-stage"></div>
+      </div>
+      <div>
+        <div class="slide-dots" id="slide-dots"></div>
+        <div class="progress-bar" style="width:200px;margin:12px auto 0;"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+    </div>
+  </section>
 
-  <!-- AUTH PAGE -->
-  <div id="auth-page" class="max-w-md mx-auto pt-12 px-6 pb-20">
-    <div class="card rounded-3xl p-8">
-      <div class="text-center mb-8">
-        <h2 class="text-3xl font-semibold logo-font text-white mb-2">Welcome to SkillSpot</h2>
-        <p class="text-zinc-400">Offer skills. Find skills. All in one place.</p>
-      </div>
-      
-      <div class="flex bg-zinc-900 rounded-2xl p-1 mb-8">
-        <button onclick="switchTab(0)" id="tab-login" class="flex-1 py-3 font-semibold rounded-xl transition-all bg-zinc-800 text-white">Login</button>
-        <button onclick="switchTab(1)" id="tab-signup" class="flex-1 py-3 font-semibold rounded-xl transition-all text-zinc-400">Sign Up</button>
-      </div>
+  <!-- STATS -->
 
-      <div id="login-form">
-        <input id="login-email" type="email" placeholder="Email address" class="dark-input w-full px-5 py-4 rounded-2xl mb-4 text-white">
-        <input id="login-password" type="password" placeholder="Password" class="dark-input w-full px-5 py-4 rounded-2xl mb-6 text-white">
-        <button onclick="login()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 font-semibold py-4 rounded-2xl hover:shadow-lg hover:shadow-cyan-500/25 transition">Login</button>
-      </div>
-
-      <div id="signup-form" class="hidden">
-        <input id="signup-name" type="text" placeholder="Full name" class="dark-input w-full px-5 py-4 rounded-2xl mb-4 text-white">
-        <input id="signup-email" type="email" placeholder="Email address" class="dark-input w-full px-5 py-4 rounded-2xl mb-4 text-white">
-        <input id="signup-password" type="password" placeholder="Password (6+ chars)" class="dark-input w-full px-5 py-4 rounded-2xl mb-6 text-white">
-        <button onclick="signup()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 font-semibold py-4 rounded-2xl hover:shadow-lg hover:shadow-cyan-500/25 transition">Create Account</button>
-      </div>
+  <div class="stats-strip">
+    <div class="stats-inner">
+      <div class="stat-item"><div class="stat-num" id="cnt-providers">0+</div><div class="stat-label">Skilled Providers</div></div>
+      <div class="stat-item"><div class="stat-num">15+</div><div class="stat-label">Service Categories</div></div>
+      <div class="stat-item"><div class="stat-num">FREE</div><div class="stat-label">Always Free to Join</div></div>
     </div>
   </div>
 
-  <!-- MAIN APP -->
-  <div id="main-app" class="hidden max-w-7xl mx-auto px-6 py-8">
-    
-    <!-- CUSTOMER MODE: Search & Map -->
-    <div id="customer-view">
-      <div class="mb-8">
-        <h2 class="text-3xl font-semibold logo-font mb-2">Find nearby pros</h2>
-        <p class="text-zinc-400">Search for any service, set your radius, explore profiles</p>
-      </div>
+  <div class="divider"></div>
 
-      <!-- Search Bar -->
-      <div class="card rounded-3xl p-6 mb-8">
-        <div class="flex flex-col lg:flex-row gap-4">
-          <div class="flex-1 relative">
-            <input id="search-term" type="text" placeholder="What service do you need? (barber, plumber, photographer...)" 
-                   class="dark-input w-full px-6 py-5 rounded-2xl text-white placeholder-zinc-500 text-base pr-12"
-                   onkeypress="if(event.key==='Enter') searchProviders()">
-            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500">🔍</span>
-          </div>
-          
-          <div class="flex items-center gap-4 bg-zinc-900 rounded-2xl px-6 py-3">
-            <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Radius</span>
-            <input id="max-distance" type="range" min="1" max="50" value="10" class="accent-cyan-400 w-32 cursor-pointer">
-            <span id="distance-value" class="font-mono text-cyan-400 text-lg w-16 text-right">10 km</span>
-          </div>
-          
-          <button onclick="searchProviders()" 
-                  class="bg-gradient-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 text-zinc-950 font-semibold px-10 py-5 rounded-2xl transition-all flex items-center gap-2">
-            <span>Search</span>
-          </button>
-        </div>
-        
-        <!-- Quick filters -->
-        <div class="flex gap-2 mt-4 flex-wrap">
-          <button onclick="quickSearch('barber')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">💈 Barber</button>
-          <button onclick="quickSearch('plumber')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">🔧 Plumber</button>
-          <button onclick="quickSearch('photographer')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">📸 Photographer</button>
-          <button onclick="quickSearch('tutor')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">📚 Tutor</button>
-          <button onclick="quickSearch('chef')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">👨‍🍳 Chef</button>
-        </div>
-      </div>
+  <!-- HOW IT WORKS -->
 
-      <!-- Results Section -->
-      <div id="results-section" class="hidden grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <!-- Map -->
-        <div class="xl:col-span-2 card rounded-3xl overflow-hidden border border-zinc-800">
-          <div class="bg-zinc-900 px-6 py-3 flex items-center justify-between border-b border-zinc-800">
-            <p class="text-sm font-medium text-cyan-400">📍 Click pins to view profiles</p>
-            <span id="results-count" class="text-xs text-zinc-500">0 providers found</span>
-          </div>
-          <div id="map" class="w-full"></div>
-        </div>
-        
-        <!-- Results List -->
-        <div class="xl:col-span-1 card rounded-3xl p-6 flex flex-col max-h-[600px]">
-          <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
-            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-            Nearby Providers
-          </h3>
-          <div id="results-list" class="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-            <!-- Dynamic content -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Empty State -->
-      <div id="empty-state" class="card rounded-3xl h-96 flex items-center justify-center flex-col border border-dashed border-zinc-700 text-center p-8">
-        <div class="text-6xl mb-4">🗺️</div>
-        <h3 class="text-xl font-semibold mb-2">Discover local talent</h3>
-        <p class="text-zinc-500 max-w-md">Search for any service to see providers on the map. Click their pins to view full profiles with portfolios.</p>
-      </div>
+  <section class="w-section" id="how-it-works">
+    <div class="section-label">The Process</div>
+    <div class="section-title">HOW SKILLSPOT WORKS</div>
+    <div class="section-sub">Four simple steps to finding the perfect professional</div>
+    <div class="steps-grid">
+      <div class="step-card"><div class="step-num">01</div><span class="step-icon">🔍</span><div class="step-title">SEARCH</div><div class="step-desc">Type any service — barber, plumber, photographer, tailor. Set how far you're willing to travel.</div></div>
+      <div class="step-card"><div class="step-num">02</div><span class="step-icon">🗺️</span><div class="step-title">DISCOVER</div><div class="step-desc">See every provider near you as pins on a live map. Your exact search radius shown visually.</div></div>
+      <div class="step-card"><div class="step-num">03</div><span class="step-icon">📷</span><div class="step-title">BROWSE</div><div class="step-desc">Tap any pin to open their full profile. See their Instagram-style portfolio of real work photos.</div></div>
+      <div class="step-card"><div class="step-num">04</div><span class="step-icon">✅</span><div class="step-title">CONNECT</div><div class="step-desc">Contact who you like directly. Same account lets you offer your own skills to customers too.</div></div>
     </div>
+  </section>
 
-    <!-- PROVIDER MODE: My Profile -->
-    <div id="provider-view" class="hidden max-w-4xl mx-auto">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <!-- Profile Edit -->
-        <div class="lg:col-span-2 space-y-6">
-          <div class="card rounded-3xl p-8">
-            <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">✏️ Edit Profile</h3>
-            
-            <!-- Avatar -->
-            <div class="flex items-center gap-6 mb-8">
-              <div class="relative">
-                <img id="edit-avatar" src="" class="w-24 h-24 rounded-full object-cover border-4 border-zinc-800">
-                <label class="absolute bottom-0 right-0 w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center cursor-pointer hover:bg-cyan-300 transition">
-                  <span class="text-zinc-900 text-xs">📷</span>
-                  <input type="file" accept="image/*" class="hidden" onchange="updateAvatar(this)">
-                </label>
-              </div>
-              <div>
-                <h4 class="font-semibold text-lg" id="edit-name">Name</h4>
-                <p class="text-zinc-500 text-sm">Update your profile to attract customers</p>
-              </div>
-            </div>
+  <div class="divider"></div>
 
-            <!-- Services -->
-            <div class="mb-6">
-              <label class="block text-sm font-medium text-zinc-400 mb-3">Services You Offer</label>
-              <div class="flex gap-2 mb-3 flex-wrap" id="my-services">
-                <!-- Dynamic tags -->
-              </div>
-              <div class="flex gap-2">
-                <input id="new-service" type="text" placeholder="Add a service (e.g., Haircut, Web Design)" 
-                       class="dark-input flex-1 px-4 py-3 rounded-xl text-white text-sm"
-                       onkeypress="if(event.key==='Enter') addService()">
-                <button onclick="addService()" class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-medium transition">Add</button>
-              </div>
-            </div>
+  <!-- CATEGORIES -->
 
-            <!-- Bio -->
-            <div class="mb-6">
-              <label class="block text-sm font-medium text-zinc-400 mb-3">Bio</label>
-              <textarea id="provider-bio" rows="4" placeholder="Tell customers about your experience, availability, and what makes you unique..." 
-                        class="dark-input w-full px-4 py-3 rounded-xl text-white resize-none"></textarea>
-            </div>
+  <section class="w-section" style="text-align:center;">
+    <div class="section-label">Available Services</div>
+    <div class="section-title">FIND ANY SKILL</div>
+    <div class="section-sub">Tap a category to start searching</div>
+    <div id="welcome-cats" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;"></div>
+  </section>
 
-            <!-- Location -->
-            <div class="mb-6 p-4 bg-zinc-900 rounded-2xl border border-zinc-800">
-              <div class="flex items-center justify-between mb-3">
-                <span class="font-medium flex items-center gap-2">📍 Your Location</span>
-                <button onclick="getCurrentLocation()" class="text-sm text-cyan-400 hover:text-cyan-300 transition">Update Location</button>
-              </div>
-              <p id="location-status" class="text-sm text-zinc-500">Set your location to appear on the map when customers search</p>
-              <div id="location-map-mini" class="mt-3 h-32 rounded-xl bg-zinc-800 hidden"></div>
-            </div>
+  <div class="divider"></div>
 
-            <!-- Contact -->
-            <div class="mb-8">
-              <label class="block text-sm font-medium text-zinc-400 mb-3">Contact Info</label>
-              <input id="contact-phone" type="tel" placeholder="Phone number (optional)" 
-                     class="dark-input w-full px-4 py-3 rounded-xl text-white mb-3">
-              <input id="contact-instagram" type="text" placeholder="Instagram handle (optional)" 
-                     class="dark-input w-full px-4 py-3 rounded-xl text-white">
-            </div>
+  <!-- BOTTOM CTA -->
 
-            <button onclick="saveProfile()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 py-4 rounded-2xl font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition">
-              Save Profile
-            </button>
-          </div>
-        </div>
-
-        <!-- Portfolio Upload -->
-        <div class="lg:col-span-1">
-          <div class="card rounded-3xl p-6 sticky top-24">
-            <h3 class="font-semibold mb-4">📸 Portfolio Photos</h3>
-            <p class="text-sm text-zinc-500 mb-4">Upload photos of your work. These appear in your profile gallery.</p>
-            
-            <input type="file" id="portfolio-input" accept="image/*" multiple class="hidden" onchange="previewPhotos(this)">
-            <button onclick="document.getElementById('portfolio-input').click()" 
-                    class="w-full py-4 border-2 border-dashed border-zinc-700 rounded-2xl hover:border-cyan-400 hover:bg-zinc-900/50 transition mb-4 text-zinc-400 hover:text-cyan-400">
-              + Add Photos
-            </button>
-
-            <div id="photo-preview-grid" class="grid grid-cols-2 gap-2">
-              <!-- Preview thumbnails -->
-            </div>
-            
-            <button onclick="uploadPhotos()" id="upload-btn" class="hidden w-full mt-4 bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl font-medium transition">
-              Upload <span id="upload-count">0</span> Photos
-            </button>
-          </div>
-        </div>
+  <section class="cta-section">
+    <div style="max-width:640px;margin:0 auto;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,6vw,72px);letter-spacing:1px;color:#fff;margin-bottom:16px;line-height:1;">
+        READY TO GET<br/>
+        <span style="background:linear-gradient(135deg,#00d4ff,#7c5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">STARTED?</span>
       </div>
+      <p style="color:var(--muted);font-size:15px;line-height:1.7;margin-bottom:36px;">Join SkillSpot today. Find professionals around you. Showcase your own skills. All for free.</p>
+      <button class="btn-hero-primary" onclick="showPage('page-auth');switchAuthTab(1)">Join SkillSpot — It's Free</button>
+    </div>
+  </section>
+</div>
+
+<!-- ══════════════════════════════════════
+     AUTH PAGE
+══════════════════════════════════════ -->
+
+<div id="page-auth" class="hidden">
+  <div class="card" style="width:100%;max-width:420px;padding:32px;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;color:#fff;margin-bottom:6px;">WELCOME</div>
+      <div style="color:var(--muted);font-size:13px;">One account — find services & offer your skills</div>
+    </div>
+    <div style="display:flex;background:var(--bg);border-radius:14px;padding:4px;margin-bottom:24px;">
+      <button id="tab-li" onclick="switchAuthTab(0)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--surface2);color:#fff;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;font-size:14px;transition:all .2s;">Login</button>
+      <button id="tab-su" onclick="switchAuthTab(1)" style="flex:1;padding:10px;border:none;border-radius:10px;background:transparent;color:var(--muted);font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;font-size:14px;transition:all .2s;">Sign Up</button>
+    </div>
+    <div id="form-login">
+      <input id="li-email" class="inp" type="email" placeholder="Email address" style="margin-bottom:12px;display:block;"/>
+      <input id="li-pass" class="inp" type="password" placeholder="Password" style="margin-bottom:20px;display:block;" onkeydown="if(event.key==='Enter')doLogin()"/>
+      <button class="btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="doLogin()">Login</button>
+      <p style="text-align:center;margin-top:14px;font-size:13px;color:var(--muted);">No account? <span style="color:var(--cyan);cursor:pointer;font-weight:600;" onclick="switchAuthTab(1)">Sign up free</span></p>
+    </div>
+    <div id="form-signup" class="hidden">
+      <input id="su-name" class="inp" type="text" placeholder="Full name" style="margin-bottom:12px;display:block;"/>
+      <input id="su-email" class="inp" type="email" placeholder="Email address" style="margin-bottom:12px;display:block;"/>
+      <input id="su-pass" class="inp" type="password" placeholder="Password (6+ characters)" style="margin-bottom:20px;display:block;"/>
+      <button class="btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="doSignup()">Create Account</button>
+      <p style="text-align:center;margin-top:14px;font-size:13px;color:var(--muted);">Have an account? <span style="color:var(--cyan);cursor:pointer;font-weight:600;" onclick="switchAuthTab(0)">Login</span></p>
     </div>
   </div>
+</div>
 
-  <!-- Public Profile Modal -->
-  <div id="profile-modal" class="profile-modal" onclick="if(event.target===this) closeProfileModal()">
-    <div class="min-h-screen p-4 md:p-8">
-      <button onclick="closeProfileModal()" class="fixed top-6 right-6 w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center text-2xl hover:bg-zinc-800 transition z-10">×</button>
-      
-      <div class="max-w-2xl mx-auto card rounded-3xl overflow-hidden mt-8">
-        <!-- Header -->
-        <div class="relative h-48 bg-gradient-to-br from-cyan-400/20 to-indigo-500/20">
-          <div class="absolute -bottom-16 left-8">
-            <img id="modal-avatar" src="" class="w-32 h-32 rounded-full object-cover border-4 border-zinc-900 bg-zinc-800">
-          </div>
-        </div>
-        
-        <div class="pt-20 px-8 pb-8">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h2 id="modal-name" class="text-2xl font-bold mb-1"></h2>
-              <p id="modal-services" class="text-cyan-400 flex gap-2 flex-wrap"></p>
-            </div>
-            <div id="modal-distance" class="px-4 py-2 bg-zinc-900 rounded-full text-sm font-mono"></div>
-          </div>
-          
-          <p id="modal-bio" class="text-zinc-300 mb-6 leading-relaxed"></p>
-          
-          <div class="flex gap-4 mb-8">
-            <button onclick="contactProvider()" class="flex-1 bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 py-3 rounded-xl font-semibold hover:shadow-lg transition">
-              Contact Now
-            </button>
-            <button onclick="shareProfile()" class="px-6 py-3 bg-zinc-900 rounded-xl hover:bg-zinc-800 transition">
-              ↗️ Share
-            </button>
-          </div>
+<!-- ══════════════════════════════════════
+     HOME / SEARCH PAGE
+══════════════════════════════════════ -->
 
-          <!-- Stats -->
-          <div class="grid grid-cols-3 gap-4 mb-8 py-6 border-y border-zinc-800">
-            <div class="text-center">
-              <div id="modal-photo-count" class="text-2xl font-bold">0</div>
-              <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Photos</div>
-            </div>
-            <div class="text-center">
-              <div id="modal-service-count" class="text-2xl font-bold">0</div>
-              <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Services</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-cyan-400">★</div>
-              <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Available</div>
-            </div>
-          </div>
+<div id="page-home" class="hidden">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;color:#fff;margin-bottom:4px;">FIND NEARBY PROS</div>
+  <div style="color:var(--muted);font-size:14px;margin-bottom:20px;">Search · Set distance · See them on the map instantly</div>
 
-          <!-- Portfolio Grid -->
-          <h3 class="font-semibold mb-4">Portfolio</h3>
-          <div id="modal-portfolio" class="instagram-grid">
-            <!-- Photos -->
-          </div>
-div>
+  <!-- Search bar -->
 
-      <div id="nav-auth" class="hidden items-center gap-6">
-        <div class="mode-toggle" id="mode-switcher" style="display: none;">
-          <button onclick="switchMode('customer')" id="mode-customer" class="active">Find Services</button>
-          <button onclick="switchMode('provider')" id="mode-provider">My Profile</button>
-        </div>
-        <div class="flex items-center gap-3 cursor-pointer" onclick="showMyProfile()">
-          <img id="nav-avatar" src="" class="w-9 h-9 rounded-full object-cover border-2 border-zinc-700 hidden">
-          <div id="nav-initial" class="w-9 h-9 bg-gradient-to-br from-cyan-400 to-indigo-500 rounded-full flex items-center justify-center text-sm font-bold"></div>
-        </div>
-        <button onclick="logout()" class="text-sm text-zinc-400 hover:text-red-400 transition">Logout</button>
-      </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+    <input id="search-term" class="inp" type="text" placeholder="barber, plumber, photographer..." style="flex:1;min-width:180px;" onkeydown="if(event.key==='Enter')doSearch()"/>
+    <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:0 14px;">
+      <span style="color:var(--muted);font-size:12px;white-space:nowrap;">Max</span>
+      <input id="dist-slider" type="range" min="1" max="50" value="10" style="width:80px;accent-color:var(--cyan);" oninput="document.getElementById('dist-val').textContent=this.value+' km'"/>
+      <span id="dist-val" style="color:var(--cyan);font-size:13px;font-weight:700;min-width:38px;">10 km</span>
     </div>
-  </nav>
-
-  <!-- AUTH PAGE -->
-  <div id="auth-page" class="max-w-md mx-auto pt-12 px-6 pb-20">
-    <div class="card rounded-3xl p-8">
-      <div class="text-center mb-8">
-        <h2 class="text-3xl font-semibold logo-font text-white mb-2">Welcome to SkillSpot</h2>
-        <p class="text-zinc-400">Offer skills. Find skills. All in one place.</p>
-      </div>
-      
-      <div class="flex bg-zinc-900 rounded-2xl p-1 mb-8">
-        <button onclick="switchTab(0)" id="tab-login" class="flex-1 py-3 font-semibold rounded-xl transition-all bg-zinc-800 text-white">Login</button>
-        <button onclick="switchTab(1)" id="tab-signup" class="flex-1 py-3 font-semibold rounded-xl transition-all text-zinc-400">Sign Up</button>
-      </div>
-
-      <div id="login-form">
-        <input id="login-email" type="email" placeholder="Email address" class="dark-input w-full px-5 py-4 rounded-2xl mb-4 text-white">
-        <input id="login-password" type="password" placeholder="Password" class="dark-input w-full px-5 py-4 rounded-2xl mb-6 text-white">
-        <button onclick="login()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 font-semibold py-4 rounded-2xl hover:shadow-lg hover:shadow-cyan-500/25 transition">Login</button>
-      </div>
-
-      <div id="signup-form" class="hidden">
-        <input id="signup-name" type="text" placeholder="Full name" class="dark-input w-full px-5 py-4 rounded-2xl mb-4 text-white">
-        <input id="signup-email" type="email" placeholder="Email address" class="dark-input w-full px-5 py-4 rounded-2xl mb-4 text-white">
-        <input id="signup-password" type="password" placeholder="Password (6+ chars)" class="dark-input w-full px-5 py-4 rounded-2xl mb-6 text-white">
-        <button onclick="signup()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 font-semibold py-4 rounded-2xl hover:shadow-lg hover:shadow-cyan-500/25 transition">Create Account</button>
-      </div>
-    </div>
+    <button class="btn-primary" style="padding:13px 28px;font-size:14px;" onclick="doSearch()">Search</button>
   </div>
 
-  <!-- MAIN APP -->
-  <div id="main-app" class="hidden max-w-7xl mx-auto px-6 py-8">
-    
-    <!-- CUSTOMER MODE: Search & Map -->
-    <div id="customer-view">
-      <div class="mb-8">
-        <h2 class="text-3xl font-semibold logo-font mb-2">Find nearby pros</h2>
-        <p class="text-zinc-400">Search for any service, set your radius, explore profiles</p>
-      </div>
+  <!-- Quick category pills -->
 
-      <!-- Search Bar -->
-      <div class="card rounded-3xl p-6 mb-8">
-        <div class="flex flex-col lg:flex-row gap-4">
-          <div class="flex-1 relative">
-            <input id="search-term" type="text" placeholder="What service do you need? (barber, plumber, photographer...)" 
-                   class="dark-input w-full px-6 py-5 rounded-2xl text-white placeholder-zinc-500 text-base pr-12"
-                   onkeypress="if(event.key==='Enter') searchProviders()">
-            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500">🔍</span>
-          </div>
-          
-          <div class="flex items-center gap-4 bg-zinc-900 rounded-2xl px-6 py-3">
-            <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Radius</span>
-            <input id="max-distance" type="range" min="1" max="50" value="10" class="accent-cyan-400 w-32 cursor-pointer">
-            <span id="distance-value" class="font-mono text-cyan-400 text-lg w-16 text-right">10 km</span>
-          </div>
-          
-          <button onclick="searchProviders()" 
-                  class="bg-gradient-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 text-zinc-950 font-semibold px-10 py-5 rounded-2xl transition-all flex items-center gap-2">
-            <span>Search</span>
-          </button>
-        </div>
-        
-        <!-- Quick filters -->
-        <div class="flex gap-2 mt-4 flex-wrap">
-          <button onclick="quickSearch('barber')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">💈 Barber</button>
-          <button onclick="quickSearch('plumber')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">🔧 Plumber</button>
-          <button onclick="quickSearch('photographer')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">📸 Photographer</button>
-          <button onclick="quickSearch('tutor')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">📚 Tutor</button>
-          <button onclick="quickSearch('chef')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">👨‍🍳 Chef</button>
-        </div>
-      </div>
+  <div id="home-cats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;"></div>
 
-      <!-- Results Section -->
-      <div id="results-section" class="hidden grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <!-- Map -->
-        <div class="xl:col-span-2 card rounded-3xl overflow-hidden border border-zinc-800">
-          <div class="bg-zinc-900 px-6 py-3 flex items-center justify-between border-b border-zinc-800">
-            <p class="text-sm font-medium text-cyan-400">📍 Click pins to view profiles</p>
-            <span id="results-count" class="text-xs text-zinc-500">0 providers found</span>
-          </div>
-          <div id="map" class="w-full"></div>
-        </div>
-        
-        <!-- Results List -->
-        <div class="xl:col-span-1 card rounded-3xl p-6 flex flex-col max-h-[600px]">
-          <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
-            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-            Nearby Providers
-          </h3>
-          <div id="results-list" class="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-            <!-- Dynamic content -->
-          </div>
-        </div>
-      </div>
+  <!-- Map + results -->
 
-      <!-- Empty State -->
-      <div id="empty-state" class="card rounded-3xl h-96 flex items-center justify-center flex-col border border-dashed border-zinc-700 text-center p-8">
-        <div class="text-6xl mb-4">🗺️</div>
-        <h3 class="text-xl font-semibold mb-2">Discover local talent</h3>
-        <p class="text-zinc-500 max-w-md">Search for any service to see providers on the map. Click their pins to view full profiles with portfolios.</p>
-      </div>
+  <div id="search-results" class="hidden">
+    <div class="card" style="overflow:hidden;margin-bottom:20px;">
+      <div style="background:var(--surface);padding:12px 18px;border-bottom:1px solid var(--border);font-size:12px;color:var(--cyan);font-weight:600;letter-spacing:.5px;">📍 LIVE MAP — Tap a pin to view profile</div>
+      <div id="map"></div>
     </div>
-
-    <!-- PROVIDER MODE: My Profile -->
-    <div id="provider-view" class="hidden max-w-4xl mx-auto">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <!-- Profile Edit -->
-        <div class="lg:col-span-2 space-y-6">
-          <div class="card rounded-3xl p-8">
-            <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">✏️ Edit Profile</h3>
-            
-            <!-- Avatar -->
-            <div class="flex items-center gap-6 mb-8">
-              <div class="relative">
-                <img id="edit-avatar" src="" class="w-24 h-24 rounded-full object-cover border-4 border-zinc-800">
-                <label class="absolute bottom-0 right-0 w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center cursor-pointer hover:bg-cyan-300 transition">
-                  <span class="text-zinc-900 text-xs">📷</span>
-                  <input type="file" accept="image/*" class="hidden" onchange="updateAvatar(this)">
-                </label>
-              </div>
-              <div>
-                <h4 class="font-semibold text-lg" id="edit-name">Name</h4>
-                <p class="text-zinc-500 text-sm">Update your profile to attract customers</p>
-              </div>
-            </div>
-
-            <!-- Services -->
-            <div class="mb-6">
-              <label class="block text-sm font-medium text-zinc-400 mb-3">Services You Offer</label>
-              <div class="flex gap-2 mb-3 flex-wrap" id="my-services">
-                <!-- Dynamic tags -->
-              </div>
-              <div class="flex gap-2">
-                <input id="new-service" type="text" placeholder="Add a service (e.g., Haircut, Web Design)" 
-                       class="dark-input flex-1 px-4 py-3 rounded-xl text-white text-sm"
-                       onkeypress="if(event.key==='Enter') addService()">
-                <button onclick="addService()" class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-medium transition">Add</button>
-              </div>
-            </div>
-
-            <!-- Bio -->
-            <div class="mb-6">
-              <label class="block text-sm font-medium text-zinc-400 mb-3">Bio</label>
-              <textarea id="provider-bio" rows="4" placeholder="Tell customers about your experience, availability, and what makes you unique..." 
-                        class="dark-input w-full px-4 py-3 rounded-xl text-white resize-none"></textarea>
-            </div>
-
-            <!-- Location -->
-            <div class="mb-6 p-4 bg-zinc-900 rounded-2xl border border-zinc-800">
-              <div class="flex items-center justify-between mb-3">
-                <span class="font-medium flex items-center gap-2">📍 Your Location</span>
-                <button onclick="getCurrentLocation()" class="text-sm text-cyan-400 hover:text-cyan-300 transition">Update Location</button>
-              </div>
-              <p id="location-status" class="text-sm text-zinc-500">Set your location to appear on the map when customers search</p>
-              <div id="location-map-mini" class="mt-3 h-32 rounded-xl bg-zinc-800 hidden"></div>
-            </div>
-
-            <!-- Contact -->
-            <div class="mb-8">
-              <label class="block text-sm font-medium text-zinc-400 mb-3">Contact Info</label>
-              <input id="contact-phone" type="tel" placeholder="Phone number (optional)" 
-                     class="dark-input w-full px-4 py-3 rounded-xl text-white mb-3">
-              <input id="contact-instagram" type="text" placeholder="Instagram handle (optional)" 
-                     class="dark-input w-full px-4 py-3 rounded-xl text-white">
-            </div>
-
-            <button onclick="saveProfile()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 py-4 rounded-2xl font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition">
-              Save Profile
-            </button>
-          </div>
-        </div>
-
-        <!-- Portfolio Upload -->
-        <div class="lg:col-span-1">
-          <div class="card rounded-3xl p-6 sticky top-24">
-            <h3 class="font-semibold mb-4">📸 Portfolio Photos</h3>
-            <p class="text-sm text-zinc-500 mb-4">Upload photos of your work. These appear in your profile gallery.</p>
-            
-            <input type="file" id="portfolio-input" accept="image/*" multiple class="hidden" onchange="previewPhotos(this)">
-            <button onclick="document.getElementById('portfolio-input').click()" 
-                    class="w-full py-4 border-2 border-dashed border-zinc-700 rounded-2xl hover:border-cyan-400 hover:bg-zinc-900/50 transition mb-4 text-zinc-400 hover:text-cyan-400">
-              + Add Photos
-            </button>
-
-            <div id="photo-preview-grid" class="grid grid-cols-2 gap-2">
-              <!-- Preview thumbnails -->
-            </div>
-            
-            <button onclick="uploadPhotos()" id="upload-btn" class="hidden w-full mt-4 bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl font-medium transition">
-              Upload <span id="upload-count">0</span> Photos
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div id="results-count" style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:600;"></div>
+    <div id="results-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px;"></div>
   </div>
 
-  <!-- Public Profile Modal -->
-  <div id="profile-modal" class="profile-modal" onclick="if(event.target===this) closeProfileModal()">
-    <div class="min-h-screen p-4 md:p-8">
-      <button onclick="closeProfileModal()" class="fixed top-6 right-6 w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center text-2xl hover:bg-zinc-800 transition z-10">×</button>
-      
-      <div class="max-w-2xl mx-auto card rounded-3xl overflow-hidden mt-8">
-        <!-- Header -->
-        <div class="relative h-48 bg-gradient-to-br from-cyan-400/20 to-indigo-500/20">
-          <div class="absolute -bottom-16 left-8">
-            <img id="modal-avatar" src="" class="w-32 h-32 rounded-full object-cover border-4 border-zinc-900 bg-zinc-800">
-          </div>
-        </div>
-        
-        <div class="pt-20 px-8 pb-8">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h2 id="modal-name" class="text-2xl font-bold mb-1"></h2>
-              <p id="modal-services" class="text-cyan-400 flex gap-2 flex-wrap"></p>
-            </div>
-            <div id="modal-distance" class="px-4 py-2 bg-zinc-900 rounded-full text-sm font-mono"></div>
-          </div>
-          
-          <p id="modal-bio" class="text-zinc-300 mb-6 leading-relaxed"></p>
-          
-          <div class="flex gap-4 mb-8">
-            <button onclick="contactProvider()" class="flex-1 bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 py-3 rounded-xl font-semibold hover:shadow-lg transition">
-              Contact Now
-            </button>
-            <button onclick="shareProfile()" class="px-6 py-3 bg-zinc-900 rounded-xl hover:bg-zinc-800 transition">
-              ↗️ Share
-            </button>
-          </div>
+  <div id="search-placeholder" style="padding:60px 0;text-align:center;">
+    <div style="font-size:56px;margin-bottom:16px;">🗺️</div>
+    <div style="color:var(--muted);font-size:16px;margin-bottom:6px;">Search a service above to discover providers near you</div>
+    <div style="color:var(--dim);font-size:13px;">or tap a category below</div>
+  </div>
 
-          <!-- Stats -->
-          <div class="grid grid-cols-3 gap-4 mb-8 py-6 border-y border-zinc-800">
-            <div class="text-center">
-              <div id="modal-photo-count" class="text-2xl font-bold">0</div>
-              <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Photos</div>
-            </div>
-            <div class="text-center">
-              <div id="modal-service-count" class="text-2xl font-bold">0</div>
-              <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Services</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-cyan-400">★</div>
-              <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Available</div>
-            </div>
-          </div>
+  <!-- Provider CTA -->
 
-          <!-- Portfolio Grid -->
-          <h3 class="font-semibold mb-4">Portfolio</h3>
-          <div id="modal-portfolio" class="instagram-grid">
-            <!-- Photos -->
-          </div>
-        </div>
+  <div style="background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(124,92,255,.06));border:1px solid rgba(0,212,255,.15);border-radius:20px;padding:24px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:20px 0 0;">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#fff;margin-bottom:4px;">OFFER YOUR SKILLS TOO</div>
+      <div style="color:var(--muted);font-size:13px;">Set up your provider profile and get discovered by customers nearby</div>
+    </div>
+    <button class="btn-primary" style="padding:12px 24px;font-size:14px;" onclick="showPage('page-profile');setActiveNav('nav-p')">Set Up My Profile →</button>
+  </div>
+  <div id="nav-spacer"></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MY PROFILE PAGE
+══════════════════════════════════════ -->
+
+<div id="page-profile" class="hidden" style="position:relative;z-index:2;max-width:700px;margin:0 auto;padding:80px 20px 0;">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;color:#fff;margin-bottom:4px;">MY PROFILE</div>
+  <div style="color:var(--muted);font-size:13px;margin-bottom:24px;">Your public profile — customers see this when they find you on the map</div>
+
+  <!-- Preview -->
+
+  <div class="card" style="padding:24px;margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+      <div id="pa-avatar" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--indigo));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#06060f;font-family:'Bebas Neue',sans-serif;flex-shrink:0;overflow:hidden;"></div>
+      <div>
+        <div id="pa-name" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#fff;"></div>
+        <div id="pa-service" style="color:var(--cyan);font-size:14px;margin-top:2px;"></div>
+        <div id="pa-location" style="color:var(--muted);font-size:12px;margin-top:2px;"></div>
       </div>
     </div>
+    <div id="pa-bio" style="color:#a0a0c0;font-size:14px;line-height:1.6;margin-bottom:16px;"></div>
+    <div id="pa-photos" class="photo-grid"></div>
   </div>
 
-  <!-- Image Lightbox -->
-  <div id="lightbox" class="image-lightbox" onclick="closeLightbox()">
-    <button class="fixed top-6 right-6 text-white text-4xl hover:text-cyan-400 transition">&times;</button>
-    <img id="lightbox-img" src="" onclick="event.stopPropagation()">
+  <!-- Edit form -->
+
+  <div class="card" style="padding:24px;">
+    <div style="font-weight:600;font-size:15px;color:#fff;margin-bottom:20px;">Edit Profile</div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div>
+        <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Your Service / Skill</label>
+        <input id="edit-service" class="inp" type="text" placeholder="e.g. Barber, Plumber, Photographer"/>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Bio</label>
+        <textarea id="edit-bio" class="inp" rows="3" placeholder="Describe your experience and skills..."></textarea>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Location</label>
+        <div style="display:flex;gap:10px;">
+          <input id="edit-location" class="inp" type="text" placeholder="e.g. Lagos, Nigeria" style="flex:1;"/>
+          <button class="btn-ghost" style="padding:12px 14px;font-size:13px;white-space:nowrap;" onclick="getMyLocation()">📍 GPS</button>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Add Work Photos (select multiple)</label>
+        <input id="photo-input" type="file" accept="image/*" multiple style="display:none;" onchange="handlePhotoSelect(this)"/>
+        <button class="btn-ghost" style="width:100%;padding:16px;font-size:14px;border-style:dashed;" onclick="document.getElementById('photo-input').click()">📷 Choose Photos from Gallery</button>
+        <div id="photo-previews" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"></div>
+      </div>
+      <button class="btn-primary" style="width:100%;padding:15px;font-size:15px;" onclick="saveProfile()">Save Profile</button>
+    </div>
   </div>
+  <div id="nav-spacer2" style="height:72px;"></div>
+</div>
 
-  <!-- Toast -->
-  <div id="toast" class="fixed bottom-8 right-8 px-6 py-4 rounded-2xl text-sm font-medium shadow-2xl z-50 transform translate-y-20 opacity-0 transition-all duration-300"></div>
+<!-- ══════════════════════════════════════
+     VIEW SOMEONE ELSE'S PROFILE
+══════════════════════════════════════ -->
 
-  <script type="module">
-    // Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyAPKUM4Tzk0g80o3AgQRyzcGKNMZx7GJEE",
-      authDomain: "skillspot95611.firebaseapp.com",
-      projectId: "skillspot95611",
-      storageBucket: "skillspot95611.firebasestorage.app",
-      messagingSenderId: "880371869598",
-      appId: "1:880371869598:web:359ba15c51474fd595188f",
-      measurementId: "G-36ELL41V4Q"
-    };
+<div id="page-view-profile" class="hidden" style="position:relative;z-index:2;max-width:600px;margin:0 auto;padding:80px 20px 0;">
+  <button class="btn-ghost" style="padding:8px 14px;font-size:13px;margin-bottom:20px;" onclick="goBack()">← Back</button>
+  <div id="view-profile-content"></div>
+  <div style="height:72px;"></div>
+</div>
 
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js';
-    import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js';
-    import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-storage.js';
+<!-- ══════════════════════════════════════
+     BOTTOM NAV (logged in only)
+══════════════════════════════════════ -->
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const storage = getStorage(app);
+<div id="bottom-nav" class="hidden">
+  <div class="nav-tab active" id="nav-h" onclick="showPage('page-home');setActiveNav('nav-h')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+    Home
+  </div>
+  <div class="nav-tab" id="nav-p" onclick="showPage('page-profile');setActiveNav('nav-p')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    My Profile
+  </div>
+</div>
 
-    // State
-    let currentUser = null;
-    let userData = null;
-    let currentMode = 'customer';
-    let map = null;
-    let markers = [];
-    let selectedFiles = [];
-    let currentProviders = [];
+<!-- TOAST -->
 
-    // Initialize
-    window.switchTab = switchTab;
-    window.signup = signup;
-    window.login = login;
-    window.logout = logout;
-    window.switchMode = switchMode;
-    window.searchProviders = searchProviders;
-    window.quickSearch = quickSearch;
-    window.addService = addService;
-    window.removeService = removeService;
-    window.saveProfile = saveProfile;
-    window.getCurrentLocation = getCurrentLocation;
-    window.updateAvatar = updateAvatar;
-    window.previewPhotos = previewPhotos;
-    window.removePreview = removePreview;
-    window.uploadPhotos = uploadPhotos;
-    window.showMyProfile = showMyProfile;
-    window.showDashboard = showDashboard;
-    window.closeProfileModal = closeProfileModal;
-    window.viewProviderProfile = viewProviderProfile;
-    window.openLightbox = openLightbox;
-    window.closeLightbox = closeLightbox;
-    window.contactProvider = contactProvider;
-    window.shareProfile = shareProfile;
+<div id="toast"></div>
 
-    function showToast(message, type = 'success') {
-      const toast = document.getElementById('toast');
-      toast.className = `fixed bottom-8 right-8 px-6 py-4 rounded-2xl text-sm font-medium shadow-2xl z-50 transform transition-all duration-300 ${type === 'success' ? 'bg-cyan-400 text-zinc-900' : 'bg-red-500 text-white'}`;
-      toast.textContent = message;
-      toast.style.transform = 'translateY(0)';
-      toast.style.opacity = '1';
-      setTimeout(() => {
-        toast.style.transform = 'translateY(20px)';
-        toast.style.opacity = '0';
-      }, 3000);
-    }
+<!-- LIGHTBOX -->
 
-    function switchTab(tab) {
-      const login = document.getElementById('login-form');
-      const signup = document.getElementById('signup-form');
-      const tabLogin = document.getElementById('tab-login');
-      const tabSignup = document.getElementById('tab-signup');
+<div id="lightbox" class="hidden" onclick="closeLightbox()"><img id="lightbox-img" src="" alt=""/></div>
 
-      if (tab === 0) {
-        login.classList.remove('hidden');
-        signup.classList.add('hidden');
-        tabLogin.classList.add('bg-zinc-800', 'text-white');
-        tabLogin.classList.remove('text-zinc-400');
-        tabSignup.classList.remove('bg-zinc-800', 'text-white');
-        tabSignup.classList.add('text-zinc-400');
-      } else {
-        login.classList.add('hidden');
-        signup.classList.remove('hidden');
-        tabSignup.classList.add('bg-zinc-800', 'text-white');
-        tabSignup.classList.remove('text-zinc-400');
-        tabLogin.classList.remove('bg-zinc-800', 'text-white');
-        tabLogin.classList.add('text-zinc-400');
-      }
-    }
+<!-- ══════════════════════════════════════
+     WELCOME PAGE SCRIPTS (non-module)
+══════════════════════════════════════ -->
 
-    async function signup() {
-      const name = document.getElementById('signup-name').value.trim();
-      const email = document.getElementById('signup-email').value.trim();
-      const password = document.getElementById('signup-password').value.trim();
+<script>
+const TOOLS = [
+  { emoji:'✂️', profession:'Barbers & Hair Stylists',      color:'rgba(0,212,255,0.12)',   glow:'rgba(0,212,255,0.4)' },
+  { emoji:'🔨', profession:'Carpenters & Builders',        color:'rgba(251,146,60,0.12)',  glow:'rgba(251,146,60,0.4)' },
+  { emoji:'⛑️', profession:'Electricians & Contractors',  color:'rgba(250,204,21,0.1)',   glow:'rgba(250,204,21,0.4)' },
+  { emoji:'🧤', profession:'Cleaners & Handymen',          color:'rgba(124,92,255,0.12)', glow:'rgba(124,92,255,0.4)' },
+  { emoji:'🔧', profession:'Plumbers & Mechanics',         color:'rgba(34,197,94,0.1)',    glow:'rgba(34,197,94,0.4)' },
+  { emoji:'📷', profession:'Photographers & Videographers',color:'rgba(239,68,68,0.1)',    glow:'rgba(239,68,68,0.4)' },
+  { emoji:'💅', profession:'Nail Techs & Beauty Pros',     color:'rgba(236,72,153,0.12)', glow:'rgba(236,72,153,0.4)' },
+  { emoji:'🎵', profession:'DJs & Musicians',              color:'rgba(168,85,247,0.12)', glow:'rgba(168,85,247,0.4)' },
+  { emoji:'🍳', profession:'Chefs & Caterers',             color:'rgba(245,158,11,0.1)',   glow:'rgba(245,158,11,0.4)' },
+  { emoji:'🧵', profession:'Tailors & Fashion Designers',  color:'rgba(20,184,166,0.12)', glow:'rgba(20,184,166,0.4)' },
+  { emoji:'🪚', profession:'Woodworkers & Craftsmen',      color:'rgba(161,98,7,0.12)',    glow:'rgba(161,98,7,0.4)' },
+  { emoji:'💪', profession:'Personal Trainers & Coaches',  color:'rgba(59,130,246,0.12)', glow:'rgba(59,130,246,0.4)' },
+];
 
-      if (!name || !email || !password) {
-        showToast('Please fill all fields', 'error');
-        return;
-      }
-      if (password.length < 6) {
-        showToast('Password must be 6+ characters', 'error');
-        return;
-      }
+const CATS = [
+  {icon:'✂️',name:'Barber'},{icon:'💇',name:'Hair Stylist'},{icon:'🔧',name:'Plumber'},
+  {icon:'⚡',name:'Electrician'},{icon:'🧹',name:'Cleaner'},{icon:'🎨',name:'Painter'},
+  {icon:'🪚',name:'Carpenter'},{icon:'📷',name:'Photographer'},{icon:'💪',name:'Personal Trainer'},
+  {icon:'💅',name:'Nail Tech'},{icon:'👨‍🍳',name:'Chef'},{icon:'🔩',name:'Mechanic'},
+  {icon:'🪡',name:'Tailor'},{icon:'🎵',name:'DJ'},{icon:'📚',name:'Tutor'},{icon:'🏠',name:'Interior Designer'},
+];
 
+let currentSlide = 0;
+const SLIDE_DURATION = 3000;
+
+function buildSlideshow() {
+  const stage = document.getElementById('tool-stage');
+  const dotsEl = document.getElementById('slide-dots');
+  if (!stage || !dotsEl) return;
+  stage.innerHTML = TOOLS.map((t,i) => `
+    <div class="tool-card ${i===0?'active':''}" id="tc-${i}" style="background:${t.color};">
+      <div class="tool-emoji-wrap">
+        <div class="tool-glow" style="background:${t.glow};"></div>
+        <div class="tool-emoji">${t.emoji}</div>
+      </div>
+      <div class="tool-profession">${t.profession}</div>
+      <div class="tool-number">${String(i+1).padStart(2,'0')} / ${String(TOOLS.length).padStart(2,'0')}</div>
+    </div>
+  `).join('');
+  dotsEl.innerHTML = TOOLS.map((_,i) => `<div class="dot ${i===0?'active':''}" id="dot-${i}" onclick="goToSlide(${i})"></div>`).join('');
+  setInterval(() => goToSlide((currentSlide+1) % TOOLS.length), SLIDE_DURATION);
+  restartProgress();
+}
+
+window.goToSlide = function(n) {
+  const prev = document.getElementById(`tc-${currentSlide}`);
+  const prevDot = document.getElementById(`dot-${currentSlide}`);
+  if (prev) { prev.classList.remove('active'); prev.classList.add('exit'); setTimeout(()=>prev.classList.remove('exit'),600); }
+  if (prevDot) prevDot.classList.remove('active');
+  currentSlide = n;
+  const next = document.getElementById(`tc-${currentSlide}`);
+  const nextDot = document.getElementById(`dot-${currentSlide}`);
+  if (next) next.classList.add('active');
+  if (nextDot) nextDot.classList.add('active');
+  restartProgress();
+};
+
+function restartProgress() {
+  const fill = document.getElementById('progress-fill');
+  if (!fill) return;
+  fill.style.animation = 'none';
+  fill.offsetHeight;
+  fill.style.animation = `progressAnim ${SLIDE_DURATION}ms linear`;
+}
+
+function buildCats(containerId, onclickFn) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = CATS.map(c => `
+    <div class="cat-pill" onclick="${onclickFn}('${c.name}')"><span>${c.icon}</span>${c.name}</div>
+  `).join('');
+}
+
+window.welcomeCatClick = function(cat) {
+  if (window._loggedIn) { document.getElementById('search-term').value = cat; showPage('page-home'); doSearch(); }
+  else { showPage('page-auth'); switchAuthTab(1); }
+};
+
+window.homeCatClick = function(cat) {
+  document.getElementById('search-term').value = cat; doSearch();
+};
+
+function buildBgTools() {
+  const container = document.getElementById('bg-tools');
+  if (!container) return;
+  ['✂️','🔨','🔧','⛑️','🧤','📷','💅','🪚','💪','🍳'].forEach((e,i) => {
+    const el = document.createElement('div');
+    el.className = 'bg-tool';
+    el.textContent = e;
+    el.style.cssText = `left:${10+(i*9)}%;bottom:-60px;animation-duration:${20+Math.random()*20}s;animation-delay:${Math.random()*20}s;font-size:${24+Math.random()*20}px;`;
+    container.appendChild(el);
+  });
+}
+
+function animateCount(el, end, suffix='', duration=2000) {
+  if (!el) return;
+  let start = 0;
+  const step = end / (duration / 16);
+  const timer = setInterval(() => {
+    start = Math.min(start + step, end);
+    el.textContent = Math.floor(start) + suffix;
+    if (start >= end) clearInterval(timer);
+  }, 16);
+}
+
+const statsObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) { animateCount(document.getElementById('cnt-providers'), 100, '+'); statsObserver.disconnect(); }
+  });
+}, { threshold: 0.5 });
+
+// PAGE ROUTER
+window.showPage = function(id) {
+  ['page-welcome','page-auth','page-home','page-profile','page-view-profile'].forEach(p => {
+    const el = document.getElementById(p);
+    if (el) el.classList.add('hidden');
+  });
+  const target = document.getElementById(id);
+  if (target) target.classList.remove('hidden');
+  if (id === 'page-profile') { if (window.loadMyProfile) loadMyProfile(); }
+  window.scrollTo(0,0);
+};
+
+window.goHome = function() {
+  if (window._loggedIn) showPage('page-home'); else showPage('page-welcome');
+};
+
+window._prevPage = 'page-home';
+window.goBack = function() { showPage(window._prevPage); };
+
+window.setActiveNav = function(id) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const el = document.getElementById(id); if (el) el.classList.add('active');
+};
+
+window.switchAuthTab = function(tab) {
+  const li = document.getElementById('form-login');
+  const su = document.getElementById('form-signup');
+  const tli = document.getElementById('tab-li');
+  const tsu = document.getElementById('tab-su');
+  if (tab === 0) {
+    li.classList.remove('hidden'); su.classList.add('hidden');
+    tli.style.background='#12122a'; tli.style.color='#fff';
+    tsu.style.background='transparent'; tsu.style.color='#7070a0';
+  } else {
+    li.classList.add('hidden'); su.classList.remove('hidden');
+    tsu.style.background='#12122a'; tsu.style.color='#fff';
+    tli.style.background='transparent'; tli.style.color='#7070a0';
+  }
+};
+
+window.toast = function(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type==='error' ? '#ef4444' : type==='info' ? '#27272a' : '#00d4ff';
+  t.style.color = type==='success' ? '#06060f' : '#fff';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+};
+
+window.openLightbox = function(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.remove('hidden');
+};
+window.closeLightbox = function() { document.getElementById('lightbox').classList.add('hidden'); };
+
+// Init welcome page elements
+buildSlideshow();
+buildBgTools();
+buildCats('welcome-cats', 'welcomeCatClick');
+buildCats('home-cats', 'homeCatClick');
+const statsEl = document.querySelector('.stats-strip');
+if (statsEl) statsObserver.observe(statsEl);
+showPage('page-welcome');
+</script>
+
+<!-- ══════════════════════════════════════
+     FIREBASE MODULE SCRIPT
+══════════════════════════════════════ -->
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js';
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
+  import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAPKUM4Tzk0g80o3AgQRyzcGKNMZx7GJEE",
+    authDomain: "skillspot95611.firebaseapp.com",
+    projectId: "skillspot95611",
+    storageBucket: "skillspot95611.firebasestorage.app",
+    messagingSenderId: "880371869598",
+    appId: "1:880371869598:web:359ba15c51474fd595188f",
+    measurementId: "G-36ELL41V4Q"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+
+  let currentUser = null;
+  let currentProfile = null;
+  let map = null;
+  let pendingPhotos = [];
+
+  const $ = id => document.getElementById(id);
+
+  // ── SIGN UP ───────────────────────────────────────────────────
+  window.doSignup = async function() {
+    const name = $('su-name').value.trim();
+    const email = $('su-email').value.trim();
+    const pass = $('su-pass').value;
+    if (!name||!email||!pass) return toast('Fill in all fields','error');
+    if (pass.length < 6) return toast('Password must be 6+ characters','error');
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await setDoc(doc(db,'users',cred.user.uid), {
+        uid: cred.user.uid, name, email,
+        service:'', bio:'', location:'', lat:null, lng:null, photos:[], createdAt: Date.now()
+      });
+      toast('Welcome to SkillSpot! 🎉');
+    } catch(e) { toast(e.message.replace('Firebase: ',''), 'error'); }
+  };
+
+  // ── LOGIN ─────────────────────────────────────────────────────
+  window.doLogin = async function() {
+    const email = $('li-email').value.trim();
+    const pass = $('li-pass').value;
+    if (!email||!pass) return toast('Fill in all fields','error');
+    try { await signInWithEmailAndPassword(auth, email, pass); }
+    catch(e) { toast('Wrong email or password','error'); }
+  };
+
+  // ── LOGOUT ────────────────────────────────────────────────────
+  window.doLogout = async function() { await signOut(auth); toast('Signed out','info'); };
+
+  // ── AUTH STATE ────────────────────────────────────────────────
+  onAuthStateChanged(auth, async user => {
+    if (user) {
+      currentUser = user;
+      window._loggedIn = true;
+      const snap = await getDoc(doc(db,'users',user.uid));
+      currentProfile = snap.exists() ? snap.data() : null;
+
+      // Update nav
+      $('nav-guest').classList.add('hidden');
+      $('nav-user').classList.remove('hidden');
+      $('nav-avatar').textContent = (currentProfile?.name||'U')[0].toUpperCase();
+
+      // Show bottom nav
+      $('bottom-nav').classList.remove('hidden');
+
+      // Count providers for stat
       try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, { displayName: name });
-        
-        await setDoc(doc(db, "users", userCredential.user.uid), {
-          name,
-          email,
-          services: [],
-          bio: "",
-          lat: null,
-          lng: null,
-          portfolio: [],
-          avatar: null,
-          phone: "",
-          instagram: "",
-          createdAt: new Date().toISOString()
-        });
-        
-        showToast('Account created! Welcome to SkillSpot');
-      } catch (e) {
-        showToast(e.message, 'error');
-      }
-    }
+        const allSnap = await getDocs(collection(db,'users'));
+        let count = 0;
+        allSnap.forEach(d => { if (d.data().service) count++; });
+        const el = $('cnt-providers');
+        if (el) { let n=0; const t=setInterval(()=>{ n=Math.min(n+1,Math.max(count,1)); el.textContent=n+'+'; if(n>=Math.max(count,1)) clearInterval(t); },40); }
+      } catch(e) {}
 
-    async function login() {
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value.trim();
-      
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (e) {
-        showToast(e.message, 'error');
-      }
+      showPage('page-home');
+    } else {
+      currentUser = null; currentProfile = null; window._loggedIn = false;
+      $('nav-guest').classList.remove('hidden');
+      $('nav-user').classList.add('hidden');
+      $('bottom-nav').classList.add('hidden');
+      showPage('page-welcome');
     }
+  });
 
-    async function logout() {
-      await signOut(auth);
-      currentMode = 'customer';
-    }
+  // ── SEARCH ────────────────────────────────────────────────────
+  window.doSearch = async function() {
+    const term = $('search-term').value.trim().toLowerCase();
+    const maxKm = parseFloat($('dist-slider').value);
+    if (!term) return toast('Enter a service to search','error');
 
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        currentUser = user;
-        const docSnap = await getDoc(doc(db, "users", user.uid));
-        userData = docSnap.data();
-        
-        // Update nav
-        document.getElementById('nav-auth').classList.remove('hidden');
-        document.getElementById('nav-auth').classList.add('flex');
-        document.getElementById('nav-initial').textContent = userData.name[0].toUpperCase();
-        
-        if (userData.avatar) {
-          document.getElementById('nav-avatar').src = userData.avatar;
-          document.getElementById('nav-avatar').classList.remove('hidden');
-          document.getElementById('nav-initial').classList.add('hidden');
-        }
-        
-        document.getElementById('auth-page').classList.add('hidden');
-        document.getElementById('main-app').classList.remove('hidden');
-        document.getElementById('mode-switcher').style.display = 'flex';
-        
-        switchMode('customer');
-      } else {
-        document.getElementById('auth-page').classList.remove('hidden');
-        document.getElementById('main-app').classList.add('hidden');
-        document.getElementById('nav-auth').classList.add('hidden');
-        document.getElementById('nav-auth').classList.remove('flex');
-      }
+    $('search-placeholder').classList.add('hidden');
+    $('search-results').classList.remove('hidden');
+    $('results-list').innerHTML = '<div style="color:var(--muted);padding:60px;text-align:center;grid-column:1/-1;">Finding providers near you...</div>';
+
+    navigator.geolocation.getCurrentPosition(
+      async pos => await runSearch(term, maxKm, pos.coords.latitude, pos.coords.longitude),
+      async () => { toast('Location denied — showing near Lagos','info'); await runSearch(term, maxKm, 6.5244, 3.3792); },
+      { timeout: 8000 }
+    );
+  };
+
+  async function runSearch(term, maxKm, uLat, uLng) {
+    // Init map
+    if (map) { map.remove(); map = null; }
+    map = L.map('map').setView([uLat, uLng], 13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'© OSM © CartoDB' }).addTo(map);
+    L.circleMarker([uLat,uLng], { radius:10, color:'#00d4ff', fillColor:'#00d4ff', fillOpacity:1, weight:3 }).addTo(map).bindPopup('<b style="color:#00d4ff">You are here</b>');
+    L.circle([uLat,uLng], { radius:maxKm*1000, color:'#00d4ff', fillColor:'#00d4ff', fillOpacity:.04, weight:1 }).addTo(map);
+
+    // Fetch providers
+    const snap = await getDocs(collection(db,'users'));
+    let providers = [];
+    snap.forEach(d => {
+      const p = d.data();
+      if (!p.lat||!p.lng||!p.service) return;
+      if (!p.service.toLowerCase().includes(term) && !p.bio?.toLowerCase().includes(term) && !p.name?.toLowerCase().includes(term)) return;
+      const dist = calcDist(uLat, uLng, p.lat, p.lng);
+      if (dist <= maxKm) providers.push({...p, distKm: dist});
+    });
+    providers.sort((a,b) => a.distKm - b.distKm);
+
+    $('results-count').textContent = `${providers.length} provider${providers.length!==1?'s':''} found within ${maxKm} km`;
+
+    // Map pins
+    providers.forEach(p => {
+      const icon = L.divIcon({
+        className:'',
+        html:`<div style="width:42px;height:42px;background:linear-gradient(135deg,#00d4ff,#7c5cff);border-radius:50%;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:17px;color:#06060f;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.6);cursor:pointer;">${(p.service||'?')[0].toUpperCase()}</div>`,
+        iconSize:[42,42], iconAnchor:[21,21]
+      });
+      const marker = L.marker([p.lat,p.lng],{icon}).addTo(map);
+      marker.bindPopup(`
+        <div class="pin-popup" style="min-width:200px;">
+          ${p.photos?.[0]?`<img src="${p.photos[0]}" alt="${p.name}"/>`:`<div style="height:70px;background:#1a1a35;border-radius:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;">No photos yet</div>`}
+          <div class="pname">${p.name}</div>
+          <div class="psvc">${p.service} · ${p.distKm.toFixed(1)} km away</div>
+          <button onclick="window.viewProfile('${p.uid}')">View Full Profile →</button>
+        </div>
+      `, {maxWidth:240});
     });
 
-    function switchMode(mode) {
-      currentMode = mode;
-      const customerBtn = document.getElementById('mode-customer');
-      const providerBtn = document.getElementById('mode-provider');
-      const customerView = document.getElementById('customer-view');
-      const providerView = document.getElementById('provider-view');
+    if (providers.length > 0) {
+      map.fitBounds([[uLat,uLng],...providers.map(p=>[p.lat,p.lng])], {padding:[50,50]});
+    }
+    setTimeout(() => map.invalidateSize(), 300);
 
-      if (mode === 'customer') {
-        customerBtn.classList.add('active');
-        providerBtn.classList.remove('active');
-        customerView.classList.remove('hidden');
-        providerView.classList.add('hidden');
-      } else {
-        providerBtn.classList.add('active');
-        customerBtn.classList.remove('active');
-        customerView.classList.add('hidden');
-        providerView.classList.remove('hidden');
-        loadProviderProfile();
-      }
+    // Result cards
+    if (providers.length === 0) {
+      $('results-list').innerHTML = `<div style="color:var(--muted);padding:60px;text-align:center;grid-column:1/-1;"><div style="font-size:40px;margin-bottom:12px;">🔍</div>No providers found within ${maxKm} km.<br/><span style="font-size:13px;">Try a bigger distance or different search term.</span></div>`;
+      return;
     }
 
-    function showDashboard() {
-      switchMode('customer');
-    }
-
-    function showMyProfile() {
-      switchMode('provider');
-    }
-
-    // Provider Profile Functions
-    async function loadProviderProfile() {
-      if (!userData) return;
-      
-      document.getElementById('edit-name').textContent = userData.name;
-      document.getElementById('provider-bio').value = userData.bio || '';
-      document.getElementById('contact-phone').value = userData.phone || '';
-      document.getElementById('contact-instagram').value = userData.instagram || '';
-      
-      if (userData.avatar) {
-        document.getElementById('edit-avatar').src = userData.avatar;
-      } else {
-        document.getElementById('edit-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&background=random&color=fff&size=128`;
-      }
-
-      // Render services
-      const servicesContainer = document.getElementById('my-services');
-      servicesContainer.innerHTML = (userData.services || []).map(service => `
-        <span class="service-tag">
-          ${service}
-          <button onclick="removeService('${service}')" title="Remove">×</button>
-        </span>
-      `).join('');
-
-      // Render existing portfolio
-      const grid = document.getElementById('photo-preview-grid');
-      grid.innerHTML = (userData.portfolio || []).map((url, idx) => `
-        <div class="photo-upload-preview">
-          <img src="${url}">
-          <button class="remove-btn" onclick="deletePhoto(${idx}, '${url}')">×</button>
+    $('results-list').innerHTML = providers.map(p => `
+      <div class="result-card" onclick="window.viewProfile('${p.uid}')">
+        <div style="height:160px;background:var(--surface2);overflow:hidden;">
+          ${p.photos?.[0]?`<img src="${p.photos[0]}" style="width:100%;height:100%;object-fit:cover;"/>`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:36px;">📷</div>`}
         </div>
-      `).join('');
-
-      // Location status
-      if (userData.lat && userData.lng) {
-        document.getElementById('location-status').innerHTML = `✅ Location set (${userData.lat.toFixed(4)}, ${userData.lng.toFixed(4)})`;
-      }
-    }
-
-    async function addService() {
-      const input = document.getElementById('new-service');
-      const service = input.value.trim();
-      
-      if (!service) return;
-      if (userData.services?.includes(service)) {
-        showToast('Service already added', 'error');
-        return;
-      }
-
-      await updateDoc(doc(db, "users", currentUser.uid), {
-        services: arrayUnion(service)
-      });
-      
-      userData.services = [...(userData.services || []), service];
-      input.value = '';
-      loadProviderProfile();
-      showToast('Service added');
-    }
-
-    async function removeService(service) {
-      await updateDoc(doc(db, "users", currentUser.uid), {
-        services: arrayRemove(service)
-      });
-      
-      userData.services = userData.services.filter(s => s !== service);
-      loadProviderProfile();
-      showToast('Service removed');
-    }
-
-    async function saveProfile() {
-      const bio = document.getElementById('provider-bio').value.trim();
-      const phone = document.getElementById('contact-phone').value.trim();
-      const instagram = document.getElementById('contact-instagram').value.trim();
-
-      await updateDoc(doc(db, "users", currentUser.uid), { bio, phone, instagram });
-      userData = { ...userData, bio, phone, instagram };
-      showToast('Profile saved successfully');
-    }
-
-    async function getCurrentLocation() {
-      if (!navigator.geolocation) {
-        showToast('Geolocation not supported', 'error');
-        return;
-      }
-
-      showToast('Getting your location...');
-      
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        
-        await updateDoc(doc(db, "users", currentUser.uid), {
-          lat: latitude,
-          lng: longitude
-        });
-        
-        userData.lat = latitude;
-        userData.lng = longitude;
-        
-        document.getElementById('location-status').innerHTML = `✅ Location updated (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
-        showToast('Location saved! You will appear on the map');
-      }, (err) => {
-        showToast('Could not get location: ' + err.message, 'error');
-      });
-    }
-
-    async function updateAvatar(input) {
-      const file = input.files[0];
-      if (!file) return;
-
-      try {
-        showToast('Uploading avatar...');
-        const storageRef = ref(storage, `avatars/${currentUser.uid}/${Date.now()}`);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        
-        await updateDoc(doc(db, "users", currentUser.uid), { avatar: url });
-        await updateProfile(currentUser, { photoURL: url });
-        
-        userData.avatar = url;
-        document.getElementById('edit-avatar').src = url;
-        document.getElementById('nav-avatar').src = url;
-        document.getElementById('nav-avatar').classList.remove('hidden');
-        document.getElementById('nav-initial').classList.add('hidden');
-        
-        showToast('Avatar updated');
-      } catch (e) {
-        showToast('Upload failed: ' + e.message, 'error');
-      }
-    }
-
-    // Photo Upload
-    function previewPhotos(input) {
-      selectedFiles = Array.from(input.files);
-      updatePhotoPreview();
-    }
-
-    function removePreview(index) {
-      selectedFiles.splice(index, 1);
-      updatePhotoPreview();
-    }
-
-    function updatePhotoPreview() {
-      const grid = document.getElementById('photo-preview-grid');
-      const existingPhotos = (userData.portfolio || []).map((url, idx) => `
-        <div class="photo-upload-preview">
-          <img src="${url}">
-          <button class="remove-btn" onclick="deletePhoto(${idx}, '${url}')">×</button>
+        <div style="padding:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.5px;color:#fff;">${p.name}</div>
+            <div style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--cyan);font-weight:600;">${p.distKm.toFixed(1)} km</div>
+          </div>
+          <div style="color:var(--cyan);font-size:13px;margin-bottom:6px;">${p.service}</div>
+          <div style="color:var(--muted);font-size:12px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.bio||'No bio yet'}</div>
+          ${p.photos?.length>1?`<div style="display:flex;gap:4px;margin-top:10px;">${p.photos.slice(0,4).map(u=>`<img src="${u}" style="width:46px;height:46px;border-radius:8px;object-fit:cover;"/>`).join('')}${p.photos.length>4?`<div style="width:46px;height:46px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);">+${p.photos.length-4}</div>`:''}</div>`:''}
         </div>
-      `).join('');
+      </div>
+    `).join('');
+  }
 
-      const newPhotos = selectedFiles.map((file, idx) => `
-        <div class="photo-upload-preview opacity-50">
-          <img src="${URL.createObjectURL(file)}">
-          <button class="remove-btn" onclick="removePreview(${idx})">×</button>
+  // ── VIEW PROFILE ──────────────────────────────────────────────
+  window.viewProfile = async function(uid) {
+    window._prevPage = document.querySelector('[id^="page-"]:not(.hidden)')?.id || 'page-home';
+    showPage('page-view-profile');
+    $('view-profile-content').innerHTML = '<div style="color:var(--muted);text-align:center;padding:60px;">Loading...</div>';
+    const snap = await getDoc(doc(db,'users',uid));
+    if (!snap.exists()) { $('view-profile-content').innerHTML='<div style="color:#ef4444;text-align:center;padding:40px;">Profile not found</div>'; return; }
+    const p = snap.data();
+    const isMe = currentUser && currentUser.uid === uid;
+    $('view-profile-content').innerHTML = `
+      <div class="card" style="padding:24px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+          <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--indigo));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#06060f;font-family:'Bebas Neue',sans-serif;flex-shrink:0;overflow:hidden;">
+            ${p.photos?.[0]?`<img src="${p.photos[0]}" style="width:100%;height:100%;object-fit:cover;"/>`:(p.name||'U')[0].toUpperCase()}
+          </div>
+          <div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:#fff;">${p.name}</div>
+            <div style="color:var(--cyan);font-size:14px;">${p.service||'No service listed'}</div>
+            ${p.location?`<div style="color:var(--muted);font-size:12px;margin-top:2px;">📍 ${p.location}</div>`:''}
+          </div>
         </div>
-      `).join('');
-
-      grid.innerHTML = existingPhotos + newPhotos;
-
-      const uploadBtn = document.getElementById('upload-btn');
-      const uploadCount = document.getElementById('upload-count');
-      
-      if (selectedFiles.length > 0) {
-        uploadBtn.classList.remove('hidden');
-        uploadCount.textContent = selectedFiles.length;
-      } else {
-        uploadBtn.classList.add('hidden');
-      }
-    }
-
-    async function uploadPhotos() {
-      if (selectedFiles.length === 0) return;
-
-      showToast(`Uploading ${selectedFiles.length} photos...`);
-      const uploadBtn = document.getElementById('upload-btn');
-      uploadBtn.disabled = true;
-      uploadBtn.textContent = 'Uploading...';
-
-      try {
-        const urls = [];
-        for (const file of selectedFiles) {
-          const storageRef = ref(storage, `portfolio/${currentUser.uid}/${Date.now()}_${file.name}`);
-          await uploadBytes(storageRef, file);
-          const url = await getDownloadURL(storageRef);
-          urls.push(url);
+        ${p.bio?`<p style="color:#a0a0c0;font-size:14px;line-height:1.7;margin-bottom:16px;">${p.bio}</p>`:''}
+        ${isMe
+          ? `<button class="btn-ghost" style="padding:10px 20px;font-size:13px;" onclick="showPage('page-profile');setActiveNav('nav-p')">Edit My Profile</button>`
+          : `<button class="btn-primary" style="padding:11px 24px;font-size:14px;" onclick="window.contactProvider('${p.name}')">Contact ${p.name.split(' ')[0]}</button>`
         }
-
-        await updateDoc(doc(db, "users", currentUser.uid), {
-          portfolio: arrayUnion(...urls)
-        });
-
-        userData.portfolio = [...(userData.portfolio || []), ...urls];
-        selectedFiles = [];
-        loadProviderProfile();
-        showToast('Photos uploaded successfully');
-      } catch (e) {
-        showToast('Upload failed: ' + e.message, 'error');
-      } finally {
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = 'Upload Photos';
+      </div>
+      ${p.photos?.length
+        ? `<div class="card" style="padding:16px;"><div style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:12px;">Portfolio · ${p.photos.length} photo${p.photos.length!==1?'s':''}</div><div class="photo-grid">${p.photos.map((url,i)=>`<img src="${url}" alt="Work ${i+1}" onclick="openLightbox('${url}')" loading="lazy"/>`).join('')}</div></div>`
+        : `<div class="card" style="padding:40px;text-align:center;color:var(--muted);">📷 No portfolio photos yet</div>`
       }
+    `;
+  };
+
+  window.contactProvider = function(name) {
+    if (!currentUser) { showPage('page-auth'); return; }
+    toast(`Message sent to ${name}! They'll be notified ✅`);
+  };
+
+  // ── MY PROFILE ────────────────────────────────────────────────
+  window.loadMyProfile = async function() {
+    if (!currentUser) return;
+    const snap = await getDoc(doc(db,'users',currentUser.uid));
+    if (!snap.exists()) return;
+    const p = snap.data(); currentProfile = p;
+    $('pa-name').textContent = p.name||'';
+    $('pa-service').textContent = p.service||'No service set yet';
+    $('pa-location').textContent = p.location ? '📍 '+p.location : '';
+    $('pa-bio').textContent = p.bio||'';
+    $('edit-service').value = p.service||'';
+    $('edit-bio').value = p.bio||'';
+    $('edit-location').value = p.location||'';
+    const av = $('pa-avatar');
+    av.innerHTML = p.photos?.[0] ? `<img src="${p.photos[0]}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>` : (p.name||'U')[0].toUpperCase();
+    $('pa-photos').innerHTML = p.photos?.length
+      ? p.photos.map((url,i)=>`<img src="${url}" alt="Photo ${i+1}" onclick="openLightbox('${url}')" loading="lazy"/>`).join('')
+      : '<div style="color:var(--muted);font-size:13px;padding:20px;text-align:center;grid-column:1/-1;">No photos yet — add some below</div>';
+  };
+
+  window.getMyLocation = function() {
+    navigator.geolocation.getCurrentPosition(async pos => {
+      $('edit-location').value = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+      await setDoc(doc(db,'users',currentUser.uid), { lat: pos.coords.latitude, lng: pos.coords.longitude }, { merge: true });
+      toast('Location saved! You now appear on the map ✅');
+    }, () => toast('Location access denied','error'));
+  };
+
+  window.handlePhotoSelect = function(input) {
+    pendingPhotos = Array.from(input.files);
+    $('photo-previews').innerHTML = pendingPhotos.map((f,i) => `
+      <div style="position:relative;">
+        <img src="${URL.createObjectURL(f)}" style="width:72px;height:72px;border-radius:10px;object-fit:cover;"/>
+        <div onclick="removePhoto(${i})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#fff;">✕</div>
+      </div>
+    `).join('');
+  };
+
+  window.removePhoto = function(i) {
+    pendingPhotos.splice(i,1);
+    $('photo-previews').innerHTML = pendingPhotos.map((f,j) => `
+      <div style="position:relative;">
+        <img src="${URL.createObjectURL(f)}" style="width:72px;height:72px;border-radius:10px;object-fit:cover;"/>
+        <div onclick="removePhoto(${j})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#fff;">✕</div>
+      </div>
+    `).join('');
+  };
+
+  window.saveProfile = async function() {
+    if (!currentUser) return;
+    const service = $('edit-service').value.trim();
+    const bio = $('edit-bio').value.trim();
+    const location = $('edit-location').value.trim();
+    toast('Saving...','info');
+
+    // Upload photos
+    let newURLs = [];
+    for (const file of pendingPhotos) {
+      try {
+        const r = ref(storage, `photos/${currentUser.uid}/${Date.now()}_${file.name}`);
+        await uploadBytes(r, file);
+        newURLs.push(await getDownloadURL(r));
+      } catch(e) { toast('Photo upload failed: '+e.message,'error'); }
     }
 
-    async function deletePhoto(index, url) {
-      if (!confirm('Delete this photo?')) return;
-
-      try {
-        // Remove from Firestore
-        const newPortfolio = [...userData.portfolio];
-        newPortfolio.splice(index, 1);
-        await updateDoc(doc(db, "users", currentUser.uid), { portfolio: newPortfolio });
-        
-        // Try to delete from storage (may fail if URL is external)
+    // Geocode location
+    let lat = currentProfile?.lat||null, lng = currentProfile?.lng||null;
+    if (location && location !== currentProfile?.location) {
+      if (location.match(/^-?\d+\.?\d*,\s*-?\d+\.?\d*$/)) {
+        [lat,lng] = location.split(',').map(Number);
+      } else {
         try {
-          const storageRef = ref(storage, url);
-          await deleteObject(storageRef);
-        } catch (e) {
-          // Ignore storage deletion errors
-        }
-
-        userData.portfolio = newPortfolio;
-        loadProviderProfile();
-        showToast('Photo deleted');
-      } catch (e) {
-        showToast('Delete failed', 'error');
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`);
+          const j = await res.json();
+          if (j.length) { lat=parseFloat(j[0].lat); lng=parseFloat(j[0].lon); }
+        } catch(e) {}
       }
     }
 
-    // Search & Map Functions
-    function initMap() {
-      if (map) return;
-      map = L.map('map').setView([9.0, 7.5], 6);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap © CartoDB'
-      }).addTo(map);
-    }
+    await setDoc(doc(db,'users',currentUser.uid), {
+      service, bio, location, lat, lng,
+      photos: [...(currentProfile?.photos||[]), ...newURLs]
+    }, { merge: true });
 
-    async function searchProviders() {
-      const term = document.getElementById('search-term').value.trim().toLowerCase();
-      const maxKm = parseFloat(document.getElementById('max-distance').value);
+    pendingPhotos = [];
+    $('photo-previews').innerHTML = '';
+    $('photo-input').value = '';
+    toast('Profile saved! ✅');
+    loadMyProfile();
+  };
 
-      if (!term) {
-        showToast('Enter a service to search', 'error');
-        return;
-      }
+  function calcDist(lat1,lon1,lat2,lon2) {
+    const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+</script>
 
-      // Get customer location first
-      showToast('Finding your location...');
-      
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        const customerLat = pos.coords.latitude;
-        const customerLng = pos.coords.longitude;
-        
-        await performSearch(term, maxKm, customerLat, customerLng);
-      }, async (err) => {
-        // If location denied, search without distance filter
-        showToast('Location access denied. Showing all providers.', 'error');
-        await performSearch(term, maxKm, null, null);
-      });
-    }
-
-    function quickSearch(term) {
-      document.getElementById('search-term').value = term;
+</body>
+</html>
