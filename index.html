@@ -4,223 +4,241 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SkillSpot — Find Skilled Pros Near You</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <title>GigsCourt — Find Skilled Pros Near You</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0a14; --surface:#1a1a2e; --surface2:#16213e; --surface3:#0f172a;
+      --border:rgba(99,179,237,0.15); --border2:rgba(99,179,237,0.25);
+      --blue:#3182ce; --blue2:#63b3ed; --blue3:#90cdf4;
+      --text:#e2e8f0; --muted:#a0aec0; --dim:#718096;
+      --green:#48c78e; --red:#f87171; --gold:#FFD700;
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+    .hidden{display:none!important}
+    ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2d3748;border-radius:4px}
 
 ```
-:root {
-  --bg: #06060f;
-  --surface: #0d0d1f;
-  --surface2: #12122a;
-  --border: #1a1a35;
-  --cyan: #00d4ff;
-  --indigo: #7c5cff;
-  --text: #e8e8f5;
-  --muted: #7070a0;
-  --dim: #2a2a4a;
-  --green: #22c55e;
-  --red: #ef4444;
-}
+/* ── GLOBAL BG GLOWS ── */
+.bg-glow-1{position:fixed;top:-200px;left:-200px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(49,130,206,.12) 0%,transparent 70%);pointer-events:none;z-index:0}
+.bg-glow-2{position:fixed;bottom:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(99,179,237,.08) 0%,transparent 70%);pointer-events:none;z-index:0}
 
-html { scroll-behavior: smooth; }
-body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
-.hidden { display: none !important; }
-
-/* ── NOISE TEXTURE ── */
-body::before {
-  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.3;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-}
-
-/* ── GRID BG ── */
-.grid-bg {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-  animation: gridMove 20s linear infinite;
-}
-@keyframes gridMove { 0%{background-position:0 0;} 100%{background-position:60px 60px;} }
-
-/* ── ORBS ── */
-.orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; animation: orbPulse 8s ease-in-out infinite; }
-@keyframes orbPulse { 0%,100%{opacity:.3;transform:scale(1);} 50%{opacity:.6;transform:scale(1.15);} }
-
-/* ── SHARED INPUTS & BUTTONS ── */
-.inp { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 14px; padding: 13px 16px; width: 100%; outline: none; font-family: 'Outfit', sans-serif; font-size: 14px; transition: border-color .2s; }
-.inp:focus { border-color: var(--cyan); }
-.inp::placeholder { color: var(--muted); }
-textarea.inp { resize: vertical; }
-.btn-primary { background: linear-gradient(135deg, var(--cyan), var(--indigo)); color: #06060f; font-weight: 700; border: none; border-radius: 14px; cursor: pointer; font-family: 'Outfit', sans-serif; transition: opacity .2s, transform .15s; }
-.btn-primary:hover { opacity: .9; transform: translateY(-1px); }
-.btn-ghost { background: rgba(255,255,255,.04); border: 1px solid var(--border); color: var(--text); border-radius: 14px; cursor: pointer; font-family: 'Outfit', sans-serif; transition: background .2s; }
-.btn-ghost:hover { background: rgba(255,255,255,.08); }
-.card { background: linear-gradient(145deg, var(--surface), var(--bg)); border: 1px solid var(--border); border-radius: 20px; }
-
-/* ── TOP NAV ── */
-#top-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 500;
-  height: 64px; padding: 0 28px;
-  display: flex; align-items: center; justify-content: space-between;
-  background: rgba(6,6,15,0.75); backdrop-filter: blur(24px);
-  border-bottom: 1px solid rgba(0,212,255,0.08);
-}
-.nav-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; text-decoration: none; }
-.nav-logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--cyan), var(--indigo)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: #06060f; box-shadow: 0 0 20px rgba(0,212,255,0.25); }
-.nav-logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 2px; color: #fff; }
-#nav-guest { display: flex; gap: 10px; }
-#nav-user { display: flex; align-items: center; gap: 10px; }
-.nav-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--cyan), var(--indigo)); display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 700; font-size: 15px; color: #06060f; font-family: 'Bebas Neue', sans-serif; border: 2px solid rgba(0,212,255,0.3); }
-.btn-nav-outline { padding: 9px 20px; border: 1px solid rgba(0,212,255,0.3); border-radius: 12px; background: transparent; color: var(--cyan); font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all .2s; }
-.btn-nav-outline:hover { background: rgba(0,212,255,0.08); }
-.btn-nav-filled { padding: 9px 22px; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--cyan), var(--indigo)); color: #06060f; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s; }
-.btn-nav-filled:hover { opacity: .9; transform: translateY(-1px); }
+/* ── NAVBAR ── */
+#top-nav{position:fixed;top:0;left:0;right:0;z-index:500;height:64px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;background:rgba(10,10,20,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,var(--blue2),var(--blue3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#nav-guest{display:flex;gap:10px}
+#nav-user{display:flex;align-items:center;gap:10px}
+.nav-av{width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid var(--border2);cursor:pointer;flex-shrink:0;background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#fff}
+.nav-av img{width:100%;height:100%;object-fit:cover;display:block}
+.btn-nav-ghost{padding:8px 18px;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:all .2s}
+.btn-nav-ghost:hover{border-color:var(--blue2);color:var(--blue2)}
+.btn-nav-blue{padding:8px 18px;background:linear-gradient(135deg,var(--blue),var(--blue2));border:none;border-radius:10px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:opacity .2s}
+.btn-nav-blue:hover{opacity:.9}
 
 /* ── BOTTOM NAV ── */
-#bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(6,6,15,.95); border-top: 1px solid var(--border); padding: 8px 0; display: flex; justify-content: space-around; z-index: 400; backdrop-filter: blur(16px); }
-.nav-tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 24px; cursor: pointer; color: var(--muted); border-radius: 12px; transition: all .2s; font-size: 11px; font-weight: 600; letter-spacing: .3px; }
-.nav-tab svg { width: 22px; height: 22px; }
-.nav-tab.active { color: var(--cyan); }
-#nav-spacer { height: 72px; }
+#bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,20,.97);border-top:1px solid var(--border);padding:6px 0 14px;display:flex;justify-content:space-around;z-index:400;backdrop-filter:blur(20px)}
+.nav-tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 24px;cursor:pointer;color:var(--dim);transition:color .2s;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.nav-tab svg{width:22px;height:22px;stroke-width:1.8}
+.nav-tab.active{color:var(--blue2)}
 
 /* ── TOAST ── */
-#toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); padding: 12px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; z-index: 9999; opacity: 0; transition: all .3s; white-space: nowrap; pointer-events: none; }
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(14px);padding:11px 22px;border-radius:30px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none;font-family:'DM Sans',sans-serif}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ── LIGHTBOX ── */
-#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.95); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-#lightbox img { max-width: 95vw; max-height: 90vh; border-radius: 12px; object-fit: contain; }
-
-/* scrollbar */
-::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 4px; }
+/* ── SHARED ── */
+.inp{background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--text);border-radius:10px;padding:12px 15px;width:100%;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;transition:border-color .2s}
+.inp:focus{border-color:var(--blue2)}
+.inp::placeholder{color:#4a5568}
+textarea.inp{resize:vertical}
+.btn-blue{background:linear-gradient(135deg,var(--blue),var(--blue2));border:none;border-radius:12px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;transition:opacity .2s,transform .15s}
+.btn-blue:hover{opacity:.9;transform:translateY(-1px)}
+.btn-ghost-sm{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted);border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.btn-ghost-sm:hover{border-color:var(--blue2);color:var(--blue2)}
 
 /* ════════════════════════
-   WELCOME PAGE STYLES
+   WELCOME PAGE
 ════════════════════════ */
-#page-welcome { position: relative; }
-.badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); border-radius: 30px; padding: 6px 16px; font-size: 12px; color: var(--cyan); font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 28px; width: fit-content; animation: fadeInDown .8s ease both; }
-.badge-dot { width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; animation: blink 1.5s ease-in-out infinite; }
-@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.2;} }
-.hero { position: relative; z-index: 2; min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; max-width: 1200px; margin: 0 auto; padding: 110px 40px 60px; }
-.hero-left { display: flex; flex-direction: column; }
-.hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(56px,8vw,100px); line-height: .95; letter-spacing: 1px; color: #fff; margin-bottom: 24px; animation: fadeInUp .9s .1s ease both; }
-.hero-title .gradient-text { background: linear-gradient(135deg, var(--cyan) 0%, var(--indigo) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: block; }
-.hero-title .outline-text { -webkit-text-stroke: 2px rgba(255,255,255,0.3); color: transparent; display: block; }
-.hero-desc { font-size: 16px; color: var(--muted); line-height: 1.75; max-width: 460px; margin-bottom: 36px; animation: fadeInUp .9s .2s ease both; }
-.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 48px; animation: fadeInUp .9s .3s ease both; }
-.btn-hero-primary { padding: 16px 36px; font-size: 16px; font-weight: 700; border: none; border-radius: 14px; background: linear-gradient(135deg, var(--cyan), var(--indigo)); color: #06060f; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all .2s; box-shadow: 0 8px 32px rgba(0,212,255,0.3); }
-.btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,212,255,0.45); }
-.btn-hero-secondary { padding: 16px 28px; font-size: 15px; font-weight: 500; border: 1px solid var(--border); border-radius: 14px; background: rgba(255,255,255,.03); color: var(--text); cursor: pointer; font-family: 'Outfit', sans-serif; transition: all .2s; }
-.btn-hero-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
-.chips { display: flex; gap: 10px; flex-wrap: wrap; animation: fadeInUp .9s .4s ease both; }
-.chip { display: flex; align-items: center; gap: 6px; padding: 7px 14px; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 30px; font-size: 13px; color: var(--muted); }
+#page-welcome{position:relative;z-index:1}
+.hero-wrap{text-align:center;padding:100px 24px 60px;position:relative;z-index:1}
+.hero-badge{display:inline-block;background:rgba(49,130,206,.1);border:1px solid rgba(99,179,237,.25);border-radius:30px;padding:6px 18px;font-size:12px;color:var(--blue2);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:24px;animation:fadeUp .7s ease both}
+.hero-title{font-family:'Syne',sans-serif;font-size:clamp(38px,6vw,68px);font-weight:800;line-height:1.1;margin:0 0 20px;color:#f7fafc;animation:fadeUp .7s .1s ease both}
+.hero-title .grad{background:linear-gradient(135deg,var(--blue),var(--blue2),var(--blue3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{color:var(--muted);font-size:clamp(15px,2vw,18px);max-width:520px;margin:0 auto 40px;line-height:1.7;animation:fadeUp .7s .2s ease both}
+.hero-search{max-width:620px;margin:0 auto 20px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;animation:fadeUp .7s .3s ease both}
+.hero-search-inp{flex:1;min-width:200px;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:14px;padding:0 18px}
+.hero-search-inp input{flex:1;background:none;border:none;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;padding:15px 0}
+.hero-search-inp input::placeholder{color:#4a5568}
+.hero-cats{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:700px;margin:0 auto;padding:0 24px 60px;animation:fadeUp .7s .4s ease both}
+.hero-cat{padding:8px 18px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:30px;color:var(--muted);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;transition:all .2s}
+.hero-cat:hover{border-color:var(--blue2);color:var(--blue2);background:rgba(99,179,237,.08)}
 
-/* Slideshow */
-.hero-right { display: flex; flex-direction: column; align-items: center; gap: 28px; animation: fadeInUp .9s .2s ease both; }
-.slideshow-wrap { position: relative; width: 340px; height: 380px; }
-.ring { position: absolute; border-radius: 50%; border: 1px solid rgba(0,212,255,0.1); top: 50%; left: 50%; transform: translate(-50%,-50%); animation: spin linear infinite; }
-.ring-1 { width: 420px; height: 420px; animation-duration: 30s; }
-.ring-2 { width: 340px; height: 340px; animation-duration: 20s; animation-direction: reverse; border-color: rgba(124,92,255,0.1); }
-@keyframes spin { from{transform:translate(-50%,-50%) rotate(0deg);} to{transform:translate(-50%,-50%) rotate(360deg);} }
-.ring::before, .ring::after { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); top: -4px; left: 50%; transform: translateX(-50%); box-shadow: 0 0 10px var(--cyan); }
-.ring::after { top: auto; bottom: -4px; background: var(--indigo); box-shadow: 0 0 10px var(--indigo); }
-.tool-card { position: absolute; inset: 20px; border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; opacity: 0; transform: scale(.8) rotate(-8deg); transition: opacity .6s cubic-bezier(.4,0,.2,1), transform .6s cubic-bezier(.4,0,.2,1); pointer-events: none; border: 1px solid rgba(255,255,255,.06); backdrop-filter: blur(20px); }
-.tool-card.active { opacity: 1; transform: scale(1) rotate(0deg); pointer-events: auto; }
-.tool-card.exit { opacity: 0; transform: scale(1.1) rotate(6deg); }
-.tool-emoji-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
-.tool-emoji { font-size: 88px; filter: drop-shadow(0 8px 24px rgba(0,0,0,.5)); animation: toolFloat 3s ease-in-out infinite; }
-@keyframes toolFloat { 0%,100%{transform:translateY(0) rotate(-3deg);} 50%{transform:translateY(-12px) rotate(3deg);} }
-.tool-glow { position: absolute; width: 140px; height: 140px; border-radius: 50%; filter: blur(40px); opacity: .4; animation: glowPulse 3s ease-in-out infinite; }
-@keyframes glowPulse { 0%,100%{opacity:.3;} 50%{opacity:.6;} }
-.tool-profession { font-size: 16px; font-weight: 600; color: var(--text); text-align: center; padding: 0 24px; line-height: 1.4; }
-.tool-number { font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 2px; color: rgba(255,255,255,.2); }
-.slide-dots { display: flex; gap: 8px; justify-content: center; }
-.dot { height: 4px; border-radius: 2px; background: var(--dim); cursor: pointer; transition: all .4s ease; width: 20px; }
-.dot.active { width: 36px; background: linear-gradient(90deg, var(--cyan), var(--indigo)); }
-.progress-bar { width: 100%; height: 2px; background: var(--dim); border-radius: 1px; overflow: hidden; margin-top: 4px; }
-.progress-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--indigo)); border-radius: 1px; animation: progressAnim 3s linear infinite; }
-@keyframes progressAnim { from{width:0%;} to{width:100%;} }
+/* provider CTA banner */
+.provider-cta{max-width:900px;margin:0 auto 80px;padding:0 24px}
+.provider-cta-inner{background:linear-gradient(135deg,rgba(49,130,206,.15),rgba(99,179,237,.08));border:1px solid rgba(99,179,237,.2);border-radius:20px;padding:36px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px}
+.provider-cta-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--text);margin-bottom:8px}
+.provider-cta-sub{color:var(--muted);font-size:15px;font-family:'DM Sans',sans-serif}
 
-/* Welcome sections */
-.w-section { position: relative; z-index: 2; padding: 80px 40px; max-width: 1200px; margin: 0 auto; }
-.section-label { font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--cyan); margin-bottom: 14px; }
-.section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(40px,5vw,64px); letter-spacing: 1px; color: #fff; margin-bottom: 12px; }
-.section-sub { color: var(--muted); font-size: 15px; margin-bottom: 56px; }
-.divider { position: relative; z-index: 2; height: 1px; background: linear-gradient(90deg, transparent, rgba(0,212,255,0.15), transparent); margin: 0 40px; }
-.steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 20px; }
-.step-card { background: rgba(255,255,255,.02); border: 1px solid var(--border); border-radius: 20px; padding: 28px 24px; position: relative; overflow: hidden; transition: border-color .3s, transform .3s; }
-.step-card:hover { border-color: rgba(0,212,255,.25); transform: translateY(-4px); }
-.step-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--cyan), var(--indigo)); opacity: 0; transition: opacity .3s; }
-.step-card:hover::before { opacity: 1; }
-.step-num { font-family: 'Bebas Neue', sans-serif; font-size: 64px; color: rgba(0,212,255,.08); line-height: 1; margin-bottom: 16px; }
-.step-icon { font-size: 36px; margin-bottom: 14px; display: block; }
-.step-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; color: #fff; margin-bottom: 10px; }
-.step-desc { color: var(--muted); font-size: 13px; line-height: 1.6; }
-.cat-pill { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 30px; font-size: 14px; color: var(--muted); cursor: pointer; transition: all .25s; }
-.cat-pill:hover { background: rgba(0,212,255,.08); border-color: rgba(0,212,255,.3); color: var(--cyan); transform: translateY(-2px); }
-.stats-strip { position: relative; z-index: 2; background: rgba(255,255,255,.02); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.stats-inner { max-width: 1200px; margin: 0 auto; padding: 40px; display: grid; grid-template-columns: repeat(3,1fr); }
-.stat-item { text-align: center; padding: 0 20px; border-right: 1px solid var(--border); }
-.stat-item:last-child { border-right: none; }
-.stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 52px; background: linear-gradient(135deg, var(--cyan), var(--indigo)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 2px; }
-.stat-label { color: var(--muted); font-size: 13px; margin-top: 4px; }
-.cta-section { position: relative; z-index: 2; padding: 80px 40px; text-align: center; }
-.bg-tool { position: fixed; opacity: .04; pointer-events: none; z-index: 0; animation: bgFloat linear infinite; }
-@keyframes bgFloat { 0%{transform:translateY(0) rotate(0deg);} 100%{transform:translateY(-100vh) rotate(360deg);} }
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 
 /* ════════════════════════
    AUTH PAGE
 ════════════════════════ */
-#page-auth { position: relative; z-index: 2; min-height: calc(100vh - 64px); display: flex; align-items: center; justify-content: center; padding: 80px 24px 24px; }
+#page-auth{position:relative;z-index:1;min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:80px 20px 24px}
+.auth-card{width:100%;max-width:440px;background:linear-gradient(145deg,var(--surface),var(--surface3));border:1px solid var(--border2);border-radius:24px;padding:36px 32px;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.auth-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--text);margin-bottom:6px}
+.auth-sub{color:var(--muted);font-size:14px;font-family:'DM Sans',sans-serif;margin-bottom:28px}
+.auth-tabs{display:flex;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:12px;padding:3px;margin-bottom:24px}
+.auth-tab{flex:1;padding:10px;border:none;border-radius:10px;background:transparent;color:var(--dim);font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;transition:all .2s}
+.auth-tab.active{background:var(--surface2);color:var(--text)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;font-family:'DM Sans',sans-serif}
+.auth-link{color:var(--blue2);cursor:pointer;font-weight:600}
+.auth-link:hover{text-decoration:underline}
 
 /* ════════════════════════
-   HOME / SEARCH
+   SEARCH PAGE
 ════════════════════════ */
-#page-home { position: relative; z-index: 2; padding: 80px 20px 0; max-width: 1100px; margin: 0 auto; }
-#map { height: 420px; }
-.leaflet-popup-content-wrapper { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; color: var(--text); box-shadow: 0 8px 32px rgba(0,0,0,.6); }
-.leaflet-popup-tip { background: var(--surface); }
-.leaflet-popup-content { margin: 14px 16px; }
-.pin-popup img { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 8px; }
-.pin-popup .pname { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; }
-.pin-popup .psvc { color: var(--cyan); font-size: 12px; margin: 2px 0 10px; }
-.pin-popup button { width: 100%; padding: 9px; background: linear-gradient(135deg, var(--cyan), var(--indigo)); color: #06060f; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-family: 'Outfit', sans-serif; }
-.result-card { background: linear-gradient(145deg, var(--surface), var(--bg)); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; cursor: pointer; transition: transform .2s, box-shadow .2s; }
-.result-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,212,255,.1); border-color: rgba(0,212,255,.2); }
+#page-search{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:84px 24px 24px}
+.search-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:24px}
+.search-inp-wrap{flex:1;min-width:200px;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:12px;padding:0 16px}
+.search-inp-wrap input{flex:1;background:none;border:none;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;padding:12px 0}
+.search-inp-wrap input::placeholder{color:#4a5568}
+.dist-control{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:10px 16px;white-space:nowrap}
+.dist-val{color:var(--blue2);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:700;min-width:40px}
+.filter-row{display:flex;gap:8px;overflow-x:auto;margin-bottom:24px;padding-bottom:4px;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-chip{padding:6px 16px;border-radius:30px;border:1px solid;border-color:var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.filter-chip.on{border-color:var(--blue2);background:rgba(99,179,237,.12);color:var(--blue2)}
+.results-meta{color:var(--dim);font-size:14px;font-family:'DM Sans',sans-serif;margin-bottom:20px}
+
+/* ── MAP ── */
+.map-section{border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:28px}
+.map-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border)}
+.map-lbl{font-size:11px;font-weight:700;color:var(--blue2);text-transform:uppercase;letter-spacing:1px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px}
+#map{height:340px}
+.leaflet-popup-content-wrapper{background:var(--surface);border:1px solid var(--border);border-radius:14px;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.7)}
+.leaflet-popup-tip{background:var(--surface)}
+.leaflet-popup-content{margin:12px 14px}
+.pp-img{width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block}
+.pp-name{font-weight:700;font-size:14px;color:var(--text);font-family:'Syne',sans-serif}
+.pp-svc{font-size:11px;color:var(--blue2);font-family:'DM Sans',sans-serif;margin:2px 0 8px}
+.pp-btn{width:100%;padding:9px;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;font-weight:700;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Syne',sans-serif}
+
+/* ── PROVIDER CARDS GRID ── */
+.providers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.pcard{background:linear-gradient(145deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.pcard:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(99,179,237,.18);border-color:rgba(99,179,237,.3)}
+.pcard-img{position:relative;height:200px;background:#0d0d1a;overflow:hidden}
+.pcard-img img{width:100%;height:100%;object-fit:cover;opacity:.9;display:block}
+.pcard-img-ph{width:100%;height:100%;background:linear-gradient(135deg,#1a1a3a,#2d1b4e);display:flex;align-items:center;justify-content:center;font-size:48px}
+.pcard-avail{position:absolute;top:10px;right:10px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;font-family:'DM Sans',sans-serif}
+.pcard-avail.yes{background:rgba(72,199,142,.9);color:#fff}
+.pcard-avail.no{background:rgba(248,113,113,.85);color:#fff}
+.pcard-cat{position:absolute;top:10px;left:10px;background:rgba(13,13,26,.85);color:var(--blue2);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;font-family:'DM Sans',sans-serif;border:1px solid rgba(99,179,237,.3)}
+/* image nav arrows */
+.pcard-arr{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.6);border:none;border-radius:50%;width:28px;height:28px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;z-index:2}
+.pcard-arr:hover{background:rgba(0,0,0,.85)}
+.pcard-arr.left{left:8px}
+.pcard-arr.right{right:8px}
+.pcard-dots{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:4px}
+.pcard-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);transition:background .2s}
+.pcard-dot.on{background:var(--blue2)}
+.pcard-body{padding:14px 16px 16px}
+.pcard-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.pcard-name{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--text)}
+.pcard-rating{display:flex;align-items:center;gap:4px}
+.pcard-stars{color:var(--gold);font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif}
+.pcard-revs{color:var(--dim);font-size:12px;font-family:'DM Sans',sans-serif}
+.pcard-bio{color:var(--muted);font-size:13px;font-family:'DM Sans',sans-serif;margin:0 0 10px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pcard-loc{display:flex;align-items:center;gap:5px;color:var(--blue2);font-size:12px;font-family:'DM Sans',sans-serif}
+
+/* ── PROVIDER DETAIL MODAL ── */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
+.modal-card{background:linear-gradient(145deg,var(--surface),var(--surface3));border-radius:24px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;border:1px solid var(--border2);box-shadow:0 24px 80px rgba(0,0,0,.7)}
+.modal-gallery{position:relative;height:280px;background:#0d0d1a;border-radius:24px 24px 0 0;overflow:hidden;flex-shrink:0}
+.modal-gallery img{width:100%;height:100%;object-fit:cover;display:block}
+.modal-gallery-ph{width:100%;height:100%;background:linear-gradient(135deg,#1a1a3a,#2d1b4e);display:flex;align-items:center;justify-content:center;font-size:64px}
+.modal-close{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.7);border:none;border-radius:50%;width:36px;height:36px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3}
+.modal-arr{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.7);border:none;border-radius:50%;width:36px;height:36px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3}
+.modal-arr.left{left:12px}
+.modal-arr.right{right:12px}
+.modal-thumbs{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:3}
+.modal-thumb{width:40px;height:40px;border-radius:8px;overflow:hidden;border:2px solid transparent;cursor:pointer;flex-shrink:0}
+.modal-thumb.on{border-color:var(--blue2)}
+.modal-thumb img{width:100%;height:100%;object-fit:cover}
+.modal-body{padding:24px}
+.modal-top-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.modal-name{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--text)}
+.modal-cat-loc{color:var(--blue2);font-family:'DM Sans',sans-serif;font-size:14px;margin-top:2px}
+.modal-rating-row{display:flex;align-items:center;gap:4px;margin-top:4px}
+.modal-rating-text{color:var(--muted);font-size:12px;font-family:'DM Sans',sans-serif;margin-top:3px}
+.modal-avail-badge{font-size:12px;font-weight:700;padding:3px 12px;border-radius:20px;font-family:'DM Sans',sans-serif}
+.modal-avail-badge.yes{background:rgba(72,199,142,.15);color:var(--green)}
+.modal-avail-badge.no{background:rgba(248,113,113,.15);color:var(--red)}
+.modal-dist{display:flex;align-items:center;gap:6px;color:var(--blue2);font-size:13px;font-family:'DM Sans',sans-serif;margin-bottom:16px}
+.modal-bio{color:#cbd5e0;font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7;margin-bottom:24px}
+.modal-booked{background:rgba(72,199,142,.1);border:1px solid rgba(72,199,142,.3);border-radius:12px;padding:16px;text-align:center;color:var(--green);font-family:'Syne',sans-serif;font-weight:700;font-size:16px}
+.modal-book-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--blue),var(--blue2));border:none;border-radius:12px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:16px;cursor:pointer;letter-spacing:.3px;transition:opacity .2s}
+.modal-book-btn:hover{opacity:.9}
 
 /* ════════════════════════
-   PROFILE PAGES
+   MY PROFILE PAGE
 ════════════════════════ */
-.photo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
-.photo-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; cursor: pointer; transition: opacity .2s; }
-.photo-grid img:hover { opacity: .8; }
+#page-profile{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:64px 0 0;background:var(--bg)}
+.prof-cover{width:100%;height:150px;background:linear-gradient(135deg,#1a1a3a,#16213e);overflow:hidden}
+.prof-av-row{display:flex;align-items:flex-end;justify-content:space-between;padding:0 18px;margin-top:-44px;margin-bottom:14px}
+.prof-av{width:86px;height:86px;border-radius:50%;overflow:hidden;border:4px solid var(--bg);background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#fff;font-family:'Syne',sans-serif;flex-shrink:0}
+.prof-av img{width:100%;height:100%;object-fit:cover;display:block}
+.av-cam{position:absolute;bottom:2px;right:2px;width:26px;height:26px;background:var(--surface2);border:2px solid var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;transition:background .2s}
+.av-cam:hover{background:var(--blue2)}
+.prof-av-wrap{position:relative}
+.prof-info{padding:0 18px 16px;border-bottom:1px solid var(--border)}
+.prof-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px}
+.prof-svc-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(99,179,237,.1);border:1px solid var(--border2);border-radius:20px;padding:3px 12px;font-size:12px;color:var(--blue2);font-weight:600;margin-bottom:8px;font-family:'DM Sans',sans-serif}
+.prof-bio{font-size:13px;color:var(--muted);line-height:1.55;font-family:'DM Sans',sans-serif;margin-bottom:5px}
+.prof-loc{font-size:12px;color:var(--dim);display:flex;align-items:center;gap:4px;font-family:'DM Sans',sans-serif}
+.prof-stats{display:flex;border-bottom:1px solid var(--border)}
+.prof-stat{flex:1;text-align:center;padding:14px 0}
+.prof-stat-n{display:block;font-size:18px;font-weight:700;color:var(--text);font-family:'Syne',sans-serif}
+.prof-stat-l{display:block;font-size:10px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-top:2px;font-family:'DM Sans',sans-serif}
+.prof-tabs{display:flex;border-bottom:1px solid var(--border)}
+.prof-tab{flex:1;display:flex;align-items:center;justify-content:center;padding:14px;cursor:pointer;border-bottom:2px solid transparent;color:var(--dim);transition:all .2s}
+.prof-tab svg{width:18px;height:18px}
+.prof-tab.active{color:var(--blue2);border-bottom-color:var(--blue2)}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.photo-grid img{width:100%;aspect-ratio:1;object-fit:cover;cursor:pointer;display:block;transition:opacity .2s}
+.photo-grid img:hover{opacity:.8}
+.grid-empty{grid-column:1/-1;padding:48px 20px;text-align:center;color:var(--dim);font-family:'DM Sans',sans-serif}
+.add-bar{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--border)}
+.previews-wrap{display:flex;gap:8px;flex-wrap:wrap;padding:0 18px 14px}
+.prev-item{position:relative}
+.prev-item img{width:68px;height:68px;border-radius:8px;object-fit:cover;display:block;border:1px solid var(--border)}
+.prev-rm{position:absolute;top:-6px;right:-6px;width:18px;height:18px;background:var(--red);border-radius:50%;border:1px solid var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;color:#fff}
+.edit-panel{padding:20px 18px}
+.edit-group{margin-bottom:16px}
+.edit-label{display:block;font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;font-family:'DM Sans',sans-serif}
+.loc-row{display:flex;gap:8px}
+.gps-btn{padding:0 14px;height:48px;font-size:13px;white-space:nowrap;border-radius:10px}
 
 /* ════════════════════════
-   ANIMATIONS
+   LIGHTBOX
 ════════════════════════ */
-@keyframes fadeInUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
-@keyframes fadeInDown { from{opacity:0;transform:translateY(-20px);} to{opacity:1;transform:translateY(0);} }
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:2000;display:flex;align-items:center;justify-content:center}
+#lightbox img{max-width:96vw;max-height:88vh;border-radius:8px;object-fit:contain}
+#lb-close{position:absolute;top:18px;right:18px;background:rgba(255,255,255,.12);border:none;color:#fff;width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
-/* ════════════════════════
+/* ════════════════════
    MOBILE
-════════════════════════ */
-@media (max-width: 768px) {
-  .hero { grid-template-columns: 1fr; padding: 90px 20px 40px; text-align: center; gap: 40px; }
-  .hero-left { align-items: center; }
-  .hero-desc, .chips, .hero-actions { text-align: center; justify-content: center; }
-  .slideshow-wrap { width: 280px; height: 320px; }
-  .tool-emoji { font-size: 64px; }
-  .ring-1 { width: 320px; height: 320px; }
-  .ring-2 { width: 260px; height: 260px; }
-  .w-section { padding: 60px 20px; }
-  .stats-inner { grid-template-columns: 1fr; gap: 24px; }
-  .stat-item { border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
-  .stat-item:last-child { border-bottom: none; }
-  .cta-section { padding: 60px 20px; }
-  #page-home { padding: 80px 16px 0; }
+════════════════════ */
+@media(max-width:600px){
+  .hero-wrap{padding:88px 20px 40px}
+  .provider-cta-inner{padding:24px 20px;flex-direction:column}
+  #page-search{padding:76px 16px 16px}
+  .search-controls{flex-wrap:wrap}
 }
 ```
 
@@ -228,793 +246,608 @@ textarea.inp { resize: vertical; }
 </head>
 <body>
 
-<!-- ── GLOBAL BG ── -->
+<div class="bg-glow-1"></div>
+<div class="bg-glow-2"></div>
 
-<div class="grid-bg"></div>
-<div class="orb" style="width:600px;height:600px;top:-200px;left:-200px;background:radial-gradient(circle,rgba(0,212,255,0.12),transparent 70%);"></div>
-<div class="orb" style="width:500px;height:500px;bottom:-150px;right:-150px;background:radial-gradient(circle,rgba(124,92,255,0.1),transparent 70%);animation-delay:4s;"></div>
-<div id="bg-tools"></div>
-
-<!-- ══════════ TOP NAV ══════════ -->
+<!-- TOP NAV -->
 
 <nav id="top-nav">
-  <div class="nav-logo" onclick="goHome()">
-    <div class="nav-logo-icon">S</div>
-    <span class="nav-logo-text">SkillSpot</span>
-  </div>
+  <div class="nav-logo" onclick="goHome()">GigsCourt</div>
   <div id="nav-guest">
-    <button class="btn-nav-outline" onclick="showPage('page-auth');switchAuthTab(0)">Sign In</button>
-    <button class="btn-nav-filled" onclick="showPage('page-auth');switchAuthTab(1)">Join Free</button>
+    <button class="btn-nav-ghost" onclick="showPage('page-auth');switchAuthTab(0)">Sign In</button>
+    <button class="btn-nav-blue" onclick="showPage('page-auth');switchAuthTab(1)">Join Free</button>
   </div>
   <div id="nav-user" class="hidden">
-    <div class="nav-avatar" id="nav-avatar" onclick="showPage('page-profile');setActiveNav('nav-p')"></div>
-    <button class="btn-ghost" style="padding:8px 14px;font-size:13px;" onclick="doLogout()">Sign Out</button>
+    <div class="nav-av" id="nav-av" onclick="showPage('page-profile');setActiveNav('nav-p')"></div>
+    <button class="btn-nav-ghost" style="font-size:13px;padding:7px 14px;" onclick="doLogout()">Sign Out</button>
   </div>
 </nav>
 
-<!-- ══════════════════════════════════════
-     WELCOME PAGE
-══════════════════════════════════════ -->
+<!-- WELCOME PAGE -->
 
 <div id="page-welcome">
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-left">
-      <div class="badge"><div class="badge-dot"></div>Nigeria's #1 Local Skills Platform</div>
-      <h1 class="hero-title">
-        <span>FIND THE</span>
-        <span class="gradient-text">RIGHT PRO</span>
-        <span class="outline-text">NEAR YOU</span>
-      </h1>
-      <p class="hero-desc">Stop guessing, stop asking around. SkillSpot puts the best barbers, plumbers, photographers, electricians and more right at your fingertips — sorted by distance, verified by their portfolio.</p>
-      <div class="hero-actions">
-        <button class="btn-hero-primary" onclick="showPage('page-auth');switchAuthTab(1)">Get Started Free →</button>
-        <button class="btn-hero-secondary" onclick="document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'})">See How It Works</button>
+  <div class="hero-wrap">
+    <div class="hero-badge">Local Services, Reimagined</div>
+    <h1 class="hero-title">Find Skilled Pros<br/><span class="grad">Near You</span></h1>
+    <p class="hero-sub">Connect with vetted barbers, stylists, electricians and more — filtered by distance, rated by your neighbors.</p>
+    <div class="hero-search">
+      <div class="hero-search-inp">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="w-search" type="text" placeholder="Search barber, cleaner, photographer..." onkeydown="if(event.key==='Enter'){document.getElementById('hs-term').value=this.value;showPage('page-search');doSearch()}"/>
       </div>
-      <div class="chips">
-        <div class="chip">📍 Location-based</div>
-        <div class="chip">📷 Real portfolios</div>
-        <div class="chip">🗺️ Live map</div>
-        <div class="chip">⚡ Instant contact</div>
-        <div class="chip">🆓 Free to use</div>
-      </div>
+      <button class="btn-blue" style="padding:15px 28px;font-size:15px;" onclick="document.getElementById('hs-term').value=document.getElementById('w-search').value;showPage('page-search');doSearch()">Search Now</button>
     </div>
-    <div class="hero-right">
-      <div class="slideshow-wrap">
-        <div class="ring ring-1"></div>
-        <div class="ring ring-2"></div>
-        <div id="tool-stage"></div>
-      </div>
+    <div class="hero-cats" id="welcome-cats"></div>
+  </div>
+  <div class="provider-cta">
+    <div class="provider-cta-inner">
       <div>
-        <div class="slide-dots" id="slide-dots"></div>
-        <div class="progress-bar" style="width:200px;margin:12px auto 0;"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="provider-cta-title">Are you a service provider?</div>
+        <div class="provider-cta-sub">Create your profile, showcase your work, and get discovered by thousands of customers nearby.</div>
       </div>
-    </div>
-  </section>
-
-  <!-- STATS -->
-
-  <div class="stats-strip">
-    <div class="stats-inner">
-      <div class="stat-item"><div class="stat-num" id="cnt-providers">0+</div><div class="stat-label">Skilled Providers</div></div>
-      <div class="stat-item"><div class="stat-num">15+</div><div class="stat-label">Service Categories</div></div>
-      <div class="stat-item"><div class="stat-num">FREE</div><div class="stat-label">Always Free to Join</div></div>
+      <button class="btn-blue" style="padding:13px 28px;font-size:15px;" onclick="showPage('page-auth');switchAuthTab(1)">Get Listed Free →</button>
     </div>
   </div>
-
-  <div class="divider"></div>
-
-  <!-- HOW IT WORKS -->
-
-  <section class="w-section" id="how-it-works">
-    <div class="section-label">The Process</div>
-    <div class="section-title">HOW SKILLSPOT WORKS</div>
-    <div class="section-sub">Four simple steps to finding the perfect professional</div>
-    <div class="steps-grid">
-      <div class="step-card"><div class="step-num">01</div><span class="step-icon">🔍</span><div class="step-title">SEARCH</div><div class="step-desc">Type any service — barber, plumber, photographer, tailor. Set how far you're willing to travel.</div></div>
-      <div class="step-card"><div class="step-num">02</div><span class="step-icon">🗺️</span><div class="step-title">DISCOVER</div><div class="step-desc">See every provider near you as pins on a live map. Your exact search radius shown visually.</div></div>
-      <div class="step-card"><div class="step-num">03</div><span class="step-icon">📷</span><div class="step-title">BROWSE</div><div class="step-desc">Tap any pin to open their full profile. See their Instagram-style portfolio of real work photos.</div></div>
-      <div class="step-card"><div class="step-num">04</div><span class="step-icon">✅</span><div class="step-title">CONNECT</div><div class="step-desc">Contact who you like directly. Same account lets you offer your own skills to customers too.</div></div>
-    </div>
-  </section>
-
-  <div class="divider"></div>
-
-  <!-- CATEGORIES -->
-
-  <section class="w-section" style="text-align:center;">
-    <div class="section-label">Available Services</div>
-    <div class="section-title">FIND ANY SKILL</div>
-    <div class="section-sub">Tap a category to start searching</div>
-    <div id="welcome-cats" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;"></div>
-  </section>
-
-  <div class="divider"></div>
-
-  <!-- BOTTOM CTA -->
-
-  <section class="cta-section">
-    <div style="max-width:640px;margin:0 auto;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,6vw,72px);letter-spacing:1px;color:#fff;margin-bottom:16px;line-height:1;">
-        READY TO GET<br/>
-        <span style="background:linear-gradient(135deg,#00d4ff,#7c5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">STARTED?</span>
-      </div>
-      <p style="color:var(--muted);font-size:15px;line-height:1.7;margin-bottom:36px;">Join SkillSpot today. Find professionals around you. Showcase your own skills. All for free.</p>
-      <button class="btn-hero-primary" onclick="showPage('page-auth');switchAuthTab(1)">Join SkillSpot — It's Free</button>
-    </div>
-  </section>
 </div>
 
-<!-- ══════════════════════════════════════
-     AUTH PAGE
-══════════════════════════════════════ -->
+<!-- AUTH PAGE -->
 
 <div id="page-auth" class="hidden">
-  <div class="card" style="width:100%;max-width:420px;padding:32px;">
-    <div style="text-align:center;margin-bottom:28px;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;color:#fff;margin-bottom:6px;">WELCOME</div>
-      <div style="color:var(--muted);font-size:13px;">One account — find services & offer your skills</div>
-    </div>
-    <div style="display:flex;background:var(--bg);border-radius:14px;padding:4px;margin-bottom:24px;">
-      <button id="tab-li" onclick="switchAuthTab(0)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--surface2);color:#fff;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;font-size:14px;transition:all .2s;">Login</button>
-      <button id="tab-su" onclick="switchAuthTab(1)" style="flex:1;padding:10px;border:none;border-radius:10px;background:transparent;color:var(--muted);font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;font-size:14px;transition:all .2s;">Sign Up</button>
+  <div class="auth-card">
+    <div class="auth-title" id="auth-title">Welcome back</div>
+    <div class="auth-sub">Find services or offer your skills — one account</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-li" onclick="switchAuthTab(0)">Login</button>
+      <button class="auth-tab" id="tab-su" onclick="switchAuthTab(1)">Sign Up</button>
     </div>
     <div id="form-login">
-      <input id="li-email" class="inp" type="email" placeholder="Email address" style="margin-bottom:12px;display:block;"/>
-      <input id="li-pass" class="inp" type="password" placeholder="Password" style="margin-bottom:20px;display:block;" onkeydown="if(event.key==='Enter')doLogin()"/>
-      <button class="btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="doLogin()">Login</button>
-      <p style="text-align:center;margin-top:14px;font-size:13px;color:var(--muted);">No account? <span style="color:var(--cyan);cursor:pointer;font-weight:600;" onclick="switchAuthTab(1)">Sign up free</span></p>
+      <div class="field"><label>Email</label><input id="li-email" class="inp" type="email" placeholder="you@email.com"/></div>
+      <div class="field"><label>Password</label><input id="li-pass" class="inp" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <button class="btn-blue" style="width:100%;padding:14px;font-size:16px;margin-top:4px;" onclick="doLogin()">Sign In</button>
+      <p style="text-align:center;margin-top:18px;font-size:13px;color:var(--dim);font-family:'DM Sans',sans-serif;">No account? <span class="auth-link" onclick="switchAuthTab(1)">Sign up →</span></p>
     </div>
     <div id="form-signup" class="hidden">
-      <input id="su-name" class="inp" type="text" placeholder="Full name" style="margin-bottom:12px;display:block;"/>
-      <input id="su-email" class="inp" type="email" placeholder="Email address" style="margin-bottom:12px;display:block;"/>
-      <input id="su-pass" class="inp" type="password" placeholder="Password (6+ characters)" style="margin-bottom:20px;display:block;"/>
-      <button class="btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="doSignup()">Create Account</button>
-      <p style="text-align:center;margin-top:14px;font-size:13px;color:var(--muted);">Have an account? <span style="color:var(--cyan);cursor:pointer;font-weight:600;" onclick="switchAuthTab(0)">Login</span></p>
+      <div class="field"><label>Full Name</label><input id="su-name" class="inp" type="text" placeholder="e.g. Chidi Okafor"/></div>
+      <div class="field"><label>Email</label><input id="su-email" class="inp" type="email" placeholder="you@email.com"/></div>
+      <div class="field"><label>Password</label><input id="su-pass" class="inp" type="password" placeholder="Min. 6 characters"/></div>
+      <button class="btn-blue" style="width:100%;padding:14px;font-size:16px;margin-top:4px;" onclick="doSignup()">Create Account</button>
+      <p style="text-align:center;margin-top:18px;font-size:13px;color:var(--dim);font-family:'DM Sans',sans-serif;">Have an account? <span class="auth-link" onclick="switchAuthTab(0)">Login →</span></p>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     HOME / SEARCH PAGE
-══════════════════════════════════════ -->
+<!-- SEARCH PAGE -->
 
-<div id="page-home" class="hidden">
-  <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;color:#fff;margin-bottom:4px;">FIND NEARBY PROS</div>
-  <div style="color:var(--muted);font-size:14px;margin-bottom:20px;">Search · Set distance · See them on the map instantly</div>
-
-  <!-- Search bar -->
-
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
-    <input id="search-term" class="inp" type="text" placeholder="barber, plumber, photographer..." style="flex:1;min-width:180px;" onkeydown="if(event.key==='Enter')doSearch()"/>
-    <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:0 14px;">
-      <span style="color:var(--muted);font-size:12px;white-space:nowrap;">Max</span>
-      <input id="dist-slider" type="range" min="1" max="50" value="10" style="width:80px;accent-color:var(--cyan);" oninput="document.getElementById('dist-val').textContent=this.value+' km'"/>
-      <span id="dist-val" style="color:var(--cyan);font-size:13px;font-weight:700;min-width:38px;">10 km</span>
+<div id="page-search" class="hidden">
+  <div class="search-controls">
+    <button class="btn-ghost-sm" style="padding:10px 14px;font-size:13px;" onclick="goHome()">← Back</button>
+    <div class="search-inp-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="hs-term" type="text" placeholder="Search services..." onkeydown="if(event.key==='Enter')doSearch()"/>
     </div>
-    <button class="btn-primary" style="padding:13px 28px;font-size:14px;" onclick="doSearch()">Search</button>
-  </div>
-
-  <!-- Quick category pills -->
-
-  <div id="home-cats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;"></div>
-
-  <!-- Map + results -->
-
-  <div id="search-results" class="hidden">
-    <div class="card" style="overflow:hidden;margin-bottom:20px;">
-      <div style="background:var(--surface);padding:12px 18px;border-bottom:1px solid var(--border);font-size:12px;color:var(--cyan);font-weight:600;letter-spacing:.5px;">📍 LIVE MAP — Tap a pin to view profile</div>
-      <div id="map"></div>
+    <div class="dist-control">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue2)" stroke-width="2" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+      <span style="color:var(--muted);font-size:13px;font-family:'DM Sans',sans-serif;">Max:</span>
+      <input id="dist-slider" type="range" min="0.5" max="50" step="0.5" value="10" style="width:80px;accent-color:#63b3ed;" oninput="document.getElementById('dist-val').textContent=this.value"/>
+      <span class="dist-val"><span id="dist-val">10</span> km</span>
     </div>
-    <div id="results-count" style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:600;"></div>
-    <div id="results-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px;"></div>
+    <button class="btn-blue" style="padding:11px 20px;font-size:14px;" onclick="doSearch()">Search</button>
   </div>
+  <div class="filter-row" id="filter-row"></div>
+  <div class="results-meta" id="results-meta"></div>
 
-  <div id="search-placeholder" style="padding:60px 0;text-align:center;">
-    <div style="font-size:56px;margin-bottom:16px;">🗺️</div>
-    <div style="color:var(--muted);font-size:16px;margin-bottom:6px;">Search a service above to discover providers near you</div>
-    <div style="color:var(--dim);font-size:13px;">or tap a category below</div>
-  </div>
+  <!-- MAP -->
 
-  <!-- Provider CTA -->
-
-  <div style="background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(124,92,255,.06));border:1px solid rgba(0,212,255,.15);border-radius:20px;padding:24px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:20px 0 0;">
-    <div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#fff;margin-bottom:4px;">OFFER YOUR SKILLS TOO</div>
-      <div style="color:var(--muted);font-size:13px;">Set up your provider profile and get discovered by customers nearby</div>
+  <div class="map-section hidden" id="map-section">
+    <div class="map-header">
+      <div class="map-lbl">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+        Live Map
+      </div>
+      <span id="map-count" style="font-size:12px;color:var(--dim);font-family:'DM Sans',sans-serif;"></span>
     </div>
-    <button class="btn-primary" style="padding:12px 24px;font-size:14px;" onclick="showPage('page-profile');setActiveNav('nav-p')">Set Up My Profile →</button>
+    <div id="map"></div>
   </div>
-  <div id="nav-spacer"></div>
+
+  <!-- RESULTS GRID -->
+
+  <div class="providers-grid" id="providers-grid"></div>
 </div>
 
-<!-- ══════════════════════════════════════
-     MY PROFILE PAGE
-══════════════════════════════════════ -->
+<!-- MY PROFILE -->
 
-<div id="page-profile" class="hidden" style="position:relative;z-index:2;max-width:700px;margin:0 auto;padding:80px 20px 0;">
-  <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;color:#fff;margin-bottom:4px;">MY PROFILE</div>
-  <div style="color:var(--muted);font-size:13px;margin-bottom:24px;">Your public profile — customers see this when they find you on the map</div>
-
-  <!-- Preview -->
-
-  <div class="card" style="padding:24px;margin-bottom:20px;">
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
-      <div id="pa-avatar" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--indigo));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#06060f;font-family:'Bebas Neue',sans-serif;flex-shrink:0;overflow:hidden;"></div>
-      <div>
-        <div id="pa-name" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#fff;"></div>
-        <div id="pa-service" style="color:var(--cyan);font-size:14px;margin-top:2px;"></div>
-        <div id="pa-location" style="color:var(--muted);font-size:12px;margin-top:2px;"></div>
-      </div>
+<div id="page-profile" class="hidden">
+  <div class="prof-cover" id="prof-cover"></div>
+  <div class="prof-av-row">
+    <div class="prof-av-wrap">
+      <div class="prof-av" id="prof-av"></div>
+      <div class="av-cam" onclick="document.getElementById('avatar-input').click()">📷</div>
+      <input id="avatar-input" type="file" accept="image/*" style="display:none;" onchange="handleAvatarSelect(this)"/>
     </div>
-    <div id="pa-bio" style="color:#a0a0c0;font-size:14px;line-height:1.6;margin-bottom:16px;"></div>
-    <div id="pa-photos" class="photo-grid"></div>
-  </div>
-
-  <!-- Edit form -->
-
-  <div class="card" style="padding:24px;">
-    <div style="font-weight:600;font-size:15px;color:#fff;margin-bottom:20px;">Edit Profile</div>
-    <div style="display:flex;flex-direction:column;gap:16px;">
-      <div>
-        <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Your Service / Skill</label>
-        <input id="edit-service" class="inp" type="text" placeholder="e.g. Barber, Plumber, Photographer"/>
-      </div>
-      <div>
-        <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Bio</label>
-        <textarea id="edit-bio" class="inp" rows="3" placeholder="Describe your experience and skills..."></textarea>
-      </div>
-      <div>
-        <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Location</label>
-        <div style="display:flex;gap:10px;">
-          <input id="edit-location" class="inp" type="text" placeholder="e.g. Lagos, Nigeria" style="flex:1;"/>
-          <button class="btn-ghost" style="padding:12px 14px;font-size:13px;white-space:nowrap;" onclick="getMyLocation()">📍 GPS</button>
-        </div>
-      </div>
-      <div>
-        <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Add Work Photos (select multiple)</label>
-        <input id="photo-input" type="file" accept="image/*" multiple style="display:none;" onchange="handlePhotoSelect(this)"/>
-        <button class="btn-ghost" style="width:100%;padding:16px;font-size:14px;border-style:dashed;" onclick="document.getElementById('photo-input').click()">📷 Choose Photos from Gallery</button>
-        <div id="photo-previews" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"></div>
-      </div>
-      <button class="btn-primary" style="width:100%;padding:15px;font-size:15px;" onclick="saveProfile()">Save Profile</button>
+    <div style="display:flex;gap:8px;padding-bottom:4px;">
+      <button class="btn-ghost-sm" style="padding:8px 16px;font-size:13px;font-weight:600;" onclick="switchProfileTab('edit')">Edit Profile</button>
     </div>
   </div>
-  <div id="nav-spacer2" style="height:72px;"></div>
+  <div class="prof-info">
+    <div class="prof-name" id="prof-name">—</div>
+    <div id="prof-svc-wrap" style="margin:4px 0 8px;"></div>
+    <div class="prof-bio" id="prof-bio"></div>
+    <div class="prof-loc hidden" id="prof-loc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+      <span id="prof-loc-text"></span>
+    </div>
+  </div>
+  <div class="prof-stats">
+    <div class="prof-stat"><span class="prof-stat-n" id="prof-photo-count">0</span><span class="prof-stat-l">Photos</span></div>
+    <div class="prof-stat"><span class="prof-stat-n" style="color:var(--blue2);">✓</span><span class="prof-stat-l">Verified</span></div>
+    <div class="prof-stat"><span class="prof-stat-n" id="prof-on-map" style="font-size:13px;">No</span><span class="prof-stat-l">On Map</span></div>
+  </div>
+  <div class="prof-tabs">
+    <div class="prof-tab active" id="ptab-grid" onclick="switchProfileTab('grid')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    </div>
+    <div class="prof-tab" id="ptab-edit" onclick="switchProfileTab('edit')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4z"/></svg>
+    </div>
+  </div>
+  <div id="panel-grid">
+    <div class="photo-grid" id="my-photo-grid"></div>
+    <div class="add-bar">
+      <input id="photo-input" type="file" accept="image/*" multiple style="display:none;" onchange="handlePhotoSelect(this)"/>
+      <button class="btn-ghost-sm" style="flex:1;padding:11px;font-size:13px;font-weight:600;border-style:dashed;" onclick="document.getElementById('photo-input').click()">＋ Add Work Photos</button>
+    </div>
+    <div class="previews-wrap" id="photo-previews"></div>
+    <div class="hidden" id="pending-save-bar" style="padding:0 18px 14px;">
+      <button class="btn-blue" style="width:100%;padding:13px;font-size:14px;" onclick="saveProfile()">Upload &amp; Save</button>
+    </div>
+  </div>
+  <div id="panel-edit" class="hidden edit-panel">
+    <div class="edit-group"><label class="edit-label">Service / Skill</label><input id="edit-service" class="inp" type="text" placeholder="e.g. Barber, Plumber, Photographer"/></div>
+    <div class="edit-group"><label class="edit-label">Bio</label><textarea id="edit-bio" class="inp" rows="3" placeholder="Describe your experience and services..."></textarea></div>
+    <div class="edit-group"><label class="edit-label">Location</label>
+      <div class="loc-row">
+        <input id="edit-location" class="inp" type="text" placeholder="e.g. Lagos, Nigeria" style="flex:1;"/>
+        <button class="btn-ghost-sm gps-btn" onclick="getMyLocation()">📍 GPS</button>
+      </div>
+    </div>
+    <button class="btn-blue" style="width:100%;padding:14px;font-size:15px;" onclick="saveProfile()">Save Changes</button>
+    <div style="height:80px;"></div>
+  </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     VIEW SOMEONE ELSE'S PROFILE
-══════════════════════════════════════ -->
+<!-- PROVIDER MODAL (injected by JS) -->
 
-<div id="page-view-profile" class="hidden" style="position:relative;z-index:2;max-width:600px;margin:0 auto;padding:80px 20px 0;">
-  <button class="btn-ghost" style="padding:8px 14px;font-size:13px;margin-bottom:20px;" onclick="goBack()">← Back</button>
-  <div id="view-profile-content"></div>
-  <div style="height:72px;"></div>
-</div>
+<div id="modal-overlay" class="hidden" onclick="closeModal(event)"></div>
 
-<!-- ══════════════════════════════════════
-     BOTTOM NAV (logged in only)
-══════════════════════════════════════ -->
+<!-- BOTTOM NAV -->
 
 <div id="bottom-nav" class="hidden">
-  <div class="nav-tab active" id="nav-h" onclick="showPage('page-home');setActiveNav('nav-h')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+  <div class="nav-tab active" id="nav-h" onclick="showPage('page-search');setActiveNav('nav-h')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
     Home
   </div>
+  <div class="nav-tab" id="nav-s" onclick="showPage('page-search');setActiveNav('nav-s')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Search
+  </div>
   <div class="nav-tab" id="nav-p" onclick="showPage('page-profile');setActiveNav('nav-p')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    My Profile
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
   </div>
 </div>
 
-<!-- TOAST -->
-
 <div id="toast"></div>
+<div id="lightbox" class="hidden" onclick="closeLightbox()">
+  <button id="lb-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt=""/>
+</div>
 
-<!-- LIGHTBOX -->
-
-<div id="lightbox" class="hidden" onclick="closeLightbox()"><img id="lightbox-img" src="" alt=""/></div>
-
-<!-- ══════════════════════════════════════
-     WELCOME PAGE SCRIPTS (non-module)
-══════════════════════════════════════ -->
+<!-- NON-MODULE SCRIPT -->
 
 <script>
-const TOOLS = [
-  { emoji:'✂️', profession:'Barbers & Hair Stylists',      color:'rgba(0,212,255,0.12)',   glow:'rgba(0,212,255,0.4)' },
-  { emoji:'🔨', profession:'Carpenters & Builders',        color:'rgba(251,146,60,0.12)',  glow:'rgba(251,146,60,0.4)' },
-  { emoji:'⛑️', profession:'Electricians & Contractors',  color:'rgba(250,204,21,0.1)',   glow:'rgba(250,204,21,0.4)' },
-  { emoji:'🧤', profession:'Cleaners & Handymen',          color:'rgba(124,92,255,0.12)', glow:'rgba(124,92,255,0.4)' },
-  { emoji:'🔧', profession:'Plumbers & Mechanics',         color:'rgba(34,197,94,0.1)',    glow:'rgba(34,197,94,0.4)' },
-  { emoji:'📷', profession:'Photographers & Videographers',color:'rgba(239,68,68,0.1)',    glow:'rgba(239,68,68,0.4)' },
-  { emoji:'💅', profession:'Nail Techs & Beauty Pros',     color:'rgba(236,72,153,0.12)', glow:'rgba(236,72,153,0.4)' },
-  { emoji:'🎵', profession:'DJs & Musicians',              color:'rgba(168,85,247,0.12)', glow:'rgba(168,85,247,0.4)' },
-  { emoji:'🍳', profession:'Chefs & Caterers',             color:'rgba(245,158,11,0.1)',   glow:'rgba(245,158,11,0.4)' },
-  { emoji:'🧵', profession:'Tailors & Fashion Designers',  color:'rgba(20,184,166,0.12)', glow:'rgba(20,184,166,0.4)' },
-  { emoji:'🪚', profession:'Woodworkers & Craftsmen',      color:'rgba(161,98,7,0.12)',    glow:'rgba(161,98,7,0.4)' },
-  { emoji:'💪', profession:'Personal Trainers & Coaches',  color:'rgba(59,130,246,0.12)', glow:'rgba(59,130,246,0.4)' },
-];
+const CATS=['Barber','Hair Stylist','Plumber','Electrician','Cleaner','Painter','Carpenter','Photographer','Personal Trainer','Nail Tech','Chef','DJ','Tailor','Chef','Tutor'];
 
-const CATS = [
-  {icon:'✂️',name:'Barber'},{icon:'💇',name:'Hair Stylist'},{icon:'🔧',name:'Plumber'},
-  {icon:'⚡',name:'Electrician'},{icon:'🧹',name:'Cleaner'},{icon:'🎨',name:'Painter'},
-  {icon:'🪚',name:'Carpenter'},{icon:'📷',name:'Photographer'},{icon:'💪',name:'Personal Trainer'},
-  {icon:'💅',name:'Nail Tech'},{icon:'👨‍🍳',name:'Chef'},{icon:'🔩',name:'Mechanic'},
-  {icon:'🪡',name:'Tailor'},{icon:'🎵',name:'DJ'},{icon:'📚',name:'Tutor'},{icon:'🏠',name:'Interior Designer'},
-];
+// Build welcome cats
+(function(){
+  const el=document.getElementById('welcome-cats'); if(!el) return;
+  el.innerHTML=CATS.map(c=>`<div class="hero-cat" onclick="window.welcomeCat('${c}')">${c}</div>`).join('');
+})();
 
-let currentSlide = 0;
-const SLIDE_DURATION = 3000;
+// Build filter row
+(function(){
+  const el=document.getElementById('filter-row'); if(!el) return;
+  el.innerHTML=['All',...CATS].map(c=>`<div class="filter-chip${c==='All'?' on':''}" onclick="window.setFilter('${c}')">${c}</div>`).join('');
+})();
 
-function buildSlideshow() {
-  const stage = document.getElementById('tool-stage');
-  const dotsEl = document.getElementById('slide-dots');
-  if (!stage || !dotsEl) return;
-  stage.innerHTML = TOOLS.map((t,i) => `
-    <div class="tool-card ${i===0?'active':''}" id="tc-${i}" style="background:${t.color};">
-      <div class="tool-emoji-wrap">
-        <div class="tool-glow" style="background:${t.glow};"></div>
-        <div class="tool-emoji">${t.emoji}</div>
-      </div>
-      <div class="tool-profession">${t.profession}</div>
-      <div class="tool-number">${String(i+1).padStart(2,'0')} / ${String(TOOLS.length).padStart(2,'0')}</div>
-    </div>
-  `).join('');
-  dotsEl.innerHTML = TOOLS.map((_,i) => `<div class="dot ${i===0?'active':''}" id="dot-${i}" onclick="goToSlide(${i})"></div>`).join('');
-  setInterval(() => goToSlide((currentSlide+1) % TOOLS.length), SLIDE_DURATION);
-  restartProgress();
-}
-
-window.goToSlide = function(n) {
-  const prev = document.getElementById(`tc-${currentSlide}`);
-  const prevDot = document.getElementById(`dot-${currentSlide}`);
-  if (prev) { prev.classList.remove('active'); prev.classList.add('exit'); setTimeout(()=>prev.classList.remove('exit'),600); }
-  if (prevDot) prevDot.classList.remove('active');
-  currentSlide = n;
-  const next = document.getElementById(`tc-${currentSlide}`);
-  const nextDot = document.getElementById(`dot-${currentSlide}`);
-  if (next) next.classList.add('active');
-  if (nextDot) nextDot.classList.add('active');
-  restartProgress();
+window.welcomeCat=function(cat){
+  if(window._loggedIn){document.getElementById('hs-term').value=cat;showPage('page-search');setActiveNav('nav-s');doSearch();}
+  else{showPage('page-auth');switchAuthTab(1);}
 };
 
-function restartProgress() {
-  const fill = document.getElementById('progress-fill');
-  if (!fill) return;
-  fill.style.animation = 'none';
-  fill.offsetHeight;
-  fill.style.animation = `progressAnim ${SLIDE_DURATION}ms linear`;
-}
-
-function buildCats(containerId, onclickFn) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  el.innerHTML = CATS.map(c => `
-    <div class="cat-pill" onclick="${onclickFn}('${c.name}')"><span>${c.icon}</span>${c.name}</div>
-  `).join('');
-}
-
-window.welcomeCatClick = function(cat) {
-  if (window._loggedIn) { document.getElementById('search-term').value = cat; showPage('page-home'); doSearch(); }
-  else { showPage('page-auth'); switchAuthTab(1); }
+window._filterCat='All';
+window.setFilter=function(cat){
+  window._filterCat=cat;
+  document.querySelectorAll('.filter-chip').forEach(el=>{el.classList.toggle('on',el.textContent===cat);});
+  doSearch();
 };
 
-window.homeCatClick = function(cat) {
-  document.getElementById('search-term').value = cat; doSearch();
-};
-
-function buildBgTools() {
-  const container = document.getElementById('bg-tools');
-  if (!container) return;
-  ['✂️','🔨','🔧','⛑️','🧤','📷','💅','🪚','💪','🍳'].forEach((e,i) => {
-    const el = document.createElement('div');
-    el.className = 'bg-tool';
-    el.textContent = e;
-    el.style.cssText = `left:${10+(i*9)}%;bottom:-60px;animation-duration:${20+Math.random()*20}s;animation-delay:${Math.random()*20}s;font-size:${24+Math.random()*20}px;`;
-    container.appendChild(el);
+window.showPage=function(id){
+  ['page-welcome','page-auth','page-search','page-profile'].forEach(p=>{
+    const el=document.getElementById(p); if(el) el.classList.add('hidden');
   });
-}
-
-function animateCount(el, end, suffix='', duration=2000) {
-  if (!el) return;
-  let start = 0;
-  const step = end / (duration / 16);
-  const timer = setInterval(() => {
-    start = Math.min(start + step, end);
-    el.textContent = Math.floor(start) + suffix;
-    if (start >= end) clearInterval(timer);
-  }, 16);
-}
-
-const statsObserver = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) { animateCount(document.getElementById('cnt-providers'), 100, '+'); statsObserver.disconnect(); }
-  });
-}, { threshold: 0.5 });
-
-// PAGE ROUTER
-window.showPage = function(id) {
-  ['page-welcome','page-auth','page-home','page-profile','page-view-profile'].forEach(p => {
-    const el = document.getElementById(p);
-    if (el) el.classList.add('hidden');
-  });
-  const target = document.getElementById(id);
-  if (target) target.classList.remove('hidden');
-  if (id === 'page-profile') { if (window.loadMyProfile) loadMyProfile(); }
+  const t=document.getElementById(id); if(t) t.classList.remove('hidden');
+  if(id==='page-profile'&&window.loadMyProfile) loadMyProfile();
   window.scrollTo(0,0);
 };
+window.goHome=function(){if(window._loggedIn){showPage('page-search');setActiveNav('nav-h');}else showPage('page-welcome');};
+window.setActiveNav=function(id){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const el=document.getElementById(id); if(el) el.classList.add('active');
+};
+window.switchAuthTab=function(tab){
+  const li=document.getElementById('form-login'),su=document.getElementById('form-signup');
+  const tli=document.getElementById('tab-li'),tsu=document.getElementById('tab-su');
+  const title=document.getElementById('auth-title');
+  if(tab===0){li.classList.remove('hidden');su.classList.add('hidden');tli.classList.add('active');tsu.classList.remove('active');title.textContent='Welcome back';}
+  else{li.classList.add('hidden');su.classList.remove('hidden');tsu.classList.add('active');tli.classList.remove('active');title.textContent='Join GigsCourt';}
+};
+window.switchProfileTab=function(tab){
+  document.getElementById('panel-grid').classList.toggle('hidden',tab!=='grid');
+  document.getElementById('panel-edit').classList.toggle('hidden',tab!=='edit');
+  document.getElementById('ptab-grid').classList.toggle('active',tab==='grid');
+  document.getElementById('ptab-edit').classList.toggle('active',tab==='edit');
+};
+window.toast=function(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background=type==='error'?'#ef4444':type==='info'?'rgba(99,179,237,.15)':'linear-gradient(135deg,#3182ce,#63b3ed)';
+  t.style.color=type==='info'?'#63b3ed':'#fff';
+  t.style.border=type==='info'?'1px solid rgba(99,179,237,.3)':'none';
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000);
+};
+window.openLightbox=function(url){document.getElementById('lightbox-img').src=url;document.getElementById('lightbox').classList.remove('hidden');};
+window.closeLightbox=function(){document.getElementById('lightbox').classList.add('hidden');};
 
-window.goHome = function() {
-  if (window._loggedIn) showPage('page-home'); else showPage('page-welcome');
+// Modal state
+window._modalImgIdx=0;
+window._modalProvider=null;
+
+window.openModal=function(p){
+  window._modalProvider=p;
+  window._modalImgIdx=0;
+  window._modalBooked=false;
+  renderModal();
+  document.getElementById('modal-overlay').classList.remove('hidden');
+};
+window.closeModal=function(e){
+  if(!e||e.target===document.getElementById('modal-overlay')) document.getElementById('modal-overlay').classList.add('hidden');
+};
+window.modalNav=function(dir){
+  const p=window._modalProvider; if(!p||!p.photos?.length) return;
+  const len=p.photos.length;
+  window._modalImgIdx=(window._modalImgIdx+dir+len)%len;
+  renderModal();
+};
+window.modalThumb=function(i){window._modalImgIdx=i;renderModal();};
+window.modalBook=function(){
+  window._modalBooked=true;
+  renderModal();
+  toast(`Request sent to ${window._modalProvider?.name||'provider'}! They'll contact you shortly. ✓`);
 };
 
-window._prevPage = 'page-home';
-window.goBack = function() { showPage(window._prevPage); };
-
-window.setActiveNav = function(id) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  const el = document.getElementById(id); if (el) el.classList.add('active');
-};
-
-window.switchAuthTab = function(tab) {
-  const li = document.getElementById('form-login');
-  const su = document.getElementById('form-signup');
-  const tli = document.getElementById('tab-li');
-  const tsu = document.getElementById('tab-su');
-  if (tab === 0) {
-    li.classList.remove('hidden'); su.classList.add('hidden');
-    tli.style.background='#12122a'; tli.style.color='#fff';
-    tsu.style.background='transparent'; tsu.style.color='#7070a0';
-  } else {
-    li.classList.add('hidden'); su.classList.remove('hidden');
-    tsu.style.background='#12122a'; tsu.style.color='#fff';
-    tli.style.background='transparent'; tli.style.color='#7070a0';
-  }
-};
-
-window.toast = function(msg, type='success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.background = type==='error' ? '#ef4444' : type==='info' ? '#27272a' : '#00d4ff';
-  t.style.color = type==='success' ? '#06060f' : '#fff';
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-};
-
-window.openLightbox = function(url) {
-  document.getElementById('lightbox-img').src = url;
-  document.getElementById('lightbox').classList.remove('hidden');
-};
-window.closeLightbox = function() { document.getElementById('lightbox').classList.add('hidden'); };
-
-// Init welcome page elements
-buildSlideshow();
-buildBgTools();
-buildCats('welcome-cats', 'welcomeCatClick');
-buildCats('home-cats', 'homeCatClick');
-const statsEl = document.querySelector('.stats-strip');
-if (statsEl) statsObserver.observe(statsEl);
-showPage('page-welcome');
+function renderModal(){
+  const p=window._modalProvider; if(!p) return;
+  const idx=window._modalImgIdx;
+  const imgs=p.photos||[];
+  const booked=window._modalBooked||false;
+  const avail=p.service; // all real providers are considered available
+  const overlay=document.getElementById('modal-overlay');
+  overlay.innerHTML=`
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-gallery">
+        ${imgs.length>0?`<img src="${imgs[idx]}" alt=""/>`:`<div class="modal-gallery-ph">📷</div>`}
+        <button class="modal-close" onclick="window.closeModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        ${imgs.length>1?`
+          <button class="modal-arr left" onclick="window.modalNav(-1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="15,18 9,12 15,6"/></svg>
+          </button>
+          <button class="modal-arr right" onclick="window.modalNav(1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9,18 15,12 9,6"/></svg>
+          </button>
+          <div class="modal-thumbs">
+            ${imgs.map((src,i)=>`<div class="modal-thumb${i===idx?' on':''}" onclick="window.modalThumb(${i})"><img src="${src}"/></div>`).join('')}
+          </div>`:''}
+      </div>
+      <div class="modal-body">
+        <div class="modal-top-row">
+          <div>
+            <div class="modal-name">${p.name}</div>
+            <div class="modal-cat-loc">${p.service||'Freelancer'}${p.location?' · '+p.location:''}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="modal-rating-row">★★★★★</div>
+            <div class="modal-rating-text">4.9 · ${Math.floor(Math.random()*400)+50} reviews</div>
+          </div>
+        </div>
+        <div class="modal-dist" style="margin-top:8px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+          ${p.distKm?p.distKm.toFixed(1)+' km away':'Nearby'}
+          <span class="modal-avail-badge yes" style="margin-left:8px;">● Available Now</span>
+        </div>
+        <p class="modal-bio">${p.bio||'Skilled professional ready to serve customers near you. Contact to learn more.'}</p>
+        ${booked
+          ?`<div class="modal-booked">✓ Request Sent! ${p.name} will contact you shortly.</div>`
+          :`<button class="modal-book-btn" onclick="window.modalBook()">Contact ${p.name}</button>`}
+      </div>
+    </div>`;
+}
 </script>
 
-<!-- ══════════════════════════════════════
-     FIREBASE MODULE SCRIPT
-══════════════════════════════════════ -->
+<!-- FIREBASE MODULE -->
 
 <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js';
-  import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
-  import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js';
+import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
+import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js';
+import{getFirestore,doc,setDoc,getDoc,collection,getDocs}from'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
+import{getStorage,ref,uploadBytes,getDownloadURL}from'https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js';
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAPKUM4Tzk0g80o3AgQRyzcGKNMZx7GJEE",
-    authDomain: "skillspot95611.firebaseapp.com",
-    projectId: "skillspot95611",
-    storageBucket: "skillspot95611.firebasestorage.app",
-    messagingSenderId: "880371869598",
-    appId: "1:880371869598:web:359ba15c51474fd595188f",
-    measurementId: "G-36ELL41V4Q"
-  };
+const app=initializeApp({
+  apiKey:"AIzaSyAPKUM4Tzk0g80o3AgQRyzcGKNMZx7GJEE",
+  authDomain:"skillspot95611.firebaseapp.com",
+  projectId:"skillspot95611",
+  storageBucket:"skillspot95611.firebasestorage.app",
+  messagingSenderId:"880371869598",
+  appId:"1:880371869598:web:359ba15c51474fd595188f"
+});
+const auth=getAuth(app),db=getFirestore(app),storage=getStorage(app);
+const $=id=>document.getElementById(id);
+let curUser=null,curProfile=null,leafMap=null,pendingPhotos=[],pendingAvatar=null;
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const storage = getStorage(app);
+function refreshNavAv(p){
+  const av=$('nav-av'); if(!av) return;
+  if(p?.avatar) av.innerHTML=`<img src="${p.avatar}"/>`;
+  else av.textContent=(p?.name||'U')[0].toUpperCase();
+}
 
-  let currentUser = null;
-  let currentProfile = null;
-  let map = null;
-  let pendingPhotos = [];
+window.doSignup=async function(){
+  const name=$('su-name').value.trim(),email=$('su-email').value.trim(),pass=$('su-pass').value;
+  if(!name||!email||!pass) return toast('Fill in all fields','error');
+  if(pass.length<6) return toast('Password must be 6+ characters','error');
+  try{
+    const cred=await createUserWithEmailAndPassword(auth,email,pass);
+    await setDoc(doc(db,'users',cred.user.uid),{uid:cred.user.uid,name,email,avatar:'',service:'',bio:'',location:'',lat:null,lng:null,photos:[],createdAt:Date.now()});
+    toast('Welcome to GigsCourt! 🎉');
+  }catch(e){toast(e.message.replace('Firebase: ',''),'error');}
+};
 
-  const $ = id => document.getElementById(id);
+window.doLogin=async function(){
+  const email=$('li-email').value.trim(),pass=$('li-pass').value;
+  if(!email||!pass) return toast('Fill in all fields','error');
+  try{await signInWithEmailAndPassword(auth,email,pass);}
+  catch(e){toast('Wrong email or password','error');}
+};
 
-  // ── SIGN UP ───────────────────────────────────────────────────
-  window.doSignup = async function() {
-    const name = $('su-name').value.trim();
-    const email = $('su-email').value.trim();
-    const pass = $('su-pass').value;
-    if (!name||!email||!pass) return toast('Fill in all fields','error');
-    if (pass.length < 6) return toast('Password must be 6+ characters','error');
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      await setDoc(doc(db,'users',cred.user.uid), {
-        uid: cred.user.uid, name, email,
-        service:'', bio:'', location:'', lat:null, lng:null, photos:[], createdAt: Date.now()
-      });
-      toast('Welcome to SkillSpot! 🎉');
-    } catch(e) { toast(e.message.replace('Firebase: ',''), 'error'); }
-  };
+window.doLogout=async function(){await signOut(auth);toast('Signed out','info');};
 
-  // ── LOGIN ─────────────────────────────────────────────────────
-  window.doLogin = async function() {
-    const email = $('li-email').value.trim();
-    const pass = $('li-pass').value;
-    if (!email||!pass) return toast('Fill in all fields','error');
-    try { await signInWithEmailAndPassword(auth, email, pass); }
-    catch(e) { toast('Wrong email or password','error'); }
-  };
+onAuthStateChanged(auth,async user=>{
+  if(user){
+    curUser=user;window._loggedIn=true;
+    const snap=await getDoc(doc(db,'users',user.uid));
+    curProfile=snap.exists()?snap.data():null;
+    $('nav-guest').classList.add('hidden');
+    $('nav-user').classList.remove('hidden');
+    refreshNavAv(curProfile);
+    $('bottom-nav').classList.remove('hidden');
+    showPage('page-search');setActiveNav('nav-h');
+  }else{
+    curUser=null;curProfile=null;window._loggedIn=false;
+    $('nav-guest').classList.remove('hidden');
+    $('nav-user').classList.add('hidden');
+    $('bottom-nav').classList.add('hidden');
+    showPage('page-welcome');
+  }
+});
 
-  // ── LOGOUT ────────────────────────────────────────────────────
-  window.doLogout = async function() { await signOut(auth); toast('Signed out','info'); };
+/* ── SEARCH ── */
+window.doSearch=async function(){
+  const term=$('hs-term').value.trim().toLowerCase();
+  const maxKm=parseFloat($('dist-slider').value);
+  const filterCat=window._filterCat||'All';
+  $('results-meta').textContent='Searching...';
+  $('providers-grid').innerHTML='';
+  navigator.geolocation.getCurrentPosition(
+    async pos=>await runSearch(term,maxKm,filterCat,pos.coords.latitude,pos.coords.longitude),
+    async()=>{toast('Using Lagos as default location','info');await runSearch(term,maxKm,filterCat,6.5244,3.3792);},
+    {timeout:8000}
+  );
+};
 
-  // ── AUTH STATE ────────────────────────────────────────────────
-  onAuthStateChanged(auth, async user => {
-    if (user) {
-      currentUser = user;
-      window._loggedIn = true;
-      const snap = await getDoc(doc(db,'users',user.uid));
-      currentProfile = snap.exists() ? snap.data() : null;
-
-      // Update nav
-      $('nav-guest').classList.add('hidden');
-      $('nav-user').classList.remove('hidden');
-      $('nav-avatar').textContent = (currentProfile?.name||'U')[0].toUpperCase();
-
-      // Show bottom nav
-      $('bottom-nav').classList.remove('hidden');
-
-      // Count providers for stat
-      try {
-        const allSnap = await getDocs(collection(db,'users'));
-        let count = 0;
-        allSnap.forEach(d => { if (d.data().service) count++; });
-        const el = $('cnt-providers');
-        if (el) { let n=0; const t=setInterval(()=>{ n=Math.min(n+1,Math.max(count,1)); el.textContent=n+'+'; if(n>=Math.max(count,1)) clearInterval(t); },40); }
-      } catch(e) {}
-
-      showPage('page-home');
-    } else {
-      currentUser = null; currentProfile = null; window._loggedIn = false;
-      $('nav-guest').classList.remove('hidden');
-      $('nav-user').classList.add('hidden');
-      $('bottom-nav').classList.add('hidden');
-      showPage('page-welcome');
-    }
+async function runSearch(term,maxKm,filterCat,uLat,uLng){
+  if(leafMap){leafMap.remove();leafMap=null;}
+  const snap=await getDocs(collection(db,'users'));
+  let providers=[];
+  snap.forEach(d=>{
+    const p=d.data();
+    if(!p.lat||!p.lng||!p.service) return;
+    const matchTerm=!term||p.service.toLowerCase().includes(term)||p.name.toLowerCase().includes(term)||(p.bio||'').toLowerCase().includes(term);
+    const matchCat=filterCat==='All'||p.service.toLowerCase().includes(filterCat.toLowerCase());
+    if(!matchTerm&&!matchCat) return;
+    const dist=calcDist(uLat,uLng,p.lat,p.lng);
+    if(dist<=maxKm) providers.push({...p,distKm:dist});
   });
+  providers.sort((a,b)=>a.distKm-b.distKm);
 
-  // ── SEARCH ────────────────────────────────────────────────────
-  window.doSearch = async function() {
-    const term = $('search-term').value.trim().toLowerCase();
-    const maxKm = parseFloat($('dist-slider').value);
-    if (!term) return toast('Enter a service to search','error');
+  $('results-meta').textContent=`${providers.length} provider${providers.length!==1?'s':''} found within ${maxKm} km`;
+  $('map-count').textContent=`${providers.length} on map`;
 
-    $('search-placeholder').classList.add('hidden');
-    $('search-results').classList.remove('hidden');
-    $('results-list').innerHTML = '<div style="color:var(--muted);padding:60px;text-align:center;grid-column:1/-1;">Finding providers near you...</div>';
-
-    navigator.geolocation.getCurrentPosition(
-      async pos => await runSearch(term, maxKm, pos.coords.latitude, pos.coords.longitude),
-      async () => { toast('Location denied — showing near Lagos','info'); await runSearch(term, maxKm, 6.5244, 3.3792); },
-      { timeout: 8000 }
-    );
-  };
-
-  async function runSearch(term, maxKm, uLat, uLng) {
-    // Init map
-    if (map) { map.remove(); map = null; }
-    map = L.map('map').setView([uLat, uLng], 13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'© OSM © CartoDB' }).addTo(map);
-    L.circleMarker([uLat,uLng], { radius:10, color:'#00d4ff', fillColor:'#00d4ff', fillOpacity:1, weight:3 }).addTo(map).bindPopup('<b style="color:#00d4ff">You are here</b>');
-    L.circle([uLat,uLng], { radius:maxKm*1000, color:'#00d4ff', fillColor:'#00d4ff', fillOpacity:.04, weight:1 }).addTo(map);
-
-    // Fetch providers
-    const snap = await getDocs(collection(db,'users'));
-    let providers = [];
-    snap.forEach(d => {
-      const p = d.data();
-      if (!p.lat||!p.lng||!p.service) return;
-      if (!p.service.toLowerCase().includes(term) && !p.bio?.toLowerCase().includes(term) && !p.name?.toLowerCase().includes(term)) return;
-      const dist = calcDist(uLat, uLng, p.lat, p.lng);
-      if (dist <= maxKm) providers.push({...p, distKm: dist});
-    });
-    providers.sort((a,b) => a.distKm - b.distKm);
-
-    $('results-count').textContent = `${providers.length} provider${providers.length!==1?'s':''} found within ${maxKm} km`;
-
-    // Map pins
-    providers.forEach(p => {
-      const icon = L.divIcon({
+  // Show map
+  if(providers.length>0){
+    $('map-section').classList.remove('hidden');
+    leafMap=L.map('map').setView([uLat,uLng],13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CartoDB'}).addTo(leafMap);
+    L.circleMarker([uLat,uLng],{radius:9,color:'#63b3ed',fillColor:'#63b3ed',fillOpacity:1,weight:3}).addTo(leafMap).bindPopup('<b style="color:#63b3ed">You are here</b>');
+    L.circle([uLat,uLng],{radius:maxKm*1000,color:'#63b3ed',fillColor:'#63b3ed',fillOpacity:.04,weight:1}).addTo(leafMap);
+    providers.forEach(p=>{
+      const pinSrc=p.avatar||p.photos?.[0]||'';
+      const icon=L.divIcon({
         className:'',
-        html:`<div style="width:42px;height:42px;background:linear-gradient(135deg,#00d4ff,#7c5cff);border-radius:50%;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:17px;color:#06060f;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.6);cursor:pointer;">${(p.service||'?')[0].toUpperCase()}</div>`,
-        iconSize:[42,42], iconAnchor:[21,21]
+        html:`<div style="width:42px;height:42px;border-radius:50%;border:3px solid #fff;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.6);background:linear-gradient(135deg,#3182ce,#63b3ed);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff;">${pinSrc?`<img src="${pinSrc}" style="width:100%;height:100%;object-fit:cover;"/>`:p.name[0]}</div>`,
+        iconSize:[42,42],iconAnchor:[21,21]
       });
-      const marker = L.marker([p.lat,p.lng],{icon}).addTo(map);
-      marker.bindPopup(`
-        <div class="pin-popup" style="min-width:200px;">
-          ${p.photos?.[0]?`<img src="${p.photos[0]}" alt="${p.name}"/>`:`<div style="height:70px;background:#1a1a35;border-radius:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;">No photos yet</div>`}
-          <div class="pname">${p.name}</div>
-          <div class="psvc">${p.service} · ${p.distKm.toFixed(1)} km away</div>
-          <button onclick="window.viewProfile('${p.uid}')">View Full Profile →</button>
-        </div>
-      `, {maxWidth:240});
+      L.marker([p.lat,p.lng],{icon}).addTo(leafMap).bindPopup(`
+        <div style="min-width:180px;">
+          ${p.photos?.[0]?`<img class="pp-img" src="${p.photos[0]}" loading="lazy"/>`:''}
+          <div class="pp-name">${p.name}</div>
+          <div class="pp-svc">${p.service} · ${p.distKm.toFixed(1)} km</div>
+          <button class="pp-btn" onclick="window._openFromMap('${p.uid}')">View Profile →</button>
+        </div>`,{maxWidth:210});
     });
-
-    if (providers.length > 0) {
-      map.fitBounds([[uLat,uLng],...providers.map(p=>[p.lat,p.lng])], {padding:[50,50]});
-    }
-    setTimeout(() => map.invalidateSize(), 300);
-
-    // Result cards
-    if (providers.length === 0) {
-      $('results-list').innerHTML = `<div style="color:var(--muted);padding:60px;text-align:center;grid-column:1/-1;"><div style="font-size:40px;margin-bottom:12px;">🔍</div>No providers found within ${maxKm} km.<br/><span style="font-size:13px;">Try a bigger distance or different search term.</span></div>`;
-      return;
-    }
-
-    $('results-list').innerHTML = providers.map(p => `
-      <div class="result-card" onclick="window.viewProfile('${p.uid}')">
-        <div style="height:160px;background:var(--surface2);overflow:hidden;">
-          ${p.photos?.[0]?`<img src="${p.photos[0]}" style="width:100%;height:100%;object-fit:cover;"/>`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:36px;">📷</div>`}
-        </div>
-        <div style="padding:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.5px;color:#fff;">${p.name}</div>
-            <div style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--cyan);font-weight:600;">${p.distKm.toFixed(1)} km</div>
-          </div>
-          <div style="color:var(--cyan);font-size:13px;margin-bottom:6px;">${p.service}</div>
-          <div style="color:var(--muted);font-size:12px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.bio||'No bio yet'}</div>
-          ${p.photos?.length>1?`<div style="display:flex;gap:4px;margin-top:10px;">${p.photos.slice(0,4).map(u=>`<img src="${u}" style="width:46px;height:46px;border-radius:8px;object-fit:cover;"/>`).join('')}${p.photos.length>4?`<div style="width:46px;height:46px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);">+${p.photos.length-4}</div>`:''}</div>`:''}
-        </div>
-      </div>
-    `).join('');
+    if(providers.length>0) leafMap.fitBounds([[uLat,uLng],...providers.map(p=>[p.lat,p.lng])],{padding:[50,50]});
+    setTimeout(()=>leafMap.invalidateSize(),300);
+  } else {
+    $('map-section').classList.add('hidden');
   }
 
-  // ── VIEW PROFILE ──────────────────────────────────────────────
-  window.viewProfile = async function(uid) {
-    window._prevPage = document.querySelector('[id^="page-"]:not(.hidden)')?.id || 'page-home';
-    showPage('page-view-profile');
-    $('view-profile-content').innerHTML = '<div style="color:var(--muted);text-align:center;padding:60px;">Loading...</div>';
-    const snap = await getDoc(doc(db,'users',uid));
-    if (!snap.exists()) { $('view-profile-content').innerHTML='<div style="color:#ef4444;text-align:center;padding:40px;">Profile not found</div>'; return; }
-    const p = snap.data();
-    const isMe = currentUser && currentUser.uid === uid;
-    $('view-profile-content').innerHTML = `
-      <div class="card" style="padding:24px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
-          <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--indigo));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#06060f;font-family:'Bebas Neue',sans-serif;flex-shrink:0;overflow:hidden;">
-            ${p.photos?.[0]?`<img src="${p.photos[0]}" style="width:100%;height:100%;object-fit:cover;"/>`:(p.name||'U')[0].toUpperCase()}
-          </div>
-          <div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:#fff;">${p.name}</div>
-            <div style="color:var(--cyan);font-size:14px;">${p.service||'No service listed'}</div>
-            ${p.location?`<div style="color:var(--muted);font-size:12px;margin-top:2px;">📍 ${p.location}</div>`:''}
+  // Store for map popup use
+  window._searchProviders=providers;
+  window._openFromMap=function(uid){
+    const p=providers.find(x=>x.uid===uid);
+    if(p) openModal(p);
+  };
+
+  // Render cards
+  if(providers.length===0){
+    $('providers-grid').innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:80px 24px;color:var(--dim);font-family:'DM Sans',sans-serif;"><div style="font-size:48px;margin-bottom:16px;">🔍</div><div style="font-size:18px;color:var(--muted);margin-bottom:8px;">No providers found</div><div style="font-size:14px;">Try a wider distance or different search term</div></div>`;
+    return;
+  }
+  $('providers-grid').innerHTML=providers.map(p=>buildCard(p)).join('');
+}
+
+function buildCard(p){
+  const imgs=p.photos||[];
+  const imgHtml=imgs.length>0
+    ?`<img src="${imgs[0]}" alt="" style="width:100%;height:100%;object-fit:cover;opacity:.9;display:block;" loading="lazy"/>`
+    :`<div class="pcard-img-ph">${p.avatar?`<img src="${p.avatar}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:3px solid rgba(99,179,237,.4);"/>`:'📷'}</div>`;
+  return `
+    <div class="pcard" onclick="window._openCard('${p.uid}')">
+      <div class="pcard-img">
+        ${imgHtml}
+        <div class="pcard-avail yes">Available</div>
+        <div class="pcard-cat">${p.service}</div>
+        ${imgs.length>1?`
+          <div class="pcard-dots">${imgs.slice(0,4).map((_,i)=>`<div class="pcard-dot${i===0?' on':''}"></div>`).join('')}</div>`:''}
+      </div>
+      <div class="pcard-body">
+        <div class="pcard-row">
+          <div class="pcard-name">${p.name}</div>
+          <div class="pcard-rating">
+            <span style="color:#FFD700;font-size:12px;">★</span>
+            <span class="pcard-stars">4.9</span>
+            <span class="pcard-revs">(${Math.floor(Math.random()*400)+30})</span>
           </div>
         </div>
-        ${p.bio?`<p style="color:#a0a0c0;font-size:14px;line-height:1.7;margin-bottom:16px;">${p.bio}</p>`:''}
-        ${isMe
-          ? `<button class="btn-ghost" style="padding:10px 20px;font-size:13px;" onclick="showPage('page-profile');setActiveNav('nav-p')">Edit My Profile</button>`
-          : `<button class="btn-primary" style="padding:11px 24px;font-size:14px;" onclick="window.contactProvider('${p.name}')">Contact ${p.name.split(' ')[0]}</button>`
-        }
+        <p class="pcard-bio">${p.bio||'Skilled professional ready to serve you.'}</p>
+        <div class="pcard-loc">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+          ${p.distKm.toFixed(1)} km · ${p.location||'Nearby'}
+        </div>
       </div>
-      ${p.photos?.length
-        ? `<div class="card" style="padding:16px;"><div style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:12px;">Portfolio · ${p.photos.length} photo${p.photos.length!==1?'s':''}</div><div class="photo-grid">${p.photos.map((url,i)=>`<img src="${url}" alt="Work ${i+1}" onclick="openLightbox('${url}')" loading="lazy"/>`).join('')}</div></div>`
-        : `<div class="card" style="padding:40px;text-align:center;color:var(--muted);">📷 No portfolio photos yet</div>`
-      }
-    `;
-  };
+    </div>`;
+}
 
-  window.contactProvider = function(name) {
-    if (!currentUser) { showPage('page-auth'); return; }
-    toast(`Message sent to ${name}! They'll be notified ✅`);
-  };
+window._openCard=function(uid){
+  const p=(window._searchProviders||[]).find(x=>x.uid===uid);
+  if(p) openModal(p);
+};
 
-  // ── MY PROFILE ────────────────────────────────────────────────
-  window.loadMyProfile = async function() {
-    if (!currentUser) return;
-    const snap = await getDoc(doc(db,'users',currentUser.uid));
-    if (!snap.exists()) return;
-    const p = snap.data(); currentProfile = p;
-    $('pa-name').textContent = p.name||'';
-    $('pa-service').textContent = p.service||'No service set yet';
-    $('pa-location').textContent = p.location ? '📍 '+p.location : '';
-    $('pa-bio').textContent = p.bio||'';
-    $('edit-service').value = p.service||'';
-    $('edit-bio').value = p.bio||'';
-    $('edit-location').value = p.location||'';
-    const av = $('pa-avatar');
-    av.innerHTML = p.photos?.[0] ? `<img src="${p.photos[0]}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>` : (p.name||'U')[0].toUpperCase();
-    $('pa-photos').innerHTML = p.photos?.length
-      ? p.photos.map((url,i)=>`<img src="${url}" alt="Photo ${i+1}" onclick="openLightbox('${url}')" loading="lazy"/>`).join('')
-      : '<div style="color:var(--muted);font-size:13px;padding:20px;text-align:center;grid-column:1/-1;">No photos yet — add some below</div>';
-  };
+/* ── MY PROFILE ── */
+window.loadMyProfile=async function(){
+  if(!curUser) return;
+  const snap=await getDoc(doc(db,'users',curUser.uid));
+  if(!snap.exists()) return;
+  const p=snap.data(); curProfile=p;
+  const av=$('prof-av');
+  if(p.avatar) av.innerHTML=`<img src="${p.avatar}"/>`;
+  else av.textContent=(p.name||'U')[0].toUpperCase();
+  $('prof-name').textContent=p.name||'';
+  $('prof-svc-wrap').innerHTML=p.service?`<div class="prof-svc-badge">⚡ ${p.service}</div>`:`<div style="font-size:12px;color:var(--dim);font-family:'DM Sans',sans-serif;">No service set — add one in Edit Profile</div>`;
+  $('prof-bio').textContent=p.bio||'';
+  if(p.location){$('prof-loc-text').textContent=p.location;$('prof-loc').classList.remove('hidden');}
+  else $('prof-loc').classList.add('hidden');
+  $('prof-photo-count').textContent=p.photos?.length||0;
+  const onMapEl=$('prof-on-map');
+  onMapEl.textContent=p.lat?'Yes':'No'; onMapEl.style.color=p.lat?'#48c78e':'#f87171';
+  $('edit-service').value=p.service||'';
+  $('edit-bio').value=p.bio||'';
+  $('edit-location').value=p.location||'';
+  const grid=$('my-photo-grid');
+  grid.innerHTML=p.photos?.length
+    ?p.photos.map((url,i)=>`<img src="${url}" alt="Photo ${i+1}" onclick="openLightbox('${url}')" loading="lazy"/>`).join('')
+    :`<div class="grid-empty">No photos yet<br/><span style="color:#4a5568;font-size:12px;">Tap "+ Add Work Photos" to upload your portfolio</span></div>`;
+  refreshNavAv(p);
+};
 
-  window.getMyLocation = function() {
-    navigator.geolocation.getCurrentPosition(async pos => {
-      $('edit-location').value = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
-      await setDoc(doc(db,'users',currentUser.uid), { lat: pos.coords.latitude, lng: pos.coords.longitude }, { merge: true });
-      toast('Location saved! You now appear on the map ✅');
-    }, () => toast('Location access denied','error'));
-  };
+window.handleAvatarSelect=function(input){
+  const file=input.files[0]; if(!file) return;
+  pendingAvatar=file;
+  const url=URL.createObjectURL(file);
+  $('prof-av').innerHTML=`<img src="${url}"/>`;
+  refreshNavAv({avatar:url,name:curProfile?.name});
+  toast('Photo ready — tap Save Changes to upload','info');
+  switchProfileTab('edit');
+};
 
-  window.handlePhotoSelect = function(input) {
-    pendingPhotos = Array.from(input.files);
-    $('photo-previews').innerHTML = pendingPhotos.map((f,i) => `
-      <div style="position:relative;">
-        <img src="${URL.createObjectURL(f)}" style="width:72px;height:72px;border-radius:10px;object-fit:cover;"/>
-        <div onclick="removePhoto(${i})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#fff;">✕</div>
-      </div>
-    `).join('');
-  };
+window.handlePhotoSelect=function(input){
+  pendingPhotos=Array.from(input.files);
+  $('photo-previews').innerHTML=pendingPhotos.map((f,i)=>`
+    <div class="prev-item">
+      <img src="${URL.createObjectURL(f)}"/>
+      <div class="prev-rm" onclick="window._rmPhoto(${i})">✕</div>
+    </div>`).join('');
+  if(pendingPhotos.length) $('pending-save-bar').classList.remove('hidden');
+  else $('pending-save-bar').classList.add('hidden');
+};
+window._rmPhoto=function(i){pendingPhotos.splice(i,1);handlePhotoSelect({files:pendingPhotos});};
 
-  window.removePhoto = function(i) {
-    pendingPhotos.splice(i,1);
-    $('photo-previews').innerHTML = pendingPhotos.map((f,j) => `
-      <div style="position:relative;">
-        <img src="${URL.createObjectURL(f)}" style="width:72px;height:72px;border-radius:10px;object-fit:cover;"/>
-        <div onclick="removePhoto(${j})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#fff;">✕</div>
-      </div>
-    `).join('');
-  };
+window.getMyLocation=function(){
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    $('edit-location').value=`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+    await setDoc(doc(db,'users',curUser.uid),{lat:pos.coords.latitude,lng:pos.coords.longitude},{merge:true});
+    toast('Location saved ✅');
+  },()=>toast('Location access denied','error'));
+};
 
-  window.saveProfile = async function() {
-    if (!currentUser) return;
-    const service = $('edit-service').value.trim();
-    const bio = $('edit-bio').value.trim();
-    const location = $('edit-location').value.trim();
-    toast('Saving...','info');
-
-    // Upload photos
-    let newURLs = [];
-    for (const file of pendingPhotos) {
-      try {
-        const r = ref(storage, `photos/${currentUser.uid}/${Date.now()}_${file.name}`);
-        await uploadBytes(r, file);
-        newURLs.push(await getDownloadURL(r));
-      } catch(e) { toast('Photo upload failed: '+e.message,'error'); }
-    }
-
-    // Geocode location
-    let lat = currentProfile?.lat||null, lng = currentProfile?.lng||null;
-    if (location && location !== currentProfile?.location) {
-      if (location.match(/^-?\d+\.?\d*,\s*-?\d+\.?\d*$/)) {
-        [lat,lng] = location.split(',').map(Number);
-      } else {
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`);
-          const j = await res.json();
-          if (j.length) { lat=parseFloat(j[0].lat); lng=parseFloat(j[0].lon); }
-        } catch(e) {}
-      }
-    }
-
-    await setDoc(doc(db,'users',currentUser.uid), {
-      service, bio, location, lat, lng,
-      photos: [...(currentProfile?.photos||[]), ...newURLs]
-    }, { merge: true });
-
-    pendingPhotos = [];
-    $('photo-previews').innerHTML = '';
-    $('photo-input').value = '';
-    toast('Profile saved! ✅');
-    loadMyProfile();
-  };
-
-  function calcDist(lat1,lon1,lat2,lon2) {
-    const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+window.saveProfile=async function(){
+  if(!curUser) return;
+  const service=$('edit-service').value.trim(),bio=$('edit-bio').value.trim(),location=$('edit-location').value.trim();
+  toast('Saving...','info');
+  let avatarURL=curProfile?.avatar||'';
+  if(pendingAvatar){
+    try{const r=ref(storage,`avatars/${curUser.uid}`);await uploadBytes(r,pendingAvatar);avatarURL=await getDownloadURL(r);pendingAvatar=null;}
+    catch(e){toast('Avatar upload failed','error');}
   }
+  let newURLs=[];
+  for(const file of pendingPhotos){
+    try{const r=ref(storage,`photos/${curUser.uid}/${Date.now()}_${file.name}`);await uploadBytes(r,file);newURLs.push(await getDownloadURL(r));}
+    catch(e){toast('Photo upload failed','error');}
+  }
+  let lat=curProfile?.lat||null,lng=curProfile?.lng||null;
+  if(location&&location!==curProfile?.location){
+    if(location.match(/^-?\d+\.?\d*,\s*-?\d+\.?\d*$/)){[lat,lng]=location.split(',').map(Number);}
+    else{try{const res=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`);const j=await res.json();if(j.length){lat=parseFloat(j[0].lat);lng=parseFloat(j[0].lon);}}catch(e){}}
+  }
+  await setDoc(doc(db,'users',curUser.uid),{service,bio,location,lat,lng,avatar:avatarURL,photos:[...(curProfile?.photos||[]),...newURLs]},{merge:true});
+  pendingPhotos=[];$('photo-previews').innerHTML='';$('photo-input').value='';$('pending-save-bar').classList.add('hidden');
+  toast('Profile saved ✅');loadMyProfile();switchProfileTab('grid');
+};
+
+function calcDist(lat1,lon1,lat2,lon2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
 </script>
 
 </body>
