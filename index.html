@@ -1,267 +1,188 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>GigsCourt</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>GigsCourt — Find Local Services</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <!-- Leaflet CSS -->
 
-<style>
-body{font-family:sans-serif;margin:0}
-#map{height:400px}
-.provider{border:1px solid #ddd;padding:10px;margin:10px}
-</style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Google Fonts -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+
+  <!-- App Stylesheet -->
+
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
 
-<h2>GigsCourt</h2>
+  <!-- ─── SPLASH / AUTH SCREEN ─── -->
 
-<div id="auth">
-<input id="email" placeholder="email">
-<input id="password" type="password" placeholder="password">
-<button onclick="signup()">Join Free</button>
-<button onclick="login()">Sign In</button>
+  <div id="authScreen" class="screen active">
+    <div class="auth-bg">
+      <div class="auth-blob blob1"></div>
+      <div class="auth-blob blob2"></div>
+      <div class="auth-blob blob3"></div>
+    </div>
+    <div class="auth-container">
+      <div class="brand">
+        <span class="brand-icon">◈</span>
+        <h1 class="brand-name">GigsCourt</h1>
+        <p class="brand-tagline">Discover skilled people around you</p>
+      </div>
+
+```
+  <!-- Tab toggle -->
+  <div class="auth-tabs">
+    <button class="auth-tab active" data-tab="login">Sign In</button>
+    <button class="auth-tab" data-tab="signup">Create Account</button>
+  </div>
+
+  <!-- Login Form -->
+  <div id="loginForm" class="auth-form active">
+    <div class="field-group">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="you@example.com" />
+    </div>
+    <div class="field-group">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" />
+    </div>
+    <p class="auth-error" id="loginError"></p>
+    <button class="btn-primary" id="loginBtn">Sign In</button>
+  </div>
+
+  <!-- Signup Form -->
+  <div id="signupForm" class="auth-form">
+    <div class="field-group">
+      <label>Full Name</label>
+      <input type="text" id="signupName" placeholder="Jane Smith" />
+    </div>
+    <div class="field-group">
+      <label>Email</label>
+      <input type="email" id="signupEmail" placeholder="you@example.com" />
+    </div>
+    <div class="field-group">
+      <label>Password</label>
+      <input type="password" id="signupPassword" placeholder="min 6 characters" />
+    </div>
+    <p class="auth-error" id="signupError"></p>
+    <button class="btn-primary" id="signupBtn">Create Account</button>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- ─── MAIN APP SCREEN ─── -->
+
+  <div id="appScreen" class="screen">
+
+```
+<!-- Top Bar -->
+<header class="top-bar">
+  <div class="top-bar-inner">
+    <span class="top-brand">◈ GigsCourt</span>
+    <button class="icon-btn" id="logoutBtn" title="Sign out">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ── HOME TAB ── -->
+<div id="homeTab" class="tab-content active">
+  <div class="home-hero">
+    <h2 class="hero-title">Find services<br/><em>near you</em></h2>
+    <p class="hero-sub">Tap Search to discover local professionals</p>
+  </div>
+
+  <!-- Category chips -->
+  <div class="section-label">Browse Categories</div>
+  <div class="category-scroll" id="categoryChips"></div>
+
+  <!-- Notification panel for providers -->
+  <div class="section-label" id="notifLabel" style="display:none">Live Requests</div>
+  <div id="providerNotifications"></div>
+
+  <!-- Nearby quick list -->
+  <div class="section-label">Nearby Providers</div>
+  <div id="nearbyList" class="card-list"></div>
 </div>
 
-<hr>
-
-<h3>Create / Edit Profile</h3>
-
-<input id="name" placeholder="name">
-
-<input id="address" placeholder="address">
-<button onclick="geocodeAddress()">Set Location</button>
-
-<input id="primaryService" placeholder="primary service">
-
-<input id="customService" placeholder="custom service">
-
-<input type="file" id="profilePhoto">
-
-<input type="file" id="workPhotos" multiple>
-
-<button onclick="saveProfile()">Save Profile</button>
-
-<hr>
-
-<h3>Search Providers</h3>
-
-<input id="searchService" placeholder="service">
-<input type="range" id="radius" min="1" max="50" value="10">
-<span id="radiusValue">10km</span>
-
-<button onclick="searchProviders()">Search</button>
-
-<div id="results"></div>
-
-<hr>
-
-<div id="map"></div>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-apiKey: "YOUR KEY",
-authDomain: "skillspot95611.firebaseapp.com",
-projectId: "skillspot95611",
-};
-
-const app = initializeApp(firebaseConfig)
-const auth = getAuth(app)
-const db = getFirestore(app)
-
-window.signup = async () => {
-
-let email = document.getElementById("email").value
-let pass = document.getElementById("password").value
-
-await createUserWithEmailAndPassword(auth,email,pass)
-
-alert("Account created")
-
-}
-
-window.login = async () => {
-
-let email = document.getElementById("email").value
-let pass = document.getElementById("password").value
-
-await signInWithEmailAndPassword(auth,email,pass)
-
-alert("Logged in")
-
-}
-
-let map = L.map("map").setView([6.45,3.39],12)
-
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map)
-
-let userLat
-let userLng
-
-window.geocodeAddress = async () => {
-
-let address = document.getElementById("address").value
-
-let url = `https://nominatim.openstreetmap.org/search?format=json&q=${address}`
-
-let res = await fetch(url)
-
-let data = await res.json()
-
-userLat = data[0].lat
-userLng = data[0].lon
-
-L.marker([userLat,userLng]).addTo(map)
-
-}
-
-async function uploadToCloudinary(file){
-
-let form = new FormData()
-
-form.append("file",file)
-
-form.append("upload_preset","YOUR_PRESET")
-
-let res = await fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload",{method:"POST",body:form})
-
-let data = await res.json()
-
-return data.secure_url
-
-}
-
-window.saveProfile = async () => {
-
-let user = auth.currentUser
-
-let profilePhoto = document.getElementById("profilePhoto").files[0]
-
-let workFiles = document.getElementById("workPhotos").files
-
-let profileUrl = await uploadToCloudinary(profilePhoto)
-
-let workUrls = []
-
-for(let file of workFiles){
-
-let url = await uploadToCloudinary(file)
-
-workUrls.push(url)
-
-}
-
-await setDoc(doc(db,"users",user.uid),{
-
-name:document.getElementById("name").value,
-
-address:document.getElementById("address").value,
-
-lat:parseFloat(userLat),
-
-lng:parseFloat(userLng),
-
-primaryService:document.getElementById("primaryService").value,
-
-customService:document.getElementById("customService").value,
-
-profilePhoto:profileUrl,
-
-workPhotos:workUrls,
-
-rating:0,
-
-jobsCompleted:0,
-
-verified:false
-
-})
-
-alert("Profile saved")
-
-}
-
-window.searchProviders = async () => {
-
-let service = document.getElementById("searchService").value.toLowerCase()
-
-let radius = document.getElementById("radius").value
-
-let snapshot = await getDocs(collection(db,"users"))
-
-let resultsDiv = document.getElementById("results")
-
-resultsDiv.innerHTML=""
-
-snapshot.forEach(docu=>{
-
-let u = docu.data()
-
-let dist = getDistance(userLat,userLng,u.lat,u.lng)
-
-if(dist <= radius){
-
-if(u.primaryService.toLowerCase().includes(service) || (u.customService && u.customService.toLowerCase().includes(service))){
-
-let div=document.createElement("div")
-
-div.className="provider"
-
-div.innerHTML=`
-
-<img src="${u.profilePhoto}" width="80">
-
-<h4>${u.name}</h4>
-
-<p>${u.primaryService}</p>
-
-<p>${dist.toFixed(1)} km away</p>
-
-`
-
-resultsDiv.appendChild(div)
-
-L.marker([u.lat,u.lng]).addTo(map)
-
-}
-
-}
-
-})
-
-}
-
-function getDistance(lat1,lon1,lat2,lon2){
-
-let R=6371
-
-let dLat=(lat2-lat1)*Math.PI/180
-
-let dLon=(lon2-lon1)*Math.PI/180
-
-let a=
-
-Math.sin(dLat/2)*Math.sin(dLat/2)+
-
-Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-
-Math.sin(dLon/2)*Math.sin(dLon/2)
-
-let c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))
-
-return R*c
-
-}
-
-</script>
+<!-- ── SEARCH TAB ── -->
+<div id="searchTab" class="tab-content">
+  <div class="search-header">
+    <div class="search-bar-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="barber, plumber, tutor…" />
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">Radius: <strong id="radiusValue">10 km</strong></span>
+      <input type="range" id="radiusSlider" min="1" max="50" value="10" class="radius-slider" />
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div id="mapContainer" class="map-container">
+    <div id="map"></div>
+    <button class="map-locate-btn" id="locateMeBtn">📍 My Location</button>
+  </div>
+
+  <!-- Results -->
+  <div id="searchResults" class="card-list"></div>
+</div>
+
+<!-- ── PROFILE TAB ── -->
+<div id="profileTab" class="tab-content">
+  <div id="profileView"></div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-tab="home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Home</span>
+  </button>
+  <button class="nav-btn" data-tab="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span>Search</span>
+  </button>
+  <button class="nav-btn" data-tab="profile">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Profile</span>
+  </button>
+</nav>
+```
+
+  </div>
+
+  <!-- ─── PROVIDER PROFILE MODAL ─── -->
+
+  <div id="profileModal" class="modal-overlay">
+    <div class="modal-sheet">
+      <button class="modal-close" id="closeModal">✕</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- ─── LOADING OVERLAY ─── -->
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loader-ring"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+
+  <script type="module">
+    import { initApp } from './App.js';
+    initApp();
+  </script>
 
 </body>
 </html>
