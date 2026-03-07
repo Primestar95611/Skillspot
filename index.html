@@ -3,444 +3,1180 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>GigsCourt</title>
-  <meta name="theme-color" content="#FF385C" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; background: #F8F8FA; font-family: 'DM Sans', sans-serif; overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
-    #root { min-height: 100dvh; display: flex; flex-direction: column; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .gc-spin { animation: spin 0.75s linear infinite; }
-    .gc-fade { animation: fadeUp 0.3s ease both; }
-    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-    .gc-skel { background: linear-gradient(90deg,#f0f0f5 25%,#e4e4eb 50%,#f0f0f5 75%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
-    input[type=range] { -webkit-appearance: none; height: 4px; border-radius: 9999px; outline: none; cursor: pointer; width: 100%; display: block; }
-    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2.5px solid #FF385C; box-shadow: 0 2px 8px rgba(255,56,92,0.4); }
-    input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2.5px solid #FF385C; }
-    * { -webkit-tap-highlight-color: transparent; }
+    :root {
+      --red: #FF385C;
+      --red-light: #FF6B85;
+      --red-dark: #E0203E;
+      --green: #00C48C;
+      --dark: #1A1A2E;
+      --gray: #F7F7F7;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #FFFFFF;
+      margin: 0;
+      padding: 0;
+      overscroll-behavior: none;
+    }
+    h1, h2, h3, .brand { font-family: 'Syne', sans-serif; }
+
+```
+/* Scrollbar hide */
+::-webkit-scrollbar { display: none; }
+* { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Range slider */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: #E5E7EB;
+  border-radius: 99px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--red);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255,56,92,0.4);
+}
+input[type=range]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--red);
+  cursor: pointer;
+  border: none;
+}
+
+/* Toggle switch */
+.toggle-track {
+  width: 52px; height: 28px;
+  border-radius: 99px;
+  transition: background 0.3s;
+  position: relative;
+  cursor: pointer;
+}
+.toggle-thumb {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 3px;
+  transition: left 0.3s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* Card hover */
+.provider-card { transition: transform 0.2s, box-shadow 0.2s; }
+.provider-card:active { transform: scale(0.97); }
+
+/* Bottom nav */
+.bottom-nav { box-shadow: 0 -1px 0 rgba(0,0,0,0.06); }
+
+/* Pulse dot */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+.pulse { animation: pulse-dot 1.6s ease-in-out infinite; }
+
+/* Fade in */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.35s ease forwards; }
+
+/* Map placeholder */
+.map-grid {
+  background:
+    linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-color: #f0f4f8;
+}
+
+/* Image overlay gradient */
+.img-gradient {
+  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%);
+}
+```
+
   </style>
 </head>
 <body>
-  <div id="root"></div>
 
-  <script type="text/babel" data-presets="react">
+<div id="root"></div>
 
-    // ─────────────────────────────────────────────────────
-    // GIGSCOURT — Single File App
-    // All components defined here. No external JS imports.
-    // Babel transforms JSX inline — zero CORS risk on Vercel.
-    // ─────────────────────────────────────────────────────
+<script type="text/babel">
+// ─────────────────────────────────────────────
+//  FIREBASE / CLOUDINARY / MAPS SHELLS
+//  Connect your real services here later.
+// ─────────────────────────────────────────────
 
-    const { useState, useEffect, useCallback, useRef, Fragment } = React
+/** Shell: Firebase Login — connect Firebase Auth later */
+function handleFirebaseLogin(email, password) {
+  // TODO: import { signInWithEmailAndPassword } from 'firebase/auth';
+  // return signInWithEmailAndPassword(auth, email, password);
+  console.log('[Firebase] Login called with:', email);
+}
 
-    // ── Constants ────────────────────────────────────────
-    const RED   = '#FF385C'
-    const FD    = "'Clash Display', sans-serif"
-    const FB    = "'DM Sans', sans-serif"
-    const btnR  = { background:RED, color:'#fff', border:'none', borderRadius:9999, fontFamily:FB, fontWeight:700, cursor:'pointer', boxShadow:'0 4px 14px rgba(255,56,92,0.35)' }
+/** Shell: Firebase Signup — connect Firebase Auth later */
+function handleFirebaseSignup(email, password, displayName) {
+  // TODO: import { createUserWithEmailAndPassword } from 'firebase/auth';
+  // return createUserWithEmailAndPassword(auth, email, password);
+  console.log('[Firebase] Signup called with:', email, displayName);
+}
 
-    // ── Data ─────────────────────────────────────────────
-    const PROVIDERS = [
-      { id:1, name:'Elite Cuts',     area:'Sabo Auchi', km:1.2,  stars:4.9, reviews:214, cat:'Barber',  img:'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&q=80', verified:true,  open:true  },
-      { id:2, name:'Glam Studio NG', area:'Iyamho',     km:3.7,  stars:4.7, reviews:98,  cat:'Stylist', img:'https://images.unsplash.com/photo-1560066984-138daaa0ce8f?w=400&q=80', verified:true,  open:true  },
-      { id:3, name:'Stitch & Silk',  area:'Fugar',      km:6.1,  stars:4.5, reviews:61,  cat:'Tailor',  img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80', verified:false, open:true  },
-      { id:4, name:'Fade King',      area:'Auchi Town', km:8.4,  stars:4.6, reviews:177, cat:'Barber',  img:'https://images.unsplash.com/photo-1521490683712-35a1cb235d1c?w=400&q=80', verified:true,  open:false },
-      { id:5, name:'Gloss & Glow',   area:'Jattu',      km:12.0, stars:4.8, reviews:43,  cat:'Makeup',  img:'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&q=80', verified:false, open:true  },
-      { id:6, name:'Royal Tailors',  area:'Uzairue',    km:15.5, stars:4.4, reviews:29,  cat:'Tailor',  img:'https://images.unsplash.com/photo-1594938298603-c8148c4b4691?w=400&q=80', verified:true,  open:true  },
-    ]
+/** Shell: Cloudinary Upload — connect Cloudinary SDK later */
+async function uploadToCloudinary(imageFile) {
+  // TODO: const formData = new FormData();
+  // formData.append('file', imageFile);
+  // formData.append('upload_preset', 'YOUR_PRESET');
+  // const res = await fetch('https://api.cloudinary.com/v1_1/YOUR_CLOUD/image/upload', { method:'POST', body: formData });
+  // return res.json();
+  console.log('[Cloudinary] Upload called with:', imageFile?.name);
+}
 
-    const PROFILE = {
-      name:'Elite Cuts', area:'Sabo Auchi', cat:'Barber', stars:4.9, reviews:214,
-      bio:'Sharp fades. Clean lines. Premium cuts for the modern gentleman.',
-      jobs:847, followers:1203, verified:true,
-      avatar:'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=200&q=80',
-    }
+/** Shell: Google Maps Init — connect Maps JS API later */
+function initGoogleMaps(mapContainerRef, centerCoords) {
+  // TODO: const map = new google.maps.Map(mapContainerRef.current, {
+  //   center: centerCoords,
+  //   zoom: 14,
+  //   styles: CUSTOM_MAP_STYLES,
+  // });
+  console.log('[GoogleMaps] initGoogleMaps called', centerCoords);
+}
 
-    const PORTFOLIO = [
-      { id:1, url:'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=300&q=80', featured:true  },
-      { id:2, url:'https://images.unsplash.com/photo-1521490683712-35a1cb235d1c?w=300&q=80', featured:false },
-      { id:3, url:'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=300&q=80', featured:false },
-      { id:4, url:'https://images.unsplash.com/photo-1534297635766-a262cdcb8ee4?w=300&q=80', featured:false },
-      { id:5, url:'https://images.unsplash.com/photo-1605497788044-5a32c7078486?w=300&q=80', featured:false },
-      { id:6, url:'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=300&q=80', featured:false },
-    ]
+/** Shell: Availability Ping — notify nearby users when provider goes online */
+function sendAvailabilityPing(providerId, coords, serviceType) {
+  // TODO: Use Firebase FCM or a Cloud Function to push notifications
+  // to users within radius who have this service type favorited.
+  // await fetch('/api/ping', { method:'POST', body: JSON.stringify({ providerId, coords, serviceType }) });
+  console.log('[Ping] Availability ping sent for provider:', providerId);
+}
 
-    // ════════════════════════════════════════════════════
-    // EMPTY SHELLS — wire these up when ready
-    // ════════════════════════════════════════════════════
+// ─────────────────────────────────────────────
+//  MOCK DATA
+// ─────────────────────────────────────────────
 
-    function handleFirebaseLogin() {
-      // EMPTY SHELL: Firebase Auth
-      // import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
-      // signInWithPopup(auth, new GoogleAuthProvider())
-      alert('Booking coming soon! 🎉')
-    }
+const PROVIDERS = [
+  {
+    id: 1,
+    name: 'Marcus Okafor',
+    service: 'Master Barber',
+    rating: 4.9,
+    reviews: 312,
+    distance: 0.8,
+    available: true,
+    color: '#1A1A2E',
+    avatar: 'https://i.pravatar.cc/300?img=12',
+    cover: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&q=80',
+    bio: 'Top-rated barber with 8 years of experience. Specializing in fades, line-ups, and beard sculpting. Walk-ins welcome, bookings preferred.',
+    portfolio: [
+      'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=300&q=80',
+      'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=300&q=80',
+      'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=300&q=80',
+      'https://images.unsplash.com/photo-1560472355-536de3962603?w=300&q=80',
+      'https://images.unsplash.com/photo-1516914943479-89db7d9ae7f2?w=300&q=80',
+      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=300&q=80',
+    ],
+    price: '$25–$60',
+  },
+  {
+    id: 2,
+    name: 'Aisha Koroma',
+    service: 'Nail Artist',
+    rating: 4.8,
+    reviews: 198,
+    distance: 1.4,
+    available: true,
+    color: '#C2185B',
+    avatar: 'https://i.pravatar.cc/300?img=47',
+    cover: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&q=80',
+    bio: 'Award-winning nail artist. Gel, acrylics, nail art designs, and manicures. Bringing your nail dreams to life since 2017.',
+    portfolio: [
+      'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&q=80',
+      'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&q=80',
+      'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&q=80',
+      'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?w=300&q=80',
+      'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&q=80',
+      'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?w=300&q=80',
+    ],
+    price: '$30–$80',
+  },
+  {
+    id: 3,
+    name: 'Diego Reyes',
+    service: 'Auto Mechanic',
+    rating: 4.7,
+    reviews: 456,
+    distance: 2.3,
+    available: false,
+    color: '#374151',
+    avatar: 'https://i.pravatar.cc/300?img=33',
+    cover: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=600&q=80',
+    bio: 'Certified mechanic with 15 years experience. On-site repairs, diagnostics, oil changes. Serving your neighborhood — no garage needed.',
+    portfolio: [
+      'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=300&q=80',
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80',
+      'https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=300&q=80',
+      'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=300&q=80',
+      'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=300&q=80',
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80',
+    ],
+    price: '$50–$200',
+  },
+  {
+    id: 4,
+    name: 'Fatima Al-Hassan',
+    service: 'Tailor & Seamstress',
+    rating: 5.0,
+    reviews: 87,
+    distance: 3.1,
+    available: true,
+    color: '#6D28D9',
+    avatar: 'https://i.pravatar.cc/300?img=45',
+    cover: 'https://images.unsplash.com/photo-1558171813-db3f694c8db3?w=600&q=80',
+    bio: 'Bespoke tailoring and alterations. Custom outfits, wedding attire, and repairs done with precision. 10+ years crafting elegance.',
+    portfolio: [
+      'https://images.unsplash.com/photo-1558171813-db3f694c8db3?w=300&q=80',
+      'https://images.unsplash.com/photo-1562157873-818bc0726f68?w=300&q=80',
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80',
+      'https://images.unsplash.com/photo-1558171813-db3f694c8db3?w=300&q=80',
+      'https://images.unsplash.com/photo-1562157873-818bc0726f68?w=300&q=80',
+      'https://images.unsplash.com/photo-1558171813-db3f694c8db3?w=300&q=80',
+    ],
+    price: '$40–$150',
+  },
+  {
+    id: 5,
+    name: 'James Osei',
+    service: 'Personal Trainer',
+    rating: 4.6,
+    reviews: 224,
+    distance: 4.7,
+    available: true,
+    color: '#065F46',
+    avatar: 'https://i.pravatar.cc/300?img=57',
+    cover: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80',
+    bio: 'Certified PT & nutrition coach. Home sessions, park workouts, online plans. Helping you build strength and confidence every rep.',
+    portfolio: [
+      'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=300&q=80',
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&q=80',
+      'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=300&q=80',
+      'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=300&q=80',
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&q=80',
+      'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=300&q=80',
+    ],
+    price: '$40–$90/hr',
+  },
+  {
+    id: 6,
+    name: 'Priya Nair',
+    service: 'Makeup Artist',
+    rating: 4.9,
+    reviews: 341,
+    distance: 5.9,
+    available: false,
+    color: '#B45309',
+    avatar: 'https://i.pravatar.cc/300?img=49',
+    cover: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80',
+    bio: 'Bridal, editorial, and everyday glam. Film & TV-trained. Bringing out your best look for every occasion — beauty on your terms.',
+    portfolio: [
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=300&q=80',
+      'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&q=80',
+      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=300&q=80',
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=300&q=80',
+      'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&q=80',
+      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=300&q=80',
+    ],
+    price: '$60–$200',
+  },
+];
 
-    function uploadToCloudinary(file) {
-      // EMPTY SHELL: Cloudinary Upload
-      // const fd = new FormData()
-      // fd.append('file', file)
-      // fd.append('upload_preset', 'YOUR_PRESET')
-      // return fetch('https://api.cloudinary.com/v1_1/YOUR_CLOUD/image/upload', { method:'POST', body:fd }).then(r => r.json())
-      return Promise.resolve({ url: URL.createObjectURL(file) })
-    }
+const MAP_PINS = [
+  { id: 1, x: '22%', y: '35%', available: true, name: 'Marcus' },
+  { id: 2, x: '55%', y: '28%', available: true, name: 'Aisha' },
+  { id: 3, x: '70%', y: '55%', available: false, name: 'Diego' },
+  { id: 4, x: '38%', y: '62%', available: true, name: 'Fatima' },
+  { id: 5, x: '15%', y: '68%', available: true, name: 'James' },
+  { id: 6, x: '80%', y: '35%', available: false, name: 'Priya' },
+];
 
-    function RenderGoogleMap({ lat, lng, radius }) {
-      // EMPTY SHELL: Google Maps
-      // Replace this div with @react-google-maps/api component
-      return (
-        <div style={{ background:'#E8EDF2', borderRadius:16, padding:40, textAlign:'center', color:'#9999AA' }}>
-          <div style={{ fontSize:40, marginBottom:8 }}>🗺️</div>
-          <p style={{ margin:0, fontFamily:FD, fontWeight:700, color:'#0D0D12', fontSize:16 }}>Map View</p>
-          <p style={{ margin:'6px 0 0', fontFamily:FB, fontSize:13 }}>Google Maps connects here · {radius}km radius</p>
+// ─────────────────────────────────────────────
+//  ICONS (inline SVG components)
+// ─────────────────────────────────────────────
+const Icon = {
+  Home: ({size=24, color='currentColor'}) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+  ),
+  Search: ({size=24, color='currentColor'}) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+  ),
+  Map: ({size=24, color='currentColor'}) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+    </svg>
+  ),
+  User: ({size=24, color='currentColor'}) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+    </svg>
+  ),
+  Bell: ({size=24, color='currentColor'}) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+  ),
+  Star: ({size=16, filled=true}) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#FFB800' : 'none'} stroke="#FFB800" strokeWidth="2">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+  ),
+  ArrowLeft: ({size=24, color='currentColor'}) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+    </svg>
+  ),
+  Location: ({size=16, color='currentColor'}) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+    </svg>
+  ),
+  Camera: ({size=20, color='currentColor'}) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+    </svg>
+  ),
+  Settings: ({size=22, color='currentColor'}) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+    </svg>
+  ),
+  Share: ({size=20, color='currentColor'}) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+    </svg>
+  ),
+  Heart: ({size=20, color='currentColor', filled=false}) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#FF385C' : 'none'} stroke={filled ? '#FF385C' : color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+  ),
+};
+
+// ─────────────────────────────────────────────
+//  TOGGLE SWITCH COMPONENT
+// ─────────────────────────────────────────────
+function ToggleSwitch({ value, onChange }) {
+  return (
+    <div
+      className="toggle-track"
+      style={{ background: value ? 'var(--green)' : '#D1D5DB' }}
+      onClick={() => onChange(!value)}
+    >
+      <div
+        className="toggle-thumb"
+        style={{ left: value ? '27px' : '3px' }}
+      />
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  STATUS BADGE
+// ─────────────────────────────────────────────
+function StatusBadge({ available, large = false }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 font-semibold ${large ? 'text-sm px-3 py-1.5' : 'text-xs px-2 py-0.5'} rounded-full`}
+      style={{
+        background: available ? 'rgba(0,196,140,0.12)' : 'rgba(255,56,92,0.1)',
+        color: available ? 'var(--green)' : 'var(--red)',
+      }}
+    >
+      <span
+        className={`rounded-full pulse ${large ? 'w-2.5 h-2.5' : 'w-1.5 h-1.5'}`}
+        style={{ background: available ? 'var(--green)' : 'var(--red)', display: 'inline-block' }}
+      />
+      {available ? 'Available' : 'Busy'}
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  PROVIDER CARD
+// ─────────────────────────────────────────────
+function ProviderCard({ provider, onClick, liked, onLike }) {
+  return (
+    <div
+      className="provider-card rounded-3xl overflow-hidden bg-white cursor-pointer"
+      style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.08)' }}
+      onClick={() => onClick(provider)}
+    >
+      {/* Cover image */}
+      <div className="relative" style={{ height: 200 }}>
+        <img
+          src={provider.cover}
+          alt={provider.name}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 img-gradient" />
+
+        {/* Status badge top-right */}
+        <div className="absolute top-3 right-3">
+          <StatusBadge available={provider.available} />
         </div>
-      )
-    }
 
-    // ════════════════════════════════════════════════════
-    // COMPONENT: Header
-    // ════════════════════════════════════════════════════
-    function Header({ query, onQuery, radius, onRadius, locLabel, onGPS, locating }) {
-      const [val, setVal] = useState(25)
-      const fill = ((val - 1) / 49 * 100).toFixed(1)
-      const kmLabel = val >= 50 ? '50+ km' : `${val} km`
-
-      const onSlide = e => {
-        const v = Number(e.target.value)
-        setVal(v)
-        onRadius(v)
-      }
-
-      return (
-        <header style={{ position:'sticky', top:0, zIndex:100, background:'#fff', borderBottom:'1px solid #F0F0F5', padding:'14px 16px', boxShadow:'0 1px 6px rgba(0,0,0,0.06)' }}>
-
-          {/* Logo + GPS */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-            <h1 style={{ margin:0, fontFamily:FD, fontSize:22, fontWeight:700, letterSpacing:'-0.4px', color:'#0D0D12' }}>
-              Gigs<span style={{ color:RED }}>Court</span>
-            </h1>
-            <button onClick={onGPS} style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:9999, border:'1px solid #E8E8EE', background:'none', cursor:'pointer', maxWidth:160 }}>
-              {locLabel
-                ? <><span style={{ width:7, height:7, borderRadius:'50%', background:RED, display:'inline-block', flexShrink:0 }} /><span style={{ fontSize:12, color:RED, fontWeight:500, fontFamily:FB, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{locLabel}</span></>
-                : <span style={{ fontSize:12, color:'#9999AA', fontFamily:FB }}>📍 Set location</span>
-              }
-            </button>
-          </div>
-
-          {/* Search */}
-          <div style={{ position:'relative', marginBottom:12 }}>
-            <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:15, pointerEvents:'none' }}>🔍</span>
-            <input
-              type="search"
-              placeholder="Find barbers, stylists, tailors…"
-              value={query}
-              onChange={e => onQuery(e.target.value)}
-              style={{ width:'100%', height:46, paddingLeft:40, paddingRight:50, fontFamily:FB, fontSize:15, background:'#F2F2F7', border:'1.5px solid transparent', borderRadius:9999, outline:'none', color:'#0D0D12', display:'block' }}
-              onFocus={e => { e.target.style.background='#fff'; e.target.style.borderColor=RED; e.target.style.boxShadow='0 0 0 3px rgba(255,56,92,0.1)' }}
-              onBlur={e  => { e.target.style.background='#F2F2F7'; e.target.style.borderColor='transparent'; e.target.style.boxShadow='none' }}
-            />
-            <button onClick={onGPS} style={{ ...btnR, position:'absolute', right:7, top:'50%', transform:'translateY(-50%)', width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, opacity: locating ? 0.6 : 1 }}>
-              {locating
-                ? <span className="gc-spin" style={{ width:14, height:14, border:'2px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', borderRadius:'50%', display:'inline-block' }} />
-                : '🎯'
-              }
-            </button>
-          </div>
-
-          {/* Distance slider */}
-          <div>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-              <span style={{ fontSize:11, fontWeight:600, color:'#5A5A6E', textTransform:'uppercase', letterSpacing:'0.4px', fontFamily:FB }}>📍 Distance</span>
-              <span style={{ fontSize:13, fontWeight:700, color:RED, fontFamily:FD, padding:'2px 10px', background:'rgba(255,56,92,0.08)', border:'1px solid rgba(255,56,92,0.18)', borderRadius:9999 }}>{kmLabel}</span>
-            </div>
-            <input type="range" min={1} max={50} step={1} value={val} onChange={onSlide} style={{ background:`linear-gradient(to right,${RED} ${fill}%,#E8E8EE ${fill}%)` }} />
-            <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'#9999AA', fontFamily:FB, marginTop:3 }}>
-              <span>1 km</span><span>25 km</span><span>50 km</span>
-            </div>
-          </div>
-
-        </header>
-      )
-    }
-
-    // ════════════════════════════════════════════════════
-    // COMPONENT: ProviderCard
-    // ════════════════════════════════════════════════════
-    function ProviderCard({ p, onView }) {
-      const [loaded,  setLoaded]  = useState(false)
-      const [pressed, setPressed] = useState(false)
-      const dist = p.km < 1 ? `${Math.round(p.km * 1000)}m` : p.km < 10 ? `${p.km.toFixed(1)}km` : `${Math.round(p.km)}km`
-
-      return (
-        <div
-          style={{ background:'#fff', borderRadius:20, overflow:'hidden', display:'flex', flexDirection:'column', transition:'transform .15s, box-shadow .15s', transform: pressed ? 'scale(0.97)' : 'scale(1)', boxShadow: pressed ? '0 2px 6px rgba(0,0,0,0.06)' : '0 4px 16px rgba(0,0,0,0.08)', cursor:'pointer' }}
-          onMouseDown={() => setPressed(true)} onMouseUp={() => setPressed(false)} onMouseLeave={() => setPressed(false)}
-          onTouchStart={() => setPressed(true)} onTouchEnd={() => setPressed(false)}
+        {/* Heart */}
+        <button
+          className="absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(255,255,255,0.9)' }}
+          onClick={e => { e.stopPropagation(); onLike(provider.id); }}
         >
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 10px 8px', gap:4 }}>
-            <span style={{ fontSize:11, color:'#5A5A6E', fontWeight:500, fontFamily:FB, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>📍 {p.area}{p.verified ? ' ✅' : ''}</span>
-            <span style={{ fontSize:10, fontWeight:700, color:RED, background:'rgba(255,56,92,0.08)', border:'1px solid rgba(255,56,92,0.15)', borderRadius:9999, padding:'2px 7px', whiteSpace:'nowrap', fontFamily:FB }}>{dist} away</span>
-          </div>
+          <Icon.Heart size={16} color="#6B7280" filled={liked} />
+        </button>
 
-          <div style={{ position:'relative', width:'100%', aspectRatio:'1/1', background:'#F2F2F7', overflow:'hidden' }}>
-            {!loaded && <div className="gc-skel" style={{ position:'absolute', inset:0 }} />}
-            <img src={p.img} alt={p.name} loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block', opacity: loaded ? 1 : 0, transition:'opacity 0.3s' }} onLoad={() => setLoaded(true)} />
-            <div style={{ position:'absolute', top:8, right:8, width:8, height:8, borderRadius:'50%', background: p.open ? '#22C55E' : '#94A3B8', border:'2px solid #fff' }} />
-          </div>
-
-          <div style={{ padding:'10px 10px 12px', display:'flex', flexDirection:'column', gap:6 }}>
-            <p style={{ margin:0, fontFamily:FD, fontSize:13, fontWeight:700, color:'#0D0D12', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.name}</p>
-            <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-              {[0,1,2,3,4].map(i => <span key={i} style={{ fontSize:11, color: i < Math.floor(p.stars) ? RED : '#DDD' }}>★</span>)}
-              <span style={{ fontSize:11, fontWeight:600, color:'#0D0D12', fontFamily:FB }}>{p.stars.toFixed(1)}</span>
-              <span style={{ fontSize:10, color:'#9999AA', fontFamily:FB }}>({p.reviews})</span>
-            </div>
-            <button onClick={() => onView(p)} style={{ ...btnR, width:'100%', height:34, fontSize:12, fontFamily:FB, marginTop:2 }}>View Portfolio →</button>
+        {/* Bottom info overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 flex items-end gap-2">
+          <img
+            src={provider.avatar}
+            alt={provider.name}
+            className="w-10 h-10 rounded-full border-2 border-white object-cover"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm leading-tight truncate" style={{fontFamily:'Syne,sans-serif'}}>{provider.name}</p>
+            <p className="text-white text-xs opacity-80">{provider.service}</p>
           </div>
         </div>
-      )
-    }
+      </div>
 
-    // ════════════════════════════════════════════════════
-    // COMPONENT: ProfileGrid (Instagram-style 3-col grid)
-    // ════════════════════════════════════════════════════
-    function ProfileGrid({ profile, images, onUpload }) {
-      const [uploading, setUploading] = useState(false)
-      const inputRef = useRef(null)
-      const initials = profile.name.split(' ').slice(0,2).map(w => w[0]?.toUpperCase() || '').join('')
+      {/* Card footer */}
+      <div className="px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <Icon.Star size={14} />
+          <span className="text-sm font-semibold text-gray-800">{provider.rating}</span>
+          <span className="text-xs text-gray-400">({provider.reviews})</span>
+        </div>
+        <div className="flex items-center gap-1 text-gray-500">
+          <Icon.Location size={13} color="#9CA3AF" />
+          <span className="text-xs">{provider.distance} km away</span>
+        </div>
+        <span className="text-xs font-semibold" style={{ color: 'var(--red)' }}>{provider.price}</span>
+      </div>
+    </div>
+  );
+}
 
-      const handleFile = async e => {
-        const file = e.target.files?.[0]
-        if (!file) return
-        setUploading(true)
-        const result = await uploadToCloudinary(file)
-        onUpload({ id: Date.now(), url: result.url, featured: false })
-        setUploading(false)
-        e.target.value = ''
-      }
+// ─────────────────────────────────────────────
+//  PROFILE DETAIL VIEW
+// ─────────────────────────────────────────────
+function ProfileDetail({ provider, onBack }) {
+  const [booked, setBooked] = React.useState(false);
+  const [liked, setLiked] = React.useState(false);
 
-      return (
-        <div style={{ background:'#F8F8FA', minHeight:'100dvh' }}>
+  function handleBook() {
+    setBooked(true);
+    // TODO: Connect to booking system / Firebase
+    setTimeout(() => setBooked(false), 3000);
+  }
 
-          {/* Profile header */}
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', background:'#fff', padding:'28px 20px 24px', borderBottom:'1px solid #F0F0F5', gap:6 }}>
-            <div style={{ width:90, height:90, borderRadius:'50%', padding:3, background:'linear-gradient(135deg,#FF385C,#FF6B87)', boxShadow:'0 4px 20px rgba(255,56,92,0.35)', marginBottom:6 }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', overflow:'hidden', border:'2.5px solid #fff', background:'#F2F2F7' }}>
-                {profile.avatar
-                  ? <img src={profile.avatar} alt={profile.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                  : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:FD, fontSize:28, fontWeight:700, color:'#fff', background:'linear-gradient(135deg,#1a1a2e,#16213e)' }}>{initials}</div>
-                }
+  return (
+    <div className="min-h-screen bg-white fade-up">
+      {/* Back header */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3"
+        style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+        <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: '#F3F4F6' }}>
+          <Icon.ArrowLeft size={20} color="#111" />
+        </button>
+        <span className="font-bold text-base" style={{ fontFamily: 'Syne' }}>{provider.name}</span>
+        <button
+          onClick={() => setLiked(!liked)}
+          className="w-9 h-9 rounded-full flex items-center justify-center"
+          style={{ background: '#F3F4F6' }}
+        >
+          <Icon.Heart size={18} color="#6B7280" filled={liked} />
+        </button>
+      </div>
+
+      {/* Cover */}
+      <div className="relative" style={{ height: 280, marginTop: 56 }}>
+        <img src={provider.cover} alt="cover" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 img-gradient" />
+      </div>
+
+      {/* Profile header */}
+      <div className="px-5 -mt-10 relative z-10 flex items-end justify-between">
+        <div className="flex items-end gap-3">
+          <img
+            src={provider.avatar}
+            alt={provider.name}
+            className="w-20 h-20 rounded-2xl border-4 border-white object-cover"
+            style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}
+          />
+          <div className="mb-1">
+            <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'Syne' }}>{provider.name}</h2>
+            <p className="text-sm text-gray-500 font-medium">{provider.service}</p>
+          </div>
+        </div>
+        <div className="mb-1">
+          <StatusBadge available={provider.available} large />
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div className="mx-5 mt-5 grid grid-cols-3 gap-3">
+        {[
+          { label: 'Rating', value: `⭐ ${provider.rating}` },
+          { label: 'Reviews', value: provider.reviews },
+          { label: 'Distance', value: `${provider.distance} km` },
+        ].map(s => (
+          <div key={s.label} className="rounded-2xl p-3 text-center" style={{ background: '#F9FAFB' }}>
+            <p className="text-base font-bold text-gray-900" style={{ fontFamily: 'Syne' }}>{s.value}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Bio */}
+      <div className="mx-5 mt-5">
+        <h3 className="font-bold text-gray-900 mb-2" style={{ fontFamily: 'Syne' }}>About</h3>
+        <p className="text-sm text-gray-600 leading-relaxed">{provider.bio}</p>
+      </div>
+
+      {/* Price */}
+      <div className="mx-5 mt-4 flex items-center justify-between rounded-2xl px-4 py-3"
+        style={{ background: 'rgba(255,56,92,0.06)', border: '1px solid rgba(255,56,92,0.12)' }}>
+        <span className="text-sm text-gray-600 font-medium">Price Range</span>
+        <span className="font-bold text-base" style={{ color: 'var(--red)', fontFamily: 'Syne' }}>{provider.price}</span>
+      </div>
+
+      {/* Portfolio grid */}
+      <div className="mx-5 mt-6">
+        <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily: 'Syne' }}>Portfolio</h3>
+        <div className="grid grid-cols-3 gap-1.5">
+          {provider.portfolio.map((img, i) => (
+            <div key={i} className="rounded-xl overflow-hidden" style={{ aspectRatio: '1/1' }}>
+              <img src={img} alt={`work-${i}`} className="w-full h-full object-cover" loading="lazy" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Book Now CTA */}
+      <div className="mx-5 mt-6 mb-32">
+        <button
+          onClick={handleBook}
+          className="w-full py-4 rounded-2xl font-bold text-white text-base transition-all"
+          style={{
+            background: booked ? 'var(--green)' : 'var(--red)',
+            fontFamily: 'Syne',
+            boxShadow: booked ? '0 8px 24px rgba(0,196,140,0.35)' : '0 8px 24px rgba(255,56,92,0.35)',
+          }}
+        >
+          {booked ? '✓ Booking Confirmed!' : 'Book Now'}
+        </button>
+        <button className="w-full mt-3 py-3.5 rounded-2xl font-semibold text-gray-700 text-sm flex items-center justify-center gap-2"
+          style={{ background: '#F3F4F6' }}>
+          <Icon.Share size={18} color="#6B7280" />
+          Share Profile
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  HOME TAB
+// ─────────────────────────────────────────────
+function HomeTab({ onViewProvider, providers, likedIds, onLike }) {
+  const featured = providers.slice(0, 3);
+  const nearby = providers.filter(p => p.available);
+
+  return (
+    <div className="pb-28">
+      {/* Hero greeting */}
+      <div className="px-5 pt-6 pb-4">
+        <p className="text-sm text-gray-400 font-medium">Good morning 👋</p>
+        <h1 className="text-2xl font-extrabold text-gray-900 leading-tight mt-0.5" style={{ fontFamily: 'Syne' }}>
+          Find a Pro <br />Near You
+        </h1>
+      </div>
+
+      {/* Categories scroll */}
+      <div className="flex gap-2 px-5 overflow-x-auto pb-1">
+        {['All', 'Barber', 'Mechanic', 'Tailor', 'Trainer', 'Nails', 'Makeup'].map(cat => (
+          <button
+            key={cat}
+            className="flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all"
+            style={cat === 'All'
+              ? { background: 'var(--red)', color: 'white' }
+              : { background: '#F3F4F6', color: '#374151' }
+            }
+          >{cat}</button>
+        ))}
+      </div>
+
+      {/* Featured section */}
+      <div className="mt-5 px-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold text-gray-900" style={{ fontFamily: 'Syne' }}>Featured</h2>
+          <button className="text-sm font-semibold" style={{ color: 'var(--red)' }}>See all</button>
+        </div>
+        <div className="flex gap-4 overflow-x-auto pb-2">
+          {featured.map(p => (
+            <div key={p.id} className="flex-shrink-0" style={{ width: 260 }}>
+              <ProviderCard
+                provider={p}
+                onClick={onViewProvider}
+                liked={likedIds.includes(p.id)}
+                onLike={onLike}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Available Now */}
+      <div className="mt-6 px-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold text-gray-900" style={{ fontFamily: 'Syne' }}>Available Now</h2>
+          <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: 'rgba(0,196,140,0.1)', color: 'var(--green)' }}>
+            {nearby.length} online
+          </span>
+        </div>
+        <div className="flex flex-col gap-4">
+          {nearby.map(p => (
+            <ProviderCard
+              key={p.id}
+              provider={p}
+              onClick={onViewProvider}
+              liked={likedIds.includes(p.id)}
+              onLike={onLike}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  SEARCH TAB
+// ─────────────────────────────────────────────
+function SearchTab({ onViewProvider, providers, likedIds, onLike }) {
+  const [query, setQuery] = React.useState('');
+  const [radius, setRadius] = React.useState(10);
+
+  const filtered = providers.filter(p => {
+    const matchQuery = p.name.toLowerCase().includes(query.toLowerCase())
+      || p.service.toLowerCase().includes(query.toLowerCase());
+    const matchRadius = p.distance <= radius;
+    return matchQuery && matchRadius;
+  });
+
+  return (
+    <div className="pb-28">
+      <div className="px-5 pt-6">
+        <h1 className="text-2xl font-extrabold text-gray-900 mb-4" style={{ fontFamily: 'Syne' }}>Search</h1>
+
+        {/* Search input */}
+        <div className="relative mb-5">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2">
+            <Icon.Search size={18} color="#9CA3AF" />
+          </div>
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Barber, mechanic, tailor..."
+            className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm outline-none border"
+            style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', fontFamily: 'DM Sans' }}
+          />
+        </div>
+
+        {/* Distance slider */}
+        <div className="rounded-2xl p-4 mb-5" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-semibold text-gray-700">Search Radius</span>
+            <span className="font-bold text-base" style={{ color: 'var(--red)', fontFamily: 'Syne' }}>{radius} km</span>
+          </div>
+          <input
+            type="range"
+            min="1"
+            max="50"
+            value={radius}
+            onChange={e => setRadius(Number(e.target.value))}
+          />
+          <div className="flex justify-between mt-1.5">
+            <span className="text-xs text-gray-400">1 km</span>
+            <span className="text-xs text-gray-400">50 km</span>
+          </div>
+        </div>
+
+        {/* Results count */}
+        <p className="text-sm text-gray-500 mb-4">
+          <span className="font-bold text-gray-900">{filtered.length}</span> providers within {radius} km
+          {query && <span> matching "<strong>{query}</strong>"</span>}
+        </p>
+
+        {/* Results */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="text-5xl mb-4">🔍</div>
+            <p className="font-bold text-gray-700" style={{ fontFamily: 'Syne' }}>No results found</p>
+            <p className="text-sm text-gray-400 mt-1">Try a wider radius or different keyword</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {filtered.map(p => (
+              <ProviderCard
+                key={p.id}
+                provider={p}
+                onClick={onViewProvider}
+                liked={likedIds.includes(p.id)}
+                onLike={onLike}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  MAP TAB
+// ─────────────────────────────────────────────
+function MapTab({ providers, onViewProvider }) {
+  const [selectedPin, setSelectedPin] = React.useState(null);
+  const mapRef = React.useRef(null);
+
+  React.useEffect(() => {
+    // Shell: call initGoogleMaps when component mounts
+    initGoogleMaps(mapRef, { lat: 51.505, lng: -0.09 });
+  }, []);
+
+  const selectedProvider = selectedPin ? providers.find(p => p.id === selectedPin) : null;
+
+  return (
+    <div className="pb-28">
+      <div className="px-5 pt-6 pb-3">
+        <h1 className="text-2xl font-extrabold text-gray-900" style={{ fontFamily: 'Syne' }}>Nearby Map</h1>
+        <p className="text-sm text-gray-400 mt-0.5">Tap a pin to see provider details</p>
+      </div>
+
+      {/* Map container */}
+      <div className="mx-5 rounded-3xl overflow-hidden relative" style={{ height: 360, boxShadow: '0 4px 24px rgba(0,0,0,0.1)' }}>
+        <div ref={mapRef} className="map-grid w-full h-full relative">
+
+          {/* "You are here" marker */}
+          <div className="absolute" style={{ left: '50%', top: '50%', transform: 'translate(-50%,-50%)' }}>
+            <div className="w-5 h-5 rounded-full border-4 border-white" style={{ background: '#3B82F6', boxShadow: '0 0 0 8px rgba(59,130,246,0.2)' }} />
+          </div>
+
+          {/* Map label */}
+          <div className="absolute top-3 left-3 bg-white rounded-xl px-3 py-1.5"
+            style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+            <p className="text-xs font-bold text-gray-700" style={{ fontFamily: 'Syne' }}>GigsCourt Live Map</p>
+            <p className="text-xs text-gray-400">Google Maps — connect API key</p>
+          </div>
+
+          {/* Provider pins */}
+          {MAP_PINS.map(pin => (
+            <button
+              key={pin.id}
+              className="absolute flex flex-col items-center"
+              style={{ left: pin.x, top: pin.y, transform: 'translate(-50%,-100%)' }}
+              onClick={() => setSelectedPin(selectedPin === pin.id ? null : pin.id)}
+            >
+              <div
+                className="px-2.5 py-1.5 rounded-xl text-white text-xs font-bold shadow-lg"
+                style={{
+                  background: pin.available ? 'var(--green)' : 'var(--red)',
+                  boxShadow: pin.available
+                    ? '0 4px 12px rgba(0,196,140,0.4)'
+                    : '0 4px 12px rgba(255,56,92,0.4)',
+                  fontFamily: 'Syne',
+                  border: selectedPin === pin.id ? '2px solid white' : 'none',
+                }}
+              >
+                {pin.name}
+              </div>
+              <div className="w-2 h-2 rounded-full mt-0.5"
+                style={{ background: pin.available ? 'var(--green)' : 'var(--red)' }} />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Selected provider card */}
+      {selectedProvider && (
+        <div className="mx-5 mt-4 fade-up">
+          <ProviderCard
+            provider={selectedProvider}
+            onClick={onViewProvider}
+            liked={false}
+            onLike={() => {}}
+          />
+        </div>
+      )}
+
+      {/* Legend */}
+      <div className="mx-5 mt-4 flex gap-3">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(0,196,140,0.08)' }}>
+          <span className="w-3 h-3 rounded-full" style={{ background: 'var(--green)' }} />
+          <span className="text-xs font-medium text-gray-600">Available</span>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,56,92,0.08)' }}>
+          <span className="w-3 h-3 rounded-full" style={{ background: 'var(--red)' }} />
+          <span className="text-xs font-medium text-gray-600">Busy</span>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(59,130,246,0.08)' }}>
+          <span className="w-3 h-3 rounded-full" style={{ background: '#3B82F6' }} />
+          <span className="text-xs font-medium text-gray-600">You</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  PROFILE / DASHBOARD TAB
+// ─────────────────────────────────────────────
+function ProfileTab() {
+  const [isAvailable, setIsAvailable] = React.useState(true);
+  const [name] = React.useState('Alex Johnson');
+  const [service] = React.useState('Web Developer');
+  const [bookings] = React.useState(24);
+  const [earnings] = React.useState('$1,840');
+  const [rating] = React.useState(4.9);
+
+  function handleAvailabilityToggle(val) {
+    setIsAvailable(val);
+    // Shell: send availability ping when going online
+    sendAvailabilityPing('current-user-id', { lat: 51.505, lng: -0.09 }, service);
+  }
+
+  function handleUploadPortfolio() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = e => {
+      const file = e.target.files[0];
+      if (file) uploadToCloudinary(file);
+    };
+    input.click();
+  }
+
+  return (
+    <div className="pb-28">
+      {/* Profile header */}
+      <div className="px-5 pt-6">
+        <div className="flex items-center justify-between mb-5">
+          <h1 className="text-2xl font-extrabold text-gray-900" style={{ fontFamily: 'Syne' }}>Dashboard</h1>
+          <button className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: '#F3F4F6' }}>
+            <Icon.Settings size={18} color="#6B7280" />
+          </button>
+        </div>
+
+        {/* Profile card */}
+        <div className="rounded-3xl p-5 mb-5"
+          style={{
+            background: 'linear-gradient(135deg, #1A1A2E 0%, #2D2D44 100%)',
+            boxShadow: '0 8px 32px rgba(26,26,46,0.3)',
+          }}>
+          <div className="flex items-center gap-4 mb-5">
+            <div className="relative">
+              <img
+                src="https://i.pravatar.cc/300?img=60"
+                alt="me"
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-white"
+              />
+              <button
+                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ background: 'var(--red)' }}
+              >
+                <Icon.Camera size={12} color="white" />
+              </button>
+            </div>
+            <div>
+              <h2 className="text-white font-bold text-lg" style={{ fontFamily: 'Syne' }}>{name}</h2>
+              <p className="text-gray-400 text-sm">{service}</p>
+              <div className="flex items-center gap-1 mt-1">
+                <Icon.Star size={12} filled />
+                <span className="text-yellow-400 text-xs font-bold">{rating}</span>
               </div>
             </div>
-            <h2 style={{ margin:0, fontFamily:FD, fontSize:22, fontWeight:700, color:'#0D0D12' }}>{profile.name}{profile.verified ? ' ✅' : ''}</h2>
-            <span style={{ padding:'4px 14px', background:'rgba(255,56,92,0.08)', border:'1px solid rgba(255,56,92,0.2)', borderRadius:9999, fontSize:12, fontWeight:600, color:RED, fontFamily:FB }}>{profile.cat}</span>
-            <div style={{ display:'flex', alignItems:'center', gap:10, fontSize:13, color:'#5A5A6E', fontFamily:FB }}>
-              <span>📍 {profile.area}</span>
-              <span style={{ color:'#ddd' }}>|</span>
-              <span>⭐ {profile.stars.toFixed(1)} ({profile.reviews})</span>
-            </div>
-            {profile.bio && <p style={{ margin:'4px 0 0', fontFamily:FB, fontSize:13, lineHeight:1.55, color:'#5A5A6E', textAlign:'center', maxWidth:280 }}>{profile.bio}</p>}
-            <div style={{ display:'flex', alignItems:'center', width:'100%', maxWidth:290, background:'#F2F2F7', borderRadius:14, overflow:'hidden', border:'1px solid #F0F0F5', marginTop:4 }}>
-              {[['Jobs', profile.jobs], ['Followers', profile.followers], ['Rating', `${profile.stars.toFixed(1)}★`]].map(([lbl, val], i, arr) => (
-                <Fragment key={lbl}>
-                  <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', padding:'10px 0', gap:2 }}>
-                    <strong style={{ fontFamily:FD, fontSize:16, fontWeight:700, color:'#0D0D12', lineHeight:1 }}>{val}</strong>
-                    <span style={{ fontSize:9, fontWeight:600, color:'#9999AA', textTransform:'uppercase', letterSpacing:'0.4px', fontFamily:FB }}>{lbl}</span>
-                  </div>
-                  {i < arr.length - 1 && <div style={{ width:1, height:28, background:'#E8E8EE' }} />}
-                </Fragment>
-              ))}
-            </div>
           </div>
 
-          {/* Grid header */}
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px 8px' }}>
-            <span style={{ fontFamily:FD, fontWeight:700, fontSize:15, color:'#0D0D12' }}>🖼 Work Portfolio</span>
-            <span style={{ fontSize:12, color:'#9999AA', fontFamily:FB }}>{images.length} photos</span>
-          </div>
-
-          {/* 3-column Instagram grid */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:2, background:'#E8E8EE' }}>
-            <button onClick={() => inputRef.current?.click()} disabled={uploading} style={{ aspectRatio:'1/1', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:5, background:'#F2F2F7', border:'2px dashed rgba(255,56,92,0.35)', cursor:'pointer', padding:0 }}>
-              <input ref={inputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handleFile} />
-              {uploading
-                ? <span className="gc-spin" style={{ width:24, height:24, border:'3px solid rgba(255,56,92,0.15)', borderTopColor:RED, borderRadius:'50%', display:'inline-block' }} />
-                : <>
-                    <div style={{ width:36, height:36, borderRadius:'50%', background:RED, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, color:'#fff', boxShadow:'0 4px 12px rgba(255,56,92,0.35)' }}>＋</div>
-                    <span style={{ fontSize:11, fontWeight:600, color:RED, fontFamily:FB }}>Add Work</span>
-                  </>
-              }
-            </button>
-            {images.map((img, i) => (
-              <div key={img.id || i} style={{ aspectRatio:'1/1', overflow:'hidden', background:'#F2F2F7', position:'relative' }}>
-                <img src={img.url} alt={`Work ${i+1}`} loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
-                {img.featured && <span style={{ position:'absolute', bottom:4, left:4, padding:'2px 6px', background:RED, borderRadius:9999, fontSize:8, fontWeight:700, color:'#fff', textTransform:'uppercase', fontFamily:FB }}>Featured</span>}
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            {[
+              { label: 'Bookings', value: bookings },
+              { label: 'Earnings', value: earnings },
+              { label: 'Rating', value: rating },
+            ].map(s => (
+              <div key={s.label} className="rounded-2xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                <p className="text-white font-bold" style={{ fontFamily: 'Syne' }}>{s.value}</p>
+                <p className="text-gray-400 text-xs mt-0.5">{s.label}</p>
               </div>
             ))}
           </div>
 
-          {images.length === 0 && (
-            <div style={{ textAlign:'center', padding:'32px 24px', color:'#9999AA' }}>
-              <div style={{ fontSize:40 }}>📸</div>
-              <p style={{ fontWeight:700, color:'#0D0D12', margin:'8px 0 4px', fontFamily:FD }}>No photos yet</p>
-              <p style={{ fontSize:13, margin:0, fontFamily:FB }}>Tap <strong style={{ color:RED }}>+</strong> to upload your first work photo</p>
+          {/* Availability toggle */}
+          <div className="flex items-center justify-between rounded-2xl p-4"
+            style={{ background: 'rgba(255,255,255,0.07)' }}>
+            <div>
+              <p className="text-white font-semibold text-sm">Availability Status</p>
+              <p className="text-gray-400 text-xs mt-0.5">
+                {isAvailable ? 'You\'re visible to clients nearby' : 'You\'re hidden from search'}
+              </p>
             </div>
-          )}
-        </div>
-      )
-    }
-
-    // ════════════════════════════════════════════════════
-    // ROOT APP
-    // ════════════════════════════════════════════════════
-    function App() {
-
-      // 2-second guaranteed splash clear
-      const [ready, setReady] = useState(false)
-      useEffect(() => {
-        const t = setTimeout(() => setReady(true), 2000)
-        return () => clearTimeout(t)
-      }, [])
-
-      const [view,     setView]     = useState('home')   // 'home' | 'profile' | 'map'
-      const [selected, setSelected] = useState(PROFILE)
-      const [query,    setQuery]    = useState('')
-      const [radius,   setRadius]   = useState(25)
-      const [locLabel, setLocLabel] = useState('')
-      const [locating, setLocating] = useState(false)
-      const [coords,   setCoords]   = useState(null)
-      const [images,   setImages]   = useState(PORTFOLIO)
-
-      const getGPS = useCallback(() => {
-        if (!navigator.geolocation) { alert('GPS not supported.'); return }
-        setLocating(true)
-        navigator.geolocation.getCurrentPosition(
-          async ({ coords: { latitude: lat, longitude: lng } }) => {
-            setCoords({ lat, lng })
-            try {
-              const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
-              const d = await r.json()
-              setLocLabel(d.address?.suburb || d.address?.town || d.address?.village || d.address?.city || 'My Location')
-            } catch {
-              setLocLabel(`${lat.toFixed(2)}, ${lng.toFixed(2)}`)
-            }
-            setLocating(false)
-          },
-          () => { setLocating(false); alert('Location denied. Check permissions.') },
-          { enableHighAccuracy:true, timeout:10000 }
-        )
-      }, [])
-
-      // Splash
-      if (!ready) {
-        return (
-          <div style={{ position:'fixed', inset:0, background:'#fff', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, zIndex:9999 }}>
-            <h1 style={{ margin:0, fontFamily:FD, fontSize:32, fontWeight:700, color:'#0D0D12', letterSpacing:'-0.5px' }}>
-              Gigs<span style={{ color:RED }}>Court</span>
-            </h1>
-            <span className="gc-spin" style={{ width:28, height:28, border:'3px solid rgba(255,56,92,0.15)', borderTopColor:RED, borderRadius:'50%', display:'inline-block' }} />
-            <p style={{ margin:0, fontFamily:FB, fontSize:13, color:'#9999AA' }}>Finding gigs near you…</p>
+            <div className="flex items-center gap-2">
+              <StatusBadge available={isAvailable} />
+              <ToggleSwitch value={isAvailable} onChange={handleAvailabilityToggle} />
+            </div>
           </div>
-        )
-      }
-
-      // Filter providers
-      const filtered = PROVIDERS.filter(p => {
-        if (p.km > radius) return false
-        if (!query.trim()) return true
-        const q = query.toLowerCase()
-        return p.name.toLowerCase().includes(q) || p.area.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q)
-      })
-
-      return (
-        <div style={{ display:'flex', flexDirection:'column', minHeight:'100dvh', background:'#F8F8FA' }}>
-
-          {/* ── PROFILE VIEW ── */}
-          {view === 'profile' && (
-            <div style={{ display:'flex', flexDirection:'column', minHeight:'100dvh' }}>
-              <nav style={{ position:'sticky', top:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 12px', background:'#fff', borderBottom:'1px solid #F0F0F5', boxShadow:'0 1px 4px rgba(0,0,0,0.06)', gap:8 }}>
-                <button onClick={() => setView('home')} style={{ padding:'6px 14px', borderRadius:9999, border:'none', background:'#F2F2F7', fontSize:13, fontWeight:600, color:'#5A5A6E', cursor:'pointer', fontFamily:FB }}>← Back</button>
-                <span style={{ fontFamily:FD, fontSize:16, fontWeight:700, color:'#0D0D12', flex:1, textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{selected.name}</span>
-                <button onClick={handleFirebaseLogin} style={{ ...btnR, padding:'6px 16px', fontSize:13, fontFamily:FB }}>Book</button>
-              </nav>
-              <div style={{ flex:1, paddingBottom:80 }}>
-                <ProfileGrid profile={selected} images={images} onUpload={img => setImages(prev => [img, ...prev])} />
-              </div>
-              <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:'#fff', borderTop:'1px solid #F0F0F5', boxShadow:'0 -4px 20px rgba(0,0,0,0.08)', gap:12 }}>
-                <div>
-                  <p style={{ margin:0, fontFamily:FD, fontWeight:700, fontSize:14, color:'#0D0D12' }}>{selected.name}</p>
-                  <p style={{ margin:0, fontSize:12, color:'#9999AA', fontFamily:FB }}>⭐ {selected.stars.toFixed(1)} · 📍 {selected.area}</p>
-                </div>
-                <button onClick={handleFirebaseLogin} style={{ ...btnR, padding:'0 24px', height:42, fontSize:14, fontFamily:FB, flexShrink:0 }}>Book Now</button>
-              </div>
-            </div>
-          )}
-
-          {/* ── HOME + MAP VIEWS ── */}
-          {view !== 'profile' && (
-            <>
-              <Header query={query} onQuery={setQuery} radius={radius} onRadius={setRadius} locLabel={locLabel} onGPS={getGPS} locating={locating} />
-
-              {view === 'home' && (
-                <main style={{ flex:1, padding:'12px 10px 80px' }}>
-                  <p style={{ margin:'0 0 10px 4px', fontSize:12, color:'#9999AA', fontFamily:FB }}>
-                    {filtered.length} provider{filtered.length !== 1 ? 's' : ''} within {radius}km
-                  </p>
-                  {filtered.length > 0
-                    ? (
-                      <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10 }}>
-                        {filtered.map((p, i) => (
-                          <div key={p.id} className="gc-fade" style={{ animationDelay:`${i * 0.05}s` }}>
-                            <ProviderCard p={p} onView={p => { setSelected(p); setView('profile') }} />
-                          </div>
-                        ))}
-                      </div>
-                    )
-                    : (
-                      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'60px 24px', gap:10, textAlign:'center' }}>
-                        <span style={{ fontSize:48 }}>🔍</span>
-                        <p style={{ margin:0, fontFamily:FD, fontSize:20, fontWeight:700, color:'#0D0D12' }}>No providers found</p>
-                        <p style={{ margin:0, fontSize:14, color:'#9999AA', fontFamily:FB }}>Try widening your radius or a different search.</p>
-                      </div>
-                    )
-                  }
-                </main>
-              )}
-
-              {view === 'map' && (
-                <div style={{ flex:1, padding:16 }}>
-                  <RenderGoogleMap lat={coords?.lat || 0} lng={coords?.lng || 0} radius={radius} />
-                </div>
-              )}
-
-              {/* Bottom nav */}
-              <nav style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:50, display:'flex', alignItems:'center', background:'#fff', borderTop:'1px solid #F0F0F5', boxShadow:'0 -2px 12px rgba(0,0,0,0.06)' }}>
-                {[{ id:'home', icon:'🏠', label:'Home' }, { id:'map', icon:'🗺️', label:'Map' }].map(tab => (
-                  <button key={tab.id} onClick={() => setView(tab.id)} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', padding:'10px 0 12px', border:'none', background:'none', cursor:'pointer', gap:2 }}>
-                    <span style={{ fontSize:22 }}>{tab.icon}</span>
-                    <span style={{ fontSize:10, fontWeight:600, fontFamily:FB, color: view === tab.id ? RED : '#9999AA' }}>{tab.label}</span>
-                    {view === tab.id && <span style={{ width:4, height:4, borderRadius:'50%', background:RED }} />}
-                  </button>
-                ))}
-              </nav>
-            </>
-          )}
-
         </div>
-      )
-    }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />)
+        {/* Quick actions */}
+        <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily: 'Syne' }}>Quick Actions</h3>
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          {[
+            { label: 'Upload Work', sub: 'Add to portfolio', icon: '📸', action: handleUploadPortfolio },
+            { label: 'View Bookings', sub: '3 pending', icon: '📅', action: () => {} },
+            { label: 'Edit Profile', sub: 'Update your info', icon: '✏️', action: () => {} },
+            { label: 'Earnings', sub: 'View payouts', icon: '💰', action: () => {} },
+          ].map(a => (
+            <button
+              key={a.label}
+              onClick={a.action}
+              className="rounded-2xl p-4 text-left transition-all active:scale-95"
+              style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}
+            >
+              <span className="text-2xl">{a.icon}</span>
+              <p className="font-semibold text-gray-800 text-sm mt-2" style={{ fontFamily: 'Syne' }}>{a.label}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{a.sub}</p>
+            </button>
+          ))}
+        </div>
 
-  </script>
+        {/* Auth actions */}
+        <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily: 'Syne' }}>Account</h3>
+        <div className="rounded-2xl overflow-hidden border" style={{ borderColor: '#E5E7EB' }}>
+          {[
+            { label: 'Sign In with Firebase', action: () => handleFirebaseLogin('user@email.com', 'password') },
+            { label: 'Create New Account', action: () => handleFirebaseSignup('user@email.com', 'password', 'Alex') },
+            { label: 'Notifications', action: () => {} },
+            { label: 'Help & Support', action: () => {} },
+          ].map((item, i, arr) => (
+            <button
+              key={item.label}
+              onClick={item.action}
+              className="w-full px-4 py-3.5 text-left text-sm font-medium text-gray-700 flex items-center justify-between"
+              style={{ borderBottom: i < arr.length - 1 ? '1px solid #F3F4F6' : 'none' }}
+            >
+              {item.label}
+              <span className="text-gray-300">›</span>
+            </button>
+          ))}
+        </div>
+
+        <button
+          className="w-full mt-3 py-3.5 rounded-2xl text-sm font-semibold"
+          style={{ color: 'var(--red)', background: 'rgba(255,56,92,0.06)', border: '1px solid rgba(255,56,92,0.15)' }}
+        >
+          Sign Out
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  BOTTOM NAV
+// ─────────────────────────────────────────────
+function BottomNav({ activeTab, onChange }) {
+  const tabs = [
+    { id: 'home', label: 'Home', Icon: Icon.Home },
+    { id: 'search', label: 'Search', Icon: Icon.Search },
+    { id: 'map', label: 'Map', Icon: Icon.Map },
+    { id: 'profile', label: 'Profile', Icon: Icon.User },
+  ];
+
+  return (
+    <div
+      className="fixed bottom-0 left-0 right-0 z-50 bottom-nav"
+      style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      <div className="flex">
+        {tabs.map(tab => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onChange(tab.id)}
+              className="flex-1 flex flex-col items-center py-3 gap-0.5 transition-all"
+            >
+              <tab.Icon size={22} color={active ? 'var(--red)' : '#9CA3AF'} />
+              <span
+                className="text-xs font-semibold mt-0.5"
+                style={{ color: active ? 'var(--red)' : '#9CA3AF', fontFamily: 'DM Sans' }}
+              >
+                {tab.label}
+              </span>
+              {active && (
+                <span className="w-1 h-1 rounded-full" style={{ background: 'var(--red)' }} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  TOP HEADER
+// ─────────────────────────────────────────────
+function TopHeader({ tab }) {
+  const [notifCount] = React.useState(3);
+
+  return (
+    <div
+      className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-5 py-3"
+      style={{
+        background: 'rgba(255,255,255,0.95)',
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(0,0,0,0.05)',
+        paddingTop: 'calc(env(safe-area-inset-top) + 12px)',
+      }}
+    >
+      <div className="flex items-center gap-1">
+        <span className="text-xl font-extrabold" style={{ fontFamily: 'Syne', color: 'var(--red)' }}>Gigs</span>
+        <span className="text-xl font-extrabold" style={{ fontFamily: 'Syne', color: '#1A1A2E' }}>Court</span>
+        <span className="text-lg">⚡</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="relative">
+          <button
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ background: '#F3F4F6' }}
+          >
+            <Icon.Bell size={18} color="#374151" />
+          </button>
+          {notifCount > 0 && (
+            <span
+              className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-white text-xs font-bold flex items-center justify-center"
+              style={{ background: 'var(--red)', fontSize: 9 }}
+            >
+              {notifCount}
+            </span>
+          )}
+        </div>
+        <button className="w-9 h-9 rounded-full overflow-hidden border-2" style={{ borderColor: 'var(--red)' }}>
+          <img src="https://i.pravatar.cc/36?img=60" alt="me" className="w-full h-full object-cover" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  ROOT APP
+// ─────────────────────────────────────────────
+function App() {
+  const [tab, setTab] = React.useState('home');
+  const [viewingProvider, setViewingProvider] = React.useState(null);
+  const [providers, setProviders] = React.useState(PROVIDERS);
+  const [likedIds, setLikedIds] = React.useState([]);
+
+  function handleLike(id) {
+    setLikedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  }
+
+  function handleViewProvider(provider) {
+    setViewingProvider(provider);
+    window.scrollTo(0, 0);
+  }
+
+  function handleBack() {
+    setViewingProvider(null);
+    window.scrollTo(0, 0);
+  }
+
+  // If viewing a provider, show detail full-screen
+  if (viewingProvider) {
+    return (
+      <div>
+        <ProfileDetail provider={viewingProvider} onBack={handleBack} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-md mx-auto min-h-screen">
+      <TopHeader tab={tab} />
+
+      {/* Tab content — add top padding for fixed header */}
+      <div style={{ paddingTop: 64 }}>
+        {tab === 'home' && (
+          <HomeTab
+            providers={providers}
+            onViewProvider={handleViewProvider}
+            likedIds={likedIds}
+            onLike={handleLike}
+          />
+        )}
+        {tab === 'search' && (
+          <SearchTab
+            providers={providers}
+            onViewProvider={handleViewProvider}
+            likedIds={likedIds}
+            onLike={handleLike}
+          />
+        )}
+        {tab === 'map' && (
+          <MapTab providers={providers} onViewProvider={handleViewProvider} />
+        )}
+        {tab === 'profile' && (
+          <ProfileTab />
+        )}
+      </div>
+
+      <BottomNav activeTab={tab} onChange={setTab} />
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+//  RENDER
+// ─────────────────────────────────────────────
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
 
 </body>
 </html>
