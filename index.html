@@ -1,43 +1,19 @@
 <!DOCTYPE html>
 
-<html lang="en" dir="ltr">
-
+<html lang="en">
 <head>
-  <!-- ═══════════════════════════════════════════════════
-       GigsCourt — Service Marketplace PWA
-       NO BUILD TOOL REQUIRED — React + Babel via CDN
-       All JSX is transpiled in-browser by Babel Standalone
-  ════════════════════════════════════════════════════════ -->
-
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-
-  <!-- Primary Meta -->
-
-  <title>GigsCourt — Find Skilled Providers Near You</title>
-  <meta name="description" content="GigsCourt connects you with top local barbers, stylists, tailors and more." />
+  <title>GigsCourt</title>
   <meta name="theme-color" content="#FF385C" />
-
-  <!-- PWA / Mobile -->
-
-  <meta name="format-detection"             content="telephone=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title"   content="GigsCourt" />
 
-  <!-- Open Graph -->
-
-  <meta property="og:title"       content="GigsCourt — Find Skilled Providers Near You" />
-  <meta property="og:description" content="Browse barbers, stylists, tailors by distance." />
-  <meta property="og:type"        content="website" />
-
-  <!-- Google Fonts -->
+  <!-- Fonts -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 
-  <!-- ── Tailwind CSS CDN ─────────────────────────────── -->
+  <!-- Tailwind -->
 
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -45,153 +21,81 @@
     tailwind.config = {
       theme: {
         extend: {
-          colors: {
-            red: { DEFAULT: '#FF385C', dark: '#E0294D', light: '#FF6B87' }
-          },
+          colors: { brand: '#FF385C' },
           fontFamily: {
             display: ['"Clash Display"', 'sans-serif'],
             body:    ['"DM Sans"', 'sans-serif'],
           },
         },
       },
-    };
+    }
   </script>
 
-  <!-- ══════════════════════════════════════════════════════
-       CRITICAL — React + ReactDOM (must load BEFORE App.js)
-       These become window.React and window.ReactDOM globals.
-       Babel then transforms JSX into React.createElement calls.
-  ═══════════════════════════════════════════════════════════ -->
+  <!-- React 18 -->
 
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 
-  <!-- ══════════════════════════════════════════════════════
-       Babel Standalone — transforms JSX in the browser.
-       This is what makes <div> syntax work without webpack/Vite.
-       All script tags with type="text/babel" are auto-processed.
-  ═══════════════════════════════════════════════════════════ -->
+  <!-- Babel (JSX transform) -->
 
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Styles -->
-
-  <link rel="stylesheet" href="./styles.css" />
-
-  <!-- Critical inline CSS — prevents FOUC before styles.css loads -->
+  <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
 
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body {
-      margin: 0; padding: 0;
-      background: #F8F8FA;
-      -webkit-text-size-adjust: 100%;
-      overscroll-behavior: none;
-    }
-    #root { min-height: 100dvh; display: flex; flex-direction: column; }
-
-    /* Splash loader */
-    #app-loader {
-      position: fixed; inset: 0; background: #fff;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 16px; z-index: 9999;
-      transition: opacity 0.4s ease;
-    }
-    #app-loader.hidden { opacity: 0; pointer-events: none; }
-    .loader-logo {
-      font-family: 'Clash Display', sans-serif;
-      font-size: 30px; font-weight: 700;
-      color: #0D0D12; margin: 0; letter-spacing: -0.5px;
-    }
-    .loader-logo span { color: #FF385C; }
-    .loader-tagline {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px; color: #9999AA; margin: 0;
-    }
-    .loader-spinner {
-      width: 32px; height: 32px; border-radius: 50%;
-      border: 3px solid rgba(255,56,92,0.15);
-      border-top-color: #FF385C;
-      animation: spin 0.75s linear infinite;
-    }
-    @keyframes spin   { to { transform: rotate(360deg); } }
-    @keyframes gcSpin { to { transform: rotate(360deg); } }
+    *,*::before,*::after{box-sizing:border-box}
+    body{margin:0;font-family:'DM Sans',sans-serif;background:#F8F8FA;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+    #root{min-height:100dvh;display:flex;flex-direction:column}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .spin{animation:spin .7s linear infinite}
+    .fade-up{animation:fadeUp .35s ease both}
+    input[type=range]{-webkit-appearance:none;height:4px;border-radius:9999px;outline:none;cursor:pointer}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:2.5px solid #FF385C;box-shadow:0 4px 12px rgba(255,56,92,.35)}
+    input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:2.5px solid #FF385C}
+    .search-input:focus{outline:none;border-color:#FF385C !important;box-shadow:0 0 0 3px rgba(255,56,92,.12) !important;background:#fff !important}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .skeleton{background:linear-gradient(90deg,#f0f0f5 25%,#e4e4eb 50%,#f0f0f5 75%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite}
   </style>
 
 </head>
-
 <body>
 
-  <!-- Splash — visible instantly while JS loads -->
+  <!-- ============================================================
+       TEMPORARY DEBUG TOOL — REMOVE AFTER FIXING ERRORS
+       This adds a green floating button on screen.
+       Tap it to see all console errors on your iPhone.
+       DELETE these 2 lines once the app is working correctly.
+  =============================================================== -->
 
-  <div id="app-loader" aria-hidden="true">
-    <p class="loader-logo">Gigs<span>Court</span></p>
-    <div class="loader-spinner"></div>
-    <p class="loader-tagline">Finding gigs near you…</p>
-  </div>
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 
-  <!-- React mounts here -->
+  <script>eruda.init();</script>
+
+  <!-- ============================================================
+       END OF TEMPORARY DEBUG TOOL
+  =============================================================== -->
 
   <div id="root"></div>
 
-  <!-- Loader dismiss logic — two methods for reliability -->
+  <!--
+    COMPONENT FILES — loaded in dependency order.
+    Each file uses type="text/babel" so Babel transforms JSX.
+    Leaf components first, App.js last.
+  -->
 
-  <script>
-    (function () {
-      var loader = document.getElementById('app-loader');
-      var root   = document.getElementById('root');
+  <script type="text/babel" src="./components/Header.js"      data-presets="react"></script>
 
-      function dismiss() {
-        if (!loader || loader._dismissed) return;
-        loader._dismissed = true;
-        loader.classList.add('hidden');
-        setTimeout(function () {
-          if (loader.parentNode) loader.parentNode.removeChild(loader);
-        }, 450);
-      }
+  <script type="text/babel" src="./components/ProviderCard.js" data-presets="react"></script>
 
-      // Method 1: fires the moment React renders into #root
-      var obs = new MutationObserver(function () {
-        if (root.hasChildNodes()) { dismiss(); obs.disconnect(); }
-      });
-      obs.observe(root, { childList: true });
+  <script type="text/babel" src="./components/ProfileGrid.js"  data-presets="react"></script>
 
-      // Method 2: hard 6s fallback — clears no matter what
-      setTimeout(function () { dismiss(); obs.disconnect(); }, 6000);
-    })();
-  </script>
+  <script type="text/babel" src="./ProfilePage.js"             data-presets="react"></script>
 
-  <!-- ══════════════════════════════════════════════════════
-       Component files — MUST be type="text/babel" so Babel
-       transforms the JSX before the browser tries to run it.
+  <script type="text/babel" src="./MapComponent.js"            data-presets="react"></script>
 
-       ORDER MATTERS — dependencies load before dependents:
-         1. Leaf components first (no internal imports)
-         2. ProfilePage (imports ProfileGrid)
-         3. App.js last (imports everything)
+  <script type="text/babel" src="./CloudinaryUpload.js"        data-presets="react"></script>
 
-       Each file uses window globals instead of ES imports
-       because Babel Standalone does not support import/export
-       across separate script tags. State is passed via props.
-  ═══════════════════════════════════════════════════════════ -->
-
-  <!-- NOTE TO DEVELOPER:
-       Because we're using Babel Standalone (no bundler),
-       each component file must be inlined here OR converted
-       to use the window global pattern shown in App.js.
-
-       The cleanest production upgrade path is:
-         npm create vite@latest gigscourt -- --template react
-       Then move your .js files into src/ and run: npm run build
-       Vercel will then serve a proper bundled app.
-
-       For now, App.js below is self-contained and loads everything. -->
-
-  <!-- ── Main App — self-contained, no external JS imports ── -->
-
-  <script type="text/babel" src="./App.js"></script>
+  <script type="text/babel" src="./App.js"                     data-presets="react"></script>
 
 </body>
 </html>
