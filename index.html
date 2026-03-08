@@ -1,9 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>GigsCourt · professional loop</title>
+    <title>GigsCourt · provider/client</title>
     <!-- Firebase SDK (v9 modular) -->
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
@@ -57,7 +58,7 @@
             display: none;
         }
 
-        /* clean 4-tab bottom navigation - flat, elegant, blue active */
+        /* clean 4-tab bottom navigation */
         .bottom-nav {
             background: #FFFFFF;
             border-top: 1px solid #E5E9F0;
@@ -178,7 +179,7 @@
             color: #0077B5;
         }
 
-        /* SEARCH MAP ENGINE - light theme */
+        /* SEARCH MAP ENGINE - with live GPS */
         .map-container {
             height: 240px;
             width: 100%;
@@ -206,6 +207,20 @@
         .slider-label span i {
             color: #0077B5;
             margin-right: 4px;
+        }
+        .gps-indicator {
+            background: #E8F1F8;
+            color: #0077B5;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .gps-indicator i {
+            font-size: 0.9rem;
         }
         input[type=range] {
             -webkit-appearance: none;
@@ -261,6 +276,11 @@
             color: #64748B;
             font-size: 0.85rem;
         }
+        .nearby-info .location-label {
+            font-size: 0.75rem;
+            color: #0077B5;
+            margin-top: 2px;
+        }
         .nearby-distance {
             margin-left: auto;
             color: #0077B5;
@@ -268,7 +288,7 @@
             font-size: 0.9rem;
         }
 
-        /* PROFILE – cinematic cover + 3‑col grid with white gaps */
+        /* PROFILE – with workplace location */
         .profile-header {
             position: relative;
             width: 100%;
@@ -396,6 +416,45 @@
             opacity: 1;
         }
 
+        /* edit profile with workplace location */
+        .edit-profile-form { padding:20px; background:#FFFFFF; }
+        .form-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+        .form-header h3 { font-size:1.3rem; font-weight:600; color:#1A1A1A; }
+        .edit-icon { color:#0077B5; font-size:1.2rem; }
+        .form-group { margin-bottom:20px; }
+        .form-group label { color:#64748B; font-size:0.85rem; margin-bottom:8px; display:block; }
+        .form-control {
+            width:100%; padding:16px 18px; background:#F8FAFF;
+            border:1px solid #E5E9F0; border-radius:15px; color:#1A1A1A;
+            font-size:1rem; outline:none; box-shadow:0 2px 6px rgba(0,0,0,0.02);
+        }
+        .form-control:focus { border-color:#0077B5; box-shadow:0 0 0 3px rgba(0,119,181,0.1); }
+        select.form-control {
+            appearance:none;
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230077B5' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 1rem center;
+        }
+        .location-group {
+            background: #F0F7FC;
+            border-radius: 15px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background:#0077B5; color:white; border:none; border-radius:15px;
+            padding:16px 20px; font-weight:600; font-size:1rem; width:100%;
+            margin:8px 0; cursor:pointer; box-shadow:0 4px 12px rgba(0,119,181,0.2);
+        }
+        .btn:active { transform:scale(0.98); }
+        .btn-secondary { background:#F8FAFF; border:1px solid #E5E9F0; color:#1A1A1A; }
+        .btn-secondary i { color:#0077B5; margin-right:8px; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #0077B5;
+            color: #0077B5;
+            box-shadow: none;
+        }
+
         /* messages */
         .inbox-list {
             padding: 0 16px;
@@ -442,34 +501,7 @@
             display:flex; align-items:center; gap:4px;
         }
 
-        /* edit profile - clean white */
-        .edit-profile-form { padding:20px; background:#FFFFFF; }
-        .form-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
-        .form-header h3 { font-size:1.3rem; font-weight:600; color:#1A1A1A; }
-        .edit-icon { color:#0077B5; font-size:1.2rem; }
-        .form-group { margin-bottom:20px; }
-        .form-group label { color:#64748B; font-size:0.85rem; margin-bottom:8px; display:block; }
-        .form-control {
-            width:100%; padding:16px 18px; background:#F8FAFF;
-            border:1px solid #E5E9F0; border-radius:15px; color:#1A1A1A;
-            font-size:1rem; outline:none; box-shadow:0 2px 6px rgba(0,0,0,0.02);
-        }
-        .form-control:focus { border-color:#0077B5; box-shadow:0 0 0 3px rgba(0,119,181,0.1); }
-        select.form-control {
-            appearance:none;
-            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230077B5' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat:no-repeat; background-position:right 1rem center;
-        }
-        .btn {
-            background:#0077B5; color:white; border:none; border-radius:15px;
-            padding:16px 20px; font-weight:600; font-size:1rem; width:100%;
-            margin:8px 0; cursor:pointer; box-shadow:0 4px 12px rgba(0,119,181,0.2);
-        }
-        .btn:active { transform:scale(0.98); }
-        .btn-secondary { background:#F8FAFF; border:1px solid #E5E9F0; color:#1A1A1A; }
-        .btn-secondary i { color:#0077B5; margin-right:8px; }
-
-        /* auth overlay - clean white */
+        /* auth overlay */
         .auth-overlay {
             position:fixed; top:0; left:0; width:100%; height:100%;
             background:rgba(255,255,255,0.98); backdrop-filter:blur(10px);
@@ -491,13 +523,12 @@
         }
         .input-field:focus { border-color:#0077B5; }
         .text-small { color:#64748B; font-size:0.85rem; }
+        .mb-2 { margin-bottom:8px; }
     </style>
 </head>
 <body>
     <div id="app">
         <div id="panel"></div>
-
-        <!-- clean 4-tab bottom navigation -->
         <div class="bottom-nav" id="bottomNav">
             <button class="nav-item" data-tab="home" id="tabHome"><i class="fas fa-home"></i><span>Home</span></button>
             <button class="nav-item" data-tab="search" id="tabSearch"><i class="fas fa-search"></i><span>Search</span></button>
@@ -510,7 +541,7 @@
         <div class="auth-card">
             <button class="close-auth" id="closeAuthBtn">&times;</button>
             <h2 style="color:#1A1A1A;"><i class="fa-regular fa-gem" style="color:#0077B5;"></i> GigsCourt</h2>
-            <p class="text-small mb-2">professional talent loop</p>
+            <p class="text-small mb-2">provider · client</p>
             <div><input type="email" id="authEmail" class="input-field" placeholder="Email"></div>
             <div><input type="password" id="authPassword" class="input-field" placeholder="Password"></div>
             <button class="btn" id="authPrimaryBtn">Login</button>
@@ -538,7 +569,9 @@
             getFirestore,
             doc,
             setDoc,
-            getDoc
+            getDoc,
+            collection,
+            getDocs
         } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
 
         const firebaseConfig = {
@@ -581,6 +614,20 @@
         let userProfileData = {};
         let mapInitialized = false;
         let map;
+        let liveGPS = null;
+        let allUsers = [];
+
+        // Haversine distance in km
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
 
         async function loadUserProfile(uid) {
             try {
@@ -614,6 +661,30 @@
             return data.secure_url;
         }
 
+        function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) reject('Geolocation not supported');
+                navigator.geolocation.getCurrentPosition(
+                    pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                    err => reject(err)
+                );
+            });
+        }
+
+        async function loadAllUsers() {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'users'));
+                allUsers = [];
+                querySnapshot.forEach((doc) => {
+                    if (doc.id !== currentUser?.uid) {
+                        allUsers.push({ id: doc.id, ...doc.data() });
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
         function initMap() {
             if (!mapInitialized && document.getElementById('map')) {
                 map = L.map('map', {
@@ -637,7 +708,7 @@
                 panel.innerHTML = `
                     <div class="landscape-feed">
                         <div class="landscape-card">
-                            <img class="card-bg" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format" alt="talent">
+                            <img class="card-bg" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format">
                             <div class="card-gradient"></div>
                             <div class="premium-badge-card"><i class="fas fa-crown"></i> PREMIUM</div>
                             <div class="card-content">
@@ -646,7 +717,7 @@
                             </div>
                         </div>
                         <div class="landscape-card">
-                            <img class="card-bg" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&auto=format" alt="talent">
+                            <img class="card-bg" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&auto=format">
                             <div class="card-gradient"></div>
                             <div class="premium-badge-card"><i class="fas fa-crown"></i> PREMIUM</div>
                             <div class="card-content">
@@ -655,7 +726,7 @@
                             </div>
                         </div>
                         <div class="landscape-card">
-                            <img class="card-bg" src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f9e?w=600&auto=format" alt="talent">
+                            <img class="card-bg" src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f9e?w=600&auto=format">
                             <div class="card-gradient"></div>
                             <div class="premium-badge-card"><i class="fas fa-crown"></i> PREMIUM</div>
                             <div class="card-content">
@@ -669,23 +740,38 @@
                 panel.innerHTML = `
                     <div class="map-container"><div id="map"></div></div>
                     <div class="radius-slider-container">
+                        <div class="gps-indicator" id="gpsStatus"><i class="fas fa-satellite-dish"></i> Acquiring GPS...</div>
                         <div class="slider-label"><span><i class="fas fa-location-dot"></i> radius</span><span id="radiusValue">25 km</span></div>
                         <input type="range" id="radiusSlider" min="0" max="50" value="25" step="1">
                     </div>
                     <div class="nearby-list" id="nearbyList">
-                        <div class="nearby-item"><div class="nearby-avatar"><i class="fas fa-user-tie"></i></div><div class="nearby-info"><h4>Aisha Karim</h4><p>Full‑stack · AI</p></div><div class="nearby-distance">2 km</div></div>
-                        <div class="nearby-item"><div class="nearby-avatar"><i class="fas fa-laptop-code"></i></div><div class="nearby-info"><h4>Marcus V.</h4><p>UX / product</p></div><div class="nearby-distance">5 km</div></div>
-                        <div class="nearby-item"><div class="nearby-avatar"><i class="fas fa-megaphone"></i></div><div class="nearby-info"><h4>Elena Rossi</h4><p>growth marketing</p></div><div class="nearby-distance">12 km</div></div>
-                        <div class="nearby-item"><div class="nearby-avatar"><i class="fas fa-code"></i></div><div class="nearby-info"><h4>Reyansh I.</h4><p>react · node</p></div><div class="nearby-distance">18 km</div></div>
+                        <div class="nearby-item"><div class="nearby-avatar"><i class="fas fa-spinner fa-pulse"></i></div><div class="nearby-info"><h4>Loading providers...</h4></div></div>
                     </div>
                 `;
-                setTimeout(() => {
+                
+                setTimeout(async () => {
                     initMap();
+                    try {
+                        liveGPS = await getCurrentLocation();
+                        document.getElementById('gpsStatus').innerHTML = '<i class="fas fa-check-circle"></i> GPS: live active';
+                        if (map) {
+                            map.setView([liveGPS.lat, liveGPS.lng], 12);
+                            L.marker([liveGPS.lat, liveGPS.lng], {
+                                icon: L.divIcon({ className: 'gps-marker', html: '<i class="fas fa-circle" style="color:#0077B5; font-size:1.5rem;"></i>' })
+                            }).addTo(map);
+                        }
+                        await loadAllUsers();
+                        updateNearbyList(25);
+                    } catch (err) {
+                        document.getElementById('gpsStatus').innerHTML = '<i class="fas fa-exclamation-triangle"></i> GPS unavailable';
+                    }
+                    
                     const slider = document.getElementById('radiusSlider');
                     const valSpan = document.getElementById('radiusValue');
                     if (slider) {
                         slider.addEventListener('input', (e) => {
                             valSpan.innerText = e.target.value + ' km';
+                            updateNearbyList(parseInt(e.target.value));
                         });
                     }
                 }, 100);
@@ -708,6 +794,36 @@
             }
         }
 
+        function updateNearbyList(radiusKm) {
+            if (!liveGPS) return;
+            
+            const providers = allUsers.filter(u => u.workplaceCoords?.lat && u.workplaceCoords?.lng);
+            const withDistance = providers.map(p => ({
+                ...p,
+                distance: getDistance(liveGPS.lat, liveGPS.lng, p.workplaceCoords.lat, p.workplaceCoords.lng)
+            })).filter(p => p.distance <= radiusKm).sort((a,b) => a.distance - b.distance);
+            
+            const listEl = document.getElementById('nearbyList');
+            if (!listEl) return;
+            
+            if (withDistance.length === 0) {
+                listEl.innerHTML = '<div class="nearby-item"><div class="nearby-avatar"><i class="fas fa-map-pin"></i></div><div class="nearby-info"><h4>No providers within radius</h4></div></div>';
+                return;
+            }
+            
+            listEl.innerHTML = withDistance.map(p => `
+                <div class="nearby-item">
+                    <div class="nearby-avatar"><i class="fas fa-user-tie"></i></div>
+                    <div class="nearby-info">
+                        <h4>${p.displayName || 'Provider'}</h4>
+                        <p>${p.category || 'Talent'}</p>
+                        <div class="location-label"><i class="fas fa-map-pin"></i> ${p.locationLabel || 'Workplace'}</div>
+                    </div>
+                    <div class="nearby-distance">${p.distance.toFixed(1)} km</div>
+                </div>
+            `).join('');
+        }
+
         function renderProfileEditor() {
             const data = userProfileData || {};
             panel.innerHTML = `
@@ -726,9 +842,21 @@
                     <div class="form-group"><label>Category</label><select id="category" class="form-control"><option value="Music">Music</option><option value="Tech">Tech</option><option value="Events">Events</option><option value="Design">Design</option><option value="Consulting">Consulting</option></select></div>
                     <div class="form-group"><label>Bio</label><textarea id="bio" class="form-control">${data.bio || ''}</textarea></div>
                     <div class="form-group"><label>Hourly Rate ($)</label><input type="number" id="hourlyRate" class="form-control" value="${data.hourlyRate || ''}"></div>
+                    
+                    <div class="location-group">
+                        <h4 style="margin-bottom:12px; color:#0077B5;"><i class="fas fa-map-marker-alt"></i> Workplace Location</h4>
+                        <div class="form-group">
+                            <label>Address Label (e.g. "Sabo Auchi")</label>
+                            <input type="text" id="locationLabel" class="form-control" value="${data.locationLabel || ''}" placeholder="e.g. Sabo Auchi">
+                        </div>
+                        <button class="btn btn-outline" id="setLocationBtn"><i class="fas fa-crosshairs"></i> Set Current Location as Workplace</button>
+                        <div id="locationStatus" style="margin-top:12px; font-size:0.9rem; color:#64748B;"></div>
+                    </div>
+
                     <div class="portfolio-grid" id="portfolioGrid">
                         ${[1,2,3,4,5,6].map(i => `<div class="grid-item" data-index="${i-1}">${data[`portfolio_${i-1}`] ? `<img src="${data[`portfolio_${i-1}`]}">` : ''}<input type="file" class="portfolio-upload" data-index="${i-1}" accept="image/*" style="display:none;"><div class="overlay"><i class="fas fa-plus"></i></div></div>`).join('')}
                     </div>
+                    
                     <button class="btn" id="saveProfileBtn">Save Profile</button>
                     <button class="btn btn-secondary" id="signOutBtnProfile"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
                     <div id="profileMessage" style="text-align:center; margin-top:12px; color:#0077B5;"></div>
@@ -737,6 +865,21 @@
 
             document.getElementById('uploadCoverBtn')?.addEventListener('click', ()=>document.getElementById('coverUpload')?.click());
             document.getElementById('uploadAvatarBtn')?.addEventListener('click', ()=>document.getElementById('avatarUpload')?.click());
+            
+            document.getElementById('setLocationBtn')?.addEventListener('click', async () => {
+                try {
+                    const pos = await getCurrentLocation();
+                    const locationLabel = document.getElementById('locationLabel')?.value || 'Workplace';
+                    await saveUserProfile(currentUser.uid, {
+                        workplaceCoords: { lat: pos.lat, lng: pos.lng },
+                        locationLabel: locationLabel
+                    });
+                    document.getElementById('locationStatus').innerHTML = '<i class="fas fa-check-circle" style="color:#00aa55;"></i> Workplace set!';
+                } catch (err) {
+                    document.getElementById('locationStatus').innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#dc3545;"></i> Failed to get location';
+                }
+            });
+
             document.getElementById('coverUpload')?.addEventListener('change', async (e) => {
                 const file = e.target.files?.[0]; if(!file||!currentUser) return;
                 const url = await uploadToCloudinary(file); await saveUserProfile(currentUser.uid,{coverUrl:url});
@@ -756,7 +899,14 @@
             }));
             document.getElementById('saveProfileBtn')?.addEventListener('click', async ()=>{
                 if(!currentUser) return;
-                const updates = {displayName: document.getElementById('displayName')?.value, category: document.getElementById('category')?.value, bio: document.getElementById('bio')?.value, hourlyRate: parseFloat(document.getElementById('hourlyRate')?.value)||null, updatedAt: new Date().toISOString()};
+                const updates = {
+                    displayName: document.getElementById('displayName')?.value,
+                    category: document.getElementById('category')?.value,
+                    bio: document.getElementById('bio')?.value,
+                    hourlyRate: parseFloat(document.getElementById('hourlyRate')?.value)||null,
+                    locationLabel: document.getElementById('locationLabel')?.value,
+                    updatedAt: new Date().toISOString()
+                };
                 const ok = await saveUserProfile(currentUser.uid, updates);
                 const msg = document.getElementById('profileMessage');
                 if(ok) { msg.innerHTML='Saved!'; msg.style.color='#00aa55'; setTimeout(()=>msg.innerHTML='',2000); }
@@ -796,8 +946,14 @@
 
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
-            if(user) { overlay.classList.remove('show'); await loadUserProfile(user.uid); if(currentTab==='profile') renderPanel('profile'); }
-            else { userProfileData={}; if(currentTab==='profile') renderPanel('profile'); }
+            if(user) {
+                overlay.classList.remove('show');
+                await loadUserProfile(user.uid);
+                if(currentTab==='profile') renderPanel('profile');
+            } else {
+                userProfileData = {};
+                if(currentTab==='profile') renderPanel('profile');
+            }
         });
 
         setAuthMode('login'); setActiveTab('home'); renderPanel('home'); overlay.classList.remove('show');
