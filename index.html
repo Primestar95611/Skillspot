@@ -155,14 +155,59 @@ async function updateProviderAvailability(providerId, isAvailable) {
 //  SHELLS — wire up later
 // ════════════════════════════════════════════════════════════
 
-/** Shell: Cloudinary Upload */
-async function uploadToCloudinary(imageFile) {
-  // TODO: POST to Cloudinary, then arrayUnion the URL into the
-  // provider's portfolio field in Firestore:
-  // await db.collection('providers').doc(uid).update({
-  //   portfolio: firebase.firestore.FieldValue.arrayUnion(secureUrl)
-  // });
-  console.log('[Cloudinary] Shell: upload', imageFile?.name);
+/**
+ * uploadToCloudinary  — LIVE
+ * 1. POSTs the image to Cloudinary (unsigned upload via preset "Gigscourt")
+ * 2. On success, appends the secure_url to the provider's Firestore doc
+ *    using arrayUnion so concurrent uploads never overwrite each other.
+ *
+ * @param {File}   imageFile  — the File object from the file input
+ * @param {string} providerId — the Firestore doc ID (usually Firebase UID)
+ * @param {function} onProgress — optional callback(pct) for upload progress
+ * @returns {string} the Cloudinary secure_url of the uploaded image
+ */
+async function uploadToCloudinary(imageFile, providerId, onProgress) {
+  const CLOUD_NAME    = 'dszdwnuua';
+  const UPLOAD_PRESET = 'Gigscourt';
+
+  const formData = new FormData();
+  formData.append('file',           imageFile);
+  formData.append('upload_preset',  UPLOAD_PRESET);
+  formData.append('folder',         `gigscourt/${providerId}`); // organise by provider
+
+  // Use XMLHttpRequest so we can track upload progress
+  const secureUrl = await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`);
+
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        console.log('[Cloudinary] Upload OK:', data.secure_url);
+        resolve(data.secure_url);
+      } else {
+        reject(new Error(`Cloudinary error ${xhr.status}: ${xhr.responseText}`));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Cloudinary network error'));
+    xhr.send(formData);
+  });
+
+  // Save URL to the provider's Firestore document — arrayUnion is safe for concurrent uploads
+  await db.collection('providers').doc(providerId).update({
+    portfolio:  firebase.firestore.FieldValue.arrayUnion(secureUrl),
+    updatedAt:  firebase.firestore.FieldValue.serverTimestamp(),
+  });
+  console.log('[Firestore] portfolio updated for:', providerId);
+
+  return secureUrl;
 }
 
 /** Shell: Google Maps Init */
@@ -317,9 +362,199 @@ function ProviderCard({ provider, onClick, liked, onLike }) {
 }
 
 // ════════════════════════════════════════════════════════════
+//  PORTFOLIO GRID COMPONENT
+//  • Subscribes live to Firestore so new images appear instantly
+//  • isOwner=true → shows the Action Red "Add Photo" tile
+//  • Tracks per-upload progress with an animated overlay
+// ════════════════════════════════════════════════════════════
+function PortfolioGrid({ providerId, initialImages, isOwner }) {
+  const [images,      setImages]      = React.useState(initialImages || []);
+  const [uploading,   setUploading]   = React.useState(false);
+  const [uploadPct,   setUploadPct]   = React.useState(0);
+  const [uploadMsg,   setUploadMsg]   = React.useState('');
+  const [previewSrc,  setPreviewSrc]  = React.useState(null); // local blob preview while uploading
+
+  // Live Firestore listener — keeps grid in sync with DB for real doc IDs.
+  // Skipped for mock-* IDs (no real Firestore doc exists for demo data).
+  React.useEffect(() => {
+    if (!providerId || providerId.startsWith('mock')) return;
+    const unsub = db.collection('providers').doc(providerId)
+      .onSnapshot(snap => {
+        if (snap.exists && snap.data().portfolio) {
+          setImages(snap.data().portfolio);
+        }
+      }, err => console.warn('[Portfolio] listen err:', err.message));
+    return () => unsub();
+  }, [providerId]);
+
+  function triggerFilePicker() {
+    if (uploading) return;
+    // Check sign-in — PortfolioGrid only rendered with isOwner=true for signed-in users
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/jpeg,image/png,image/webp,image/gif';
+    inp.onchange = async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Validate size (max 10 MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setUploadMsg('⚠ Image must be under 10 MB');
+        setTimeout(() => setUploadMsg(''), 3500);
+        return;
+      }
+
+      // Show local preview immediately for instant feedback
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewSrc(objectUrl);
+      setUploading(true);
+      setUploadPct(0);
+      setUploadMsg('Uploading to Cloudinary…');
+
+      try {
+        const url = await uploadToCloudinary(file, providerId, pct => {
+          setUploadPct(pct);
+          setUploadMsg(`Uploading… ${pct}%`);
+        });
+        setUploadMsg('✓ Photo added to portfolio!');
+        setPreviewSrc(null);
+        URL.revokeObjectURL(objectUrl);
+        // The onSnapshot listener above will auto-append the URL to `images`.
+        // For mock providers (no real Firestore doc), manually append:
+        if (providerId.startsWith('mock')) setImages(prev => [...prev, url]);
+      } catch(err) {
+        console.error('[PortfolioGrid] Upload failed:', err.message);
+        setUploadMsg('⚠ Upload failed — try again');
+        setPreviewSrc(null);
+        URL.revokeObjectURL(objectUrl);
+      } finally {
+        setUploading(false);
+        setUploadPct(0);
+        setTimeout(() => setUploadMsg(''), 3500);
+      }
+    };
+    inp.click();
+  }
+
+  return (
+    <div className="mx-5 mt-6">
+      {/* Section header */}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-gray-900" style={{ fontFamily:'Syne' }}>
+          Portfolio
+          {images.length > 0 && <span className="ml-2 text-sm font-normal text-gray-400">({images.length})</span>}
+        </h3>
+        {isOwner && (
+          <button
+            onClick={triggerFilePicker}
+            disabled={uploading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-white text-xs font-bold transition-all active:scale-95"
+            style={{ background:'var(--red)', opacity: uploading ? 0.6 : 1, fontFamily:'Syne',
+              boxShadow:'0 4px 12px rgba(255,56,92,0.35)' }}>
+            {uploading
+              ? <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent spin inline-block" />
+              : <Icon.Camera size={13} color="white" />}
+            {uploading ? `${uploadPct}%` : 'Add Photo'}
+          </button>
+        )}
+      </div>
+
+      {/* Upload status message */}
+      {uploadMsg && (
+        <div className="mb-3 rounded-xl px-3 py-2.5 text-xs font-medium fade-up flex items-center gap-2"
+          style={{
+            background: uploadMsg.startsWith('✓') ? 'rgba(0,196,140,0.1)' : uploadMsg.startsWith('⚠') ? 'rgba(255,56,92,0.08)' : 'rgba(255,56,92,0.06)',
+            color: uploadMsg.startsWith('✓') ? 'var(--green)' : uploadMsg.startsWith('⚠') ? 'var(--red)' : '#374151',
+          }}>
+          {uploading && <span className="w-3 h-3 rounded-full border-2 border-current border-t-transparent spin inline-block flex-shrink-0" />}
+          {uploadMsg}
+        </div>
+      )}
+
+      {/* Progress bar — visible during upload */}
+      {uploading && uploadPct > 0 && (
+        <div className="mb-3 rounded-full overflow-hidden" style={{ height:3, background:'#F3F4F6' }}>
+          <div className="h-full rounded-full transition-all" style={{ width:`${uploadPct}%`, background:'var(--red)' }} />
+        </div>
+      )}
+
+      {/* The 3-column grid */}
+      {images.length === 0 && !previewSrc ? (
+        /* Empty state */
+        <div
+          onClick={isOwner ? triggerFilePicker : undefined}
+          className="rounded-2xl py-12 flex flex-col items-center gap-2"
+          style={{
+            background:'#F9FAFB',
+            border: isOwner ? '2px dashed rgba(255,56,92,0.3)' : '2px dashed #E5E7EB',
+            cursor: isOwner ? 'pointer' : 'default',
+          }}>
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+            style={{ background: isOwner ? 'rgba(255,56,92,0.08)' : '#F3F4F6' }}>
+            <Icon.Camera size={24} color={isOwner ? 'var(--red)' : '#D1D5DB'} />
+          </div>
+          <p className="text-sm font-semibold" style={{ color: isOwner ? 'var(--red)' : '#9CA3AF', fontFamily:'Syne' }}>
+            {isOwner ? 'Tap to add your first photo' : 'No portfolio images yet'}
+          </p>
+          {isOwner && <p className="text-xs text-gray-400">JPEG, PNG or WEBP · max 10 MB</p>}
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-1.5">
+          {/* Existing images */}
+          {images.map((img, i) => (
+            <div key={i} className="rounded-xl overflow-hidden relative group"
+              style={{ aspectRatio:'1/1' }}>
+              <img src={img} alt={`portfolio-${i}`} className="w-full h-full object-cover" loading="lazy" />
+            </div>
+          ))}
+
+          {/* In-progress preview tile — shown during upload */}
+          {previewSrc && (
+            <div className="rounded-xl overflow-hidden relative" style={{ aspectRatio:'1/1' }}>
+              <img src={previewSrc} alt="uploading" className="w-full h-full object-cover" style={{ opacity:0.5 }} />
+              {/* Upload progress ring overlay */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center"
+                style={{ background:'rgba(0,0,0,0.35)' }}>
+                <svg width="36" height="36" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="3" />
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="white" strokeWidth="3"
+                    strokeDasharray={`${(uploadPct/100)*94.2} 94.2`}
+                    strokeLinecap="round" transform="rotate(-90 18 18)" />
+                </svg>
+                <span className="text-white text-xs font-bold mt-1">{uploadPct}%</span>
+              </div>
+            </div>
+          )}
+
+          {/* "Add Photo" tile — always last cell when owner */}
+          {isOwner && !uploading && (
+            <button
+              onClick={triggerFilePicker}
+              className="rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95"
+              style={{
+                aspectRatio:'1/1',
+                background:'rgba(255,56,92,0.06)',
+                border:'2px dashed rgba(255,56,92,0.4)',
+              }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background:'var(--red)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </div>
+              <span className="text-xs font-bold" style={{ color:'var(--red)', fontFamily:'Syne' }}>Add</span>
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 //  PROFILE DETAIL  (full-screen view)
 // ════════════════════════════════════════════════════════════
-function ProfileDetail({ provider, onBack }) {
+function ProfileDetail({ provider, onBack, currentUser }) {
   const [booked, setBooked] = React.useState(false);
   const [liked, setLiked]   = React.useState(false);
 
@@ -331,6 +566,9 @@ function ProfileDetail({ provider, onBack }) {
       .onSnapshot(snap => { if (snap.exists) setLiveProvider({ id: snap.id, ...snap.data(), portfolio: snap.data().portfolio || [] }); });
     return () => unsub();
   }, [provider.id]);
+
+  // Provider is the owner if they are signed in and their UID matches the doc ID
+  const isOwner = !!(currentUser && currentUser.uid === provider.id);
 
   const p = liveProvider;
 
@@ -391,23 +629,7 @@ function ProfileDetail({ provider, onBack }) {
       </div>
 
       {/* ── Instagram-style 3-column portfolio grid ── */}
-      <div className="mx-5 mt-6">
-        <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily:'Syne' }}>Portfolio</h3>
-        {p.portfolio && p.portfolio.length > 0 ? (
-          <div className="grid grid-cols-3 gap-1.5">
-            {p.portfolio.map((img,i) => (
-              <div key={i} className="rounded-xl overflow-hidden" style={{ aspectRatio:'1/1' }}>
-                <img src={img} alt={`work-${i}`} className="w-full h-full object-cover" loading="lazy" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-2xl py-10 flex flex-col items-center" style={{ background:'#F9FAFB' }}>
-            <Icon.Camera size={28} color="#D1D5DB" />
-            <p className="text-sm text-gray-400 mt-2">No portfolio images yet</p>
-          </div>
-        )}
-      </div>
+      <PortfolioGrid providerId={p.id} initialImages={p.portfolio || []} isOwner={isOwner} />
 
       {/* Book Now */}
       <div className="mx-5 mt-6 mb-32">
@@ -678,6 +900,10 @@ function ProfileTab({ currentUser }) {
   const [toggling,    setToggling]    = React.useState(false);
   const [toggleMsg,   setToggleMsg]   = React.useState('');
   const [authModal,   setAuthModal]   = React.useState(null); // 'login'|'signup'|null
+  // Cloudinary upload state for the Dashboard "Upload Work" quick-action
+  const [uploading,   setUploading]   = React.useState(false);
+  const [uploadPct,   setUploadPct]   = React.useState(0);
+  const [uploadMsg,   setUploadMsg]   = React.useState('');
 
   // Keep auth in sync
   React.useEffect(() => {
@@ -715,11 +941,43 @@ function ProfileTab({ currentUser }) {
     }
   }
 
+  // ── CLOUDINARY UPLOAD — called from Quick Actions tile ──
   function handleUploadPortfolio() {
     if (!user) { alert('Sign in first to upload portfolio images.'); return; }
+    if (uploading) return;
+
     const inp = document.createElement('input');
-    inp.type='file'; inp.accept='image/*';
-    inp.onchange = e => { if (e.target.files[0]) uploadToCloudinary(e.target.files[0]); };
+    inp.type = 'file';
+    inp.accept = 'image/jpeg,image/png,image/webp,image/gif';
+    inp.onchange = async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 10 * 1024 * 1024) {
+        setUploadMsg('⚠ Image must be under 10 MB');
+        setTimeout(() => setUploadMsg(''), 3500);
+        return;
+      }
+
+      setUploading(true);
+      setUploadPct(0);
+      setUploadMsg('Uploading to Cloudinary…');
+
+      try {
+        await uploadToCloudinary(file, user.uid, pct => {
+          setUploadPct(pct);
+          setUploadMsg(`Uploading… ${pct}%`);
+        });
+        setUploadMsg('✓ Photo added! View it on your profile.');
+      } catch(err) {
+        console.error('[Upload]', err.message);
+        setUploadMsg('⚠ Upload failed — try again');
+      } finally {
+        setUploading(false);
+        setUploadPct(0);
+        setTimeout(() => setUploadMsg(''), 4000);
+      }
+    };
     inp.click();
   }
 
@@ -804,22 +1062,67 @@ function ProfileTab({ currentUser }) {
 
         {/* Quick actions */}
         <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily:'Syne' }}>Quick Actions</h3>
+
+        {/* Cloudinary upload feedback — shown while uploading from the tile */}
+        {(uploadMsg || uploading) && (
+          <div className="mb-3 rounded-2xl overflow-hidden" style={{ border:'1px solid #E5E7EB' }}>
+            <div className="px-4 py-3 flex items-center gap-3"
+              style={{ background: uploadMsg.startsWith('✓') ? 'rgba(0,196,140,0.06)' : uploadMsg.startsWith('⚠') ? 'rgba(255,56,92,0.06)' : '#F9FAFB' }}>
+              {uploading
+                ? <span className="w-5 h-5 rounded-full border-2 border-t-transparent spin inline-block flex-shrink-0"
+                    style={{ borderColor:'var(--red)', borderTopColor:'transparent' }} />
+                : <span className="text-base">{uploadMsg.startsWith('✓') ? '✅' : '⚠️'}</span>
+              }
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-800 truncate"
+                  style={{ color: uploadMsg.startsWith('✓') ? 'var(--green)' : uploadMsg.startsWith('⚠') ? 'var(--red)' : '#374151' }}>
+                  {uploadMsg || `Uploading… ${uploadPct}%`}
+                </p>
+                {uploading && (
+                  <div className="mt-1.5 rounded-full overflow-hidden" style={{ height:3, background:'#E5E7EB' }}>
+                    <div className="h-full rounded-full transition-all" style={{ width:`${uploadPct}%`, background:'var(--red)' }} />
+                  </div>
+                )}
+              </div>
+              {uploading && (
+                <span className="text-xs font-bold flex-shrink-0" style={{ color:'var(--red)', fontFamily:'Syne' }}>{uploadPct}%</span>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3 mb-5">
           {[
-            {label:'Upload Work',   sub:'Add to portfolio',icon:'📸',action:handleUploadPortfolio},
+            {label:'Upload Work',   sub: uploading ? `${uploadPct}% complete` : 'Add to portfolio', icon: uploading ? null : '📸', action:handleUploadPortfolio},
             {label:'View Bookings', sub:'3 pending',       icon:'📅',action:()=>{}},
             {label:'Edit Profile',  sub:'Update your info',icon:'✏️',action:()=>{}},
             {label:'Earnings',      sub:'View payouts',    icon:'💰',action:()=>{}},
           ].map(a=>(
             <button key={a.label} onClick={a.action}
-              className="rounded-2xl p-4 text-left active:scale-95 transition-all"
-              style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }}>
-              <span className="text-2xl">{a.icon}</span>
-              <p className="font-semibold text-gray-800 text-sm mt-2" style={{ fontFamily:'Syne' }}>{a.label}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{a.sub}</p>
+              disabled={a.label==='Upload Work' && uploading}
+              className="rounded-2xl p-4 text-left active:scale-95 transition-all relative overflow-hidden"
+              style={{ background: a.label==='Upload Work' && uploading ? 'rgba(255,56,92,0.04)' : '#F9FAFB', border: a.label==='Upload Work' ? '1px solid rgba(255,56,92,0.25)' : '1px solid #E5E7EB' }}>
+              {/* Progress fill behind the Upload Work tile */}
+              {a.label==='Upload Work' && uploading && (
+                <div className="absolute inset-0 transition-all" style={{ width:`${uploadPct}%`, background:'rgba(255,56,92,0.07)', borderRadius:0 }} />
+              )}
+              <span className="relative text-2xl">
+                {a.label==='Upload Work' && uploading
+                  ? <span className="inline-block w-7 h-7 rounded-full border-2 border-t-transparent spin" style={{ borderColor:'var(--red)', borderTopColor:'transparent' }} />
+                  : a.icon}
+              </span>
+              <p className="relative font-semibold text-gray-800 text-sm mt-2" style={{ fontFamily:'Syne', color: a.label==='Upload Work' ? 'var(--red)' : undefined }}>{a.label}</p>
+              <p className="relative text-xs text-gray-400 mt-0.5">{a.sub}</p>
             </button>
           ))}
         </div>
+
+        {/* My Portfolio — owner grid with Add Photo button */}
+        {user && (
+          <div className="mb-5">
+            <PortfolioGrid providerId={user.uid} initialImages={[]} isOwner={true} />
+          </div>
+        )}
 
         {/* Account section */}
         <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily:'Syne' }}>Account</h3>
@@ -973,7 +1276,7 @@ function App() {
   }
 
   if (viewingProvider) {
-    return <ProfileDetail provider={viewingProvider} onBack={() => { setViewing(null); window.scrollTo(0,0); }} />;
+    return <ProfileDetail provider={viewingProvider} onBack={() => { setViewing(null); window.scrollTo(0,0); }} currentUser={currentUser} />;
   }
 
   return (
