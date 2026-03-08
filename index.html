@@ -1231,7 +1231,7 @@ function EmailChangeModal({ user, onClose }) {
       <div className="w-full max-w-md rounded-t-3xl bg-white px-6 pt-5 pb-10 fade-up">
         <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-4" />
         <h2 className="text-xl font-extrabold text-gray-900 mb-1" style={{ fontFamily:'Syne' }}>Change Email</h2>
-        <p className="text-sm text-gray-400 mb-5">We'll send a verification link to your new address before swapping.</p>
+        <p className="text-sm text-gray-400 mb-5">We&apos;ll send a verification link to your new address before swapping.</p>
         {success ? (
           <div className="rounded-xl px-4 py-4 text-sm" style={{ background:'rgba(0,196,140,0.08)', color:'var(--green)' }}>{success}</div>
         ) : (
@@ -1306,7 +1306,7 @@ function MFAEnrollModal({ user, onClose, onSuccess }) {
               <Icon.Check size={32} color="var(--green)" />
             </div>
             <p className="font-bold text-gray-800" style={{ fontFamily:'Syne' }}>MFA Enabled!</p>
-            <p className="text-sm text-gray-500 text-center">Your account is now protected. You'll receive a confirmation email.</p>
+            <p className="text-sm text-gray-500 text-center">Your account is now protected. You&apos;ll receive a confirmation email.</p>
           </div>
         ) : step === 1 ? (
           <>
