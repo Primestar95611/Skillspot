@@ -13,1389 +13,1027 @@
   <!-- FontAwesome -->
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-
-  <!-- Google Fonts: Bebas Neue (display) + DM Sans (body) -->
-
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <!-- Firebase v10 compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script>
     tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            red: { brand: '#FF385C' },
-          },
-          fontFamily: {
-            display: ['Bebas Neue', 'sans-serif'],
-            body: ['DM Sans', 'sans-serif'],
-          }
-        }
-      }
+      theme: { extend: {
+        colors: { red: { brand: '#FF385C' } },
+        fontFamily: { display: ['Bebas Neue','sans-serif'], body: ['DM Sans','sans-serif'] }
+      }}
     }
   </script>
 
   <style>
     :root {
-      --brand: #FF385C;
-      --brand-glow: rgba(255, 56, 92, 0.35);
-      --bg-base: #0A0A0E;
-      --bg-card: #13131A;
-      --bg-surface: #1C1C27;
-      --bg-nav: rgba(13, 13, 20, 0.97);
+      --brand:        #FF385C;
+      --brand-glow:   rgba(255,56,92,0.35);
+      --bg-base:      #0A0A0E;
+      --bg-card:      #13131A;
+      --bg-surface:   #1C1C27;
+      --bg-nav:       rgba(13,13,20,0.97);
       --text-primary: #F5F5F7;
-      --text-muted: #7A7A8C;
-      --border: rgba(255,255,255,0.07);
+      --text-muted:   #7A7A8C;
+      --border:       rgba(255,255,255,0.07);
+    }
+    * { box-sizing:border-box; }
+    html,body {
+      background:var(--bg-base); color:var(--text-primary);
+      font-family:'DM Sans',sans-serif; height:100%;
+      overflow:hidden; -webkit-font-smoothing:antialiased;
     }
 
-    * { box-sizing: border-box; }
-
-    html, body {
-      background: var(--bg-base);
-      color: var(--text-primary);
-      font-family: 'DM Sans', sans-serif;
-      height: 100%;
-      overflow: hidden;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* ── App wrapper ── */
-    #app {
-      display: flex;
-      flex-direction: column;
-      height: 100dvh;
-      max-width: 480px;
-      margin: 0 auto;
-      position: relative;
-      overflow: hidden;
-    }
+    /* ── App ── */
+    #app { display:flex; flex-direction:column; height:100dvh; max-width:480px; margin:0 auto; position:relative; overflow:hidden; }
 
     /* ── Views ── */
-    .view {
-      display: none;
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding-bottom: 80px;
-      scroll-behavior: smooth;
-    }
-    .view.active {
-      display: block;
-      animation: fadeUp 0.28s cubic-bezier(0.16,1,0.3,1) both;
-    }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(14px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Custom scrollbar */
-    .view::-webkit-scrollbar { width: 3px; }
-    .view::-webkit-scrollbar-track { background: transparent; }
-    .view::-webkit-scrollbar-thumb { background: var(--brand); border-radius: 99px; }
+    .view { display:none; flex:1; overflow-y:auto; overflow-x:hidden; padding-bottom:80px; scroll-behavior:smooth; }
+    .view.active { display:block; animation:fadeUp 0.28s cubic-bezier(0.16,1,0.3,1) both; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    .view::-webkit-scrollbar{width:3px} .view::-webkit-scrollbar-track{background:transparent} .view::-webkit-scrollbar-thumb{background:var(--brand);border-radius:99px}
 
     /* ── Bottom Nav ── */
     #bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 480px;
-      background: var(--bg-nav);
-      border-top: 1px solid var(--border);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      height: 68px;
-      z-index: 100;
-      padding-bottom: env(safe-area-inset-bottom);
+      position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+      width:100%; max-width:480px; background:var(--bg-nav);
+      border-top:1px solid var(--border); backdrop-filter:blur(20px);
+      -webkit-backdrop-filter:blur(20px); display:flex; align-items:center;
+      justify-content:space-around; height:68px; z-index:100;
+      padding-bottom:env(safe-area-inset-bottom);
     }
+    .nav-btn { display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:8px 14px;border-radius:12px;transition:all 0.2s;position:relative;background:none;border:none;outline:none; }
+    .nav-btn i    { font-size:20px;color:var(--text-muted);transition:all 0.25s; }
+    .nav-btn span { font-size:10px;font-weight:500;color:var(--text-muted);letter-spacing:0.02em;transition:all 0.25s; }
+    .nav-btn.active i,.nav-btn.active span { color:var(--brand); }
+    .nav-btn.active i { filter:drop-shadow(0 0 6px var(--brand-glow));transform:translateY(-2px); }
+    .nav-btn::after { content:'';position:absolute;bottom:-1px;left:50%;transform:translateX(-50%) scaleX(0);width:24px;height:2px;background:var(--brand);border-radius:99px;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+    .nav-btn.active::after { transform:translateX(-50%) scaleX(1); }
 
-    .nav-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-      padding: 8px 14px;
-      border-radius: 12px;
-      transition: all 0.2s ease;
-      position: relative;
-      background: none;
-      border: none;
-      outline: none;
-    }
-    .nav-btn i {
-      font-size: 20px;
-      color: var(--text-muted);
-      transition: all 0.25s ease;
-    }
-    .nav-btn span {
-      font-size: 10px;
-      font-weight: 500;
-      color: var(--text-muted);
-      letter-spacing: 0.02em;
-      transition: all 0.25s ease;
-    }
-    .nav-btn.active i,
-    .nav-btn.active span {
-      color: var(--brand);
-    }
-    .nav-btn.active i {
-      filter: drop-shadow(0 0 6px var(--brand-glow));
-      transform: translateY(-2px);
-    }
-    .nav-btn::after {
-      content: '';
-      position: absolute;
-      bottom: -1px;
-      left: 50%;
-      transform: translateX(-50%) scaleX(0);
-      width: 24px;
-      height: 2px;
-      background: var(--brand);
-      border-radius: 99px;
-      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
-    }
-    .nav-btn.active::after {
-      transform: translateX(-50%) scaleX(1);
-    }
+    /* ── Brand btn ── */
+    .brand-btn { background:var(--brand);color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;border:none;cursor:pointer;transition:all 0.2s; }
+    .brand-btn:hover{filter:brightness(1.1);transform:translateY(-1px)} .brand-btn:active{filter:brightness(0.95);transform:translateY(0)}
+    .card { background:var(--bg-card);border:1px solid var(--border);border-radius:16px; }
+    .pill { display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;font-size:12px;font-weight:500; }
 
-    /* ── Utility classes ── */
-    .brand-btn {
-      background: var(--brand);
-      color: #fff;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
+    /* ══════════════════════════════════════
+       TOAST
+    ══════════════════════════════════════ */
+    #toast {
+      position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-80px);
+      z-index:9999; min-width:280px; max-width:400px; padding:13px 18px;
+      border-radius:12px; font-size:13px; font-weight:500;
+      display:flex; align-items:center; gap:10px; pointer-events:none;
+      transition:transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.35s;
+      opacity:0; box-shadow:0 8px 32px rgba(0,0,0,0.5);
     }
-    .brand-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
-    .brand-btn:active { filter: brightness(0.95); transform: translateY(0); }
+    #toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+    #toast.error   { background:#FF385C; color:#fff; }
+    #toast.success { background:#16A34A; color:#fff; }
+    #toast.info    { background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border); }
+    #toast i { font-size:15px; }
 
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
+    /* ══════════════════════════════════════
+       AUTH OVERLAY
+    ══════════════════════════════════════ */
+    #auth-overlay {
+      position:fixed; inset:0; z-index:999; background:var(--bg-base);
+      display:flex; flex-direction:column; align-items:center;
+      justify-content:flex-start; overflow-y:auto; padding-bottom:40px;
     }
+    #auth-overlay.hidden { display:none; }
 
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      border-radius: 99px;
-      font-size: 12px;
-      font-weight: 500;
+    /* Hero strip */
+    .auth-hero {
+      width:100%; max-width:480px; height:210px; position:relative; flex-shrink:0;
+      background:linear-gradient(160deg,#1a0810 0%,var(--bg-base) 100%);
+      overflow:hidden; display:flex; align-items:center; justify-content:center;
+      flex-direction:column; gap:6px;
     }
+    .auth-hero::before {
+      content:''; position:absolute; inset:0;
+      background:radial-gradient(ellipse 70% 60% at 50% 60%,rgba(255,56,92,0.22) 0%,transparent 70%);
+    }
+    .auth-hero-logo { font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:0.06em;color:var(--text-primary);position:relative;z-index:1;line-height:1; }
+    .auth-hero-logo span { color:var(--brand); }
+    .auth-hero-tagline { font-size:13px;color:var(--text-muted);position:relative;z-index:1;letter-spacing:0.04em; }
 
-    /* ── HOME ── */
-    .hero-banner {
-      position: relative;
-      width: 100%;
-      height: 300px;
-      background: linear-gradient(145deg, #1a0a10 0%, #0A0A0E 60%);
-      overflow: hidden;
-      display: flex;
-      align-items: flex-end;
-    }
-    .hero-banner::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: 
-        radial-gradient(ellipse 60% 50% at 70% 40%, rgba(255,56,92,0.18) 0%, transparent 70%),
-        radial-gradient(ellipse 40% 60% at 20% 80%, rgba(255,56,92,0.08) 0%, transparent 60%);
-    }
-    .hero-banner::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to top, var(--bg-base) 0%, transparent 50%);
-    }
-    .hero-text {
-      position: relative;
-      z-index: 2;
-      padding: 24px 20px;
-    }
-    .hero-eyebrow {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--brand);
-      margin-bottom: 8px;
-    }
-    .hero-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 52px;
-      line-height: 0.95;
-      letter-spacing: 0.01em;
-      color: var(--text-primary);
-    }
-    .hero-title span { color: var(--brand); }
+    /* Auth card */
+    .auth-card { width:100%;max-width:420px;padding:0 24px;margin-top:-10px; }
 
-    /* Category chips */
-    .chip-row {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 0 20px;
-      scrollbar-width: none;
-    }
-    .chip-row::-webkit-scrollbar { display: none; }
-    .chip {
-      flex-shrink: 0;
-      padding: 8px 16px;
-      border-radius: 99px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-      color: var(--text-muted);
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-    .chip.active, .chip:hover {
-      background: var(--brand);
-      color: #fff;
-      border-color: var(--brand);
-    }
+    /* Tabs */
+    .auth-tabs { display:flex;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:22px; }
+    .auth-tab { flex:1;padding:10px;text-align:center;font-size:14px;font-weight:600;border-radius:9px;cursor:pointer;transition:all 0.22s;color:var(--text-muted);border:none;background:none;font-family:'DM Sans',sans-serif; }
+    .auth-tab.active { background:var(--brand);color:#fff;box-shadow:0 4px 14px rgba(255,56,92,0.35); }
 
-    /* Talent cards */
-    .talent-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      padding: 0 20px;
-    }
-    .talent-card {
-      position: relative;
-      border-radius: 16px;
-      overflow: hidden;
-      aspect-ratio: 3/4;
-      cursor: pointer;
-      background: var(--bg-surface);
-    }
-    .talent-card-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      background: linear-gradient(135deg, var(--bg-surface) 0%, #1a1a28 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .talent-card-img i {
-      font-size: 48px;
-      color: var(--border);
-    }
-    .talent-card-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 55%);
-    }
-    .talent-card-info {
-      position: absolute;
-      bottom: 12px;
-      left: 12px;
-      right: 12px;
-    }
-    .talent-card-info .name {
-      font-weight: 600;
-      font-size: 14px;
-      color: #fff;
-      margin-bottom: 3px;
-    }
-    .talent-card-info .meta {
-      font-size: 11px;
-      color: rgba(255,255,255,0.65);
-    }
-    .status-dot {
-      display: inline-block;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      margin-right: 4px;
-    }
-    .status-dot.available { background: #22C55E; box-shadow: 0 0 5px rgba(34,197,94,0.6); }
-    .status-dot.busy      { background: #EF4444; }
+    /* Fields */
+    .field-group { margin-bottom:14px; }
+    .field-label { font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px;display:block; }
+    .field-wrap { display:flex;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:0 14px;gap:10px;transition:border-color 0.2s; }
+    .field-wrap:focus-within { border-color:var(--brand); }
+    .field-wrap i { color:var(--text-muted);font-size:14px;flex-shrink:0; }
+    .field-wrap input,.field-wrap select { flex:1;background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:14px;padding:13px 0; }
+    .field-wrap input::placeholder { color:var(--text-muted); }
 
-    .talent-card-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-    }
+    /* Phone row */
+    .phone-row { display:flex; }
+    .country-wrap { display:flex;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:12px 0 0 12px;padding:0 10px 0 14px;gap:6px;border-right:none;min-width:105px;transition:border-color 0.2s; }
+    .country-wrap:focus-within { border-color:var(--brand); }
+    .country-wrap i { color:var(--text-muted);font-size:12px; }
+    .country-wrap select { background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;padding:13px 0; }
+    .num-wrap { flex:1;display:flex;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:0 12px 12px 0;padding:0 14px;transition:border-color 0.2s; }
+    .num-wrap:focus-within { border-color:var(--brand); }
+    .num-wrap input { width:100%;background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:14px;padding:13px 0; }
+    .num-wrap input::placeholder { color:var(--text-muted); }
 
-    /* Section label */
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      margin-bottom: 14px;
-    }
-    .section-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 22px;
-      letter-spacing: 0.04em;
-      color: var(--text-primary);
-    }
-    .section-link {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--brand);
-      cursor: pointer;
-    }
+    .eye-btn { background:none;border:none;outline:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:0;flex-shrink:0;transition:color 0.2s; }
+    .eye-btn:hover { color:var(--text-primary); }
 
-    /* ── SEARCH ── */
-    .map-container {
-      position: relative;
-      height: calc(100dvh - 130px);
-      background: var(--bg-surface);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 12px;
-      color: var(--text-muted);
-      overflow: hidden;
-    }
-    .map-container::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: 
-        repeating-linear-gradient(0deg, transparent, transparent 39px, var(--border) 39px, var(--border) 40px),
-        repeating-linear-gradient(90deg, transparent, transparent 39px, var(--border) 39px, var(--border) 40px);
-      opacity: 0.5;
-    }
-    .map-placeholder-icon {
-      width: 72px;
-      height: 72px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      color: var(--brand);
-      position: relative;
-      z-index: 1;
-    }
+    /* Submit */
+    .auth-submit { width:100%;padding:14px;font-size:15px;font-weight:700;border-radius:12px;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:10px;letter-spacing:0.02em; }
+    .auth-submit .spinner { width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:none; }
+    .auth-submit.loading .spinner { display:block; }
+    .auth-submit.loading .btn-label { opacity:0.6; }
+    @keyframes spin { to{transform:rotate(360deg)} }
 
-    .search-topbar {
-      padding: 16px 20px 12px;
-      background: var(--bg-base);
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    .search-input-wrap {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 14px;
-    }
-    .search-input-wrap i { color: var(--text-muted); font-size: 14px; }
-    .search-input-wrap input {
-      flex: 1;
-      background: none;
-      border: none;
-      outline: none;
-      color: var(--text-primary);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 14px;
-    }
-    .search-input-wrap input::placeholder { color: var(--text-muted); }
+    .auth-divider { display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--text-muted);font-size:12px; }
+    .auth-divider::before,.auth-divider::after { content:'';flex:1;height:1px;background:var(--border); }
+    .social-btn { width:100%;padding:12px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s; }
+    .social-btn:hover { border-color:rgba(255,255,255,0.2);background:var(--bg-surface); }
 
-    /* Distance slider */
-    .distance-bar {
-      padding: 12px 20px 14px;
-      background: var(--bg-base);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-    .distance-bar label {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
-      white-space: nowrap;
-      min-width: 60px;
-    }
-    .distance-val {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--brand);
-      min-width: 44px;
-      text-align: right;
-    }
-    input[type="range"] {
-      -webkit-appearance: none;
-      flex: 1;
-      height: 4px;
-      background: var(--bg-surface);
-      border-radius: 99px;
-      outline: none;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: var(--brand);
-      cursor: pointer;
-      box-shadow: 0 0 8px var(--brand-glow);
-    }
+    /* MFA step */
+    #mfa-step { display:none; }
+    #mfa-step.visible { display:block; }
+    .otp-row { display:flex;gap:8px;justify-content:center;margin:20px 0; }
+    .otp-input { width:46px;height:54px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;text-align:center;font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Bebas Neue',sans-serif;outline:none;transition:border-color 0.2s; }
+    .otp-input:focus { border-color:var(--brand); }
 
-    /* ── MESSAGES ── */
-    .msg-search {
-      padding: 14px 20px 10px;
-      background: var(--bg-base);
-    }
-    .msg-search-inner {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 14px;
-    }
-    .msg-search-inner i { color: var(--text-muted); font-size: 14px; }
-    .msg-search-inner input {
-      flex: 1; background: none; border: none; outline: none;
-      color: var(--text-primary); font-family: 'DM Sans', sans-serif; font-size: 14px;
-    }
-    .msg-search-inner input::placeholder { color: var(--text-muted); }
+    /* ══════════════════════════════════════
+       HOME
+    ══════════════════════════════════════ */
+    .hero-banner { position:relative;width:100%;height:300px;background:linear-gradient(145deg,#1a0a10 0%,var(--bg-base) 60%);overflow:hidden;display:flex;align-items:flex-end; }
+    .hero-banner::before { content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 70% 40%,rgba(255,56,92,0.18) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 20% 80%,rgba(255,56,92,0.08) 0%,transparent 60%); }
+    .hero-banner::after  { content:'';position:absolute;inset:0;background:linear-gradient(to top,var(--bg-base) 0%,transparent 50%); }
+    .hero-text { position:relative;z-index:2;padding:24px 20px; }
+    .hero-eyebrow { font-size:11px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--brand);margin-bottom:8px; }
+    .hero-title { font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:0.95;color:var(--text-primary); }
+    .hero-title span { color:var(--brand); }
 
-    .chat-item {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 14px 20px;
-      cursor: pointer;
-      transition: background 0.15s;
-      border-bottom: 1px solid var(--border);
-    }
-    .chat-item:hover { background: var(--bg-card); }
-    .avatar {
-      position: relative;
-      flex-shrink: 0;
-    }
-    .avatar-img {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: var(--bg-surface);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      color: var(--text-muted);
-      border: 2px solid var(--border);
-    }
-    .avatar-status {
-      position: absolute;
-      bottom: 1px;
-      right: 1px;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 2px solid var(--bg-base);
-    }
-    .avatar-status.online { background: #22C55E; }
-    .avatar-status.offline { background: var(--text-muted); }
-    .chat-meta { flex: 1; min-width: 0; }
-    .chat-name { font-weight: 600; font-size: 14px; margin-bottom: 3px; }
-    .chat-preview {
-      font-size: 12px;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .chat-time { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
-    .unread-badge {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: var(--brand);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    .chip-row { display:flex;gap:8px;overflow-x:auto;padding:0 20px;scrollbar-width:none; }
+    .chip-row::-webkit-scrollbar { display:none; }
+    .chip { flex-shrink:0;padding:8px 16px;border-radius:99px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--bg-card);color:var(--text-muted);transition:all 0.2s;white-space:nowrap; }
+    .chip.active,.chip:hover { background:var(--brand);color:#fff;border-color:var(--brand); }
 
-    /* ── PROFILE ── */
-    .cover-photo {
-      position: relative;
-      width: 100%;
-      height: 200px;
-      background: linear-gradient(135deg, #1a0a10 0%, #1C1C27 100%);
-      overflow: hidden;
-    }
-    .cover-photo::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(255,56,92,0.12) 0%, transparent 70%);
-    }
-    .cover-edit-btn {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      width: 34px;
-      height: 34px;
-      background: rgba(0,0,0,0.45);
-      backdrop-filter: blur(8px);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      color: #fff;
-      font-size: 13px;
-    }
-    .profile-photo-wrap {
-      position: relative;
-      margin-top: -46px;
-      margin-left: 20px;
-      display: inline-block;
-    }
-    .profile-photo {
-      width: 92px;
-      height: 92px;
-      border-radius: 50%;
-      background: var(--bg-surface);
-      border: 3px solid var(--bg-base);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      color: var(--text-muted);
-      position: relative;
-      overflow: hidden;
-    }
-    .profile-photo-edit {
-      position: absolute;
-      bottom: 4px;
-      right: 0;
-      width: 26px;
-      height: 26px;
-      background: var(--brand);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      color: #fff;
-      cursor: pointer;
-      border: 2px solid var(--bg-base);
-    }
-    .profile-info {
-      padding: 12px 20px 0;
-    }
-    .profile-name {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 28px;
-      letter-spacing: 0.03em;
-      color: var(--text-primary);
-    }
-    .profile-handle {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-    }
-    .profile-bio {
-      font-size: 13px;
-      line-height: 1.55;
-      color: rgba(245,245,247,0.75);
-      margin-bottom: 14px;
-    }
-    .profile-stats {
-      display: flex;
-      gap: 24px;
-      padding: 14px 20px;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      margin: 0 0 4px;
-    }
-    .stat { text-align: center; }
-    .stat-value {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 22px;
-      color: var(--text-primary);
-      letter-spacing: 0.03em;
-    }
-    .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .talent-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px; }
+    .talent-card { position:relative;border-radius:16px;overflow:hidden;aspect-ratio:3/4;cursor:pointer;background:var(--bg-surface); }
+    .talent-card-img { width:100%;height:100%;background:linear-gradient(135deg,var(--bg-surface) 0%,#1a1a28 100%);display:flex;align-items:center;justify-content:center; }
+    .talent-card-img i { font-size:48px;color:var(--border); }
+    .talent-card-overlay { position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.85) 0%,transparent 55%); }
+    .talent-card-info { position:absolute;bottom:12px;left:12px;right:12px; }
+    .talent-card-info .name { font-weight:600;font-size:14px;color:#fff;margin-bottom:3px; }
+    .talent-card-info .meta { font-size:11px;color:rgba(255,255,255,0.65); }
+    .status-dot { display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px; }
+    .status-dot.available { background:#22C55E;box-shadow:0 0 5px rgba(34,197,94,0.6); }
+    .status-dot.busy      { background:#EF4444; }
+    .talent-card-badge { position:absolute;top:10px;right:10px; }
 
-    /* Status toggle */
-    .status-toggle {
-      display: flex;
-      gap: 0;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-    }
-    .toggle-btn {
-      flex: 1;
-      padding: 9px 0;
-      font-size: 12px;
-      font-weight: 600;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      color: var(--text-muted);
-      border: none;
-      background: none;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .toggle-btn.active-avail {
-      background: rgba(34,197,94,0.15);
-      color: #22C55E;
-    }
-    .toggle-btn.active-busy {
-      background: rgba(255,56,92,0.12);
-      color: var(--brand);
-    }
+    .section-header { display:flex;align-items:center;justify-content:space-between;padding:0 20px;margin-bottom:14px; }
+    .section-title  { font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.04em;color:var(--text-primary); }
+    .section-link   { font-size:12px;font-weight:500;color:var(--brand);cursor:pointer; }
 
-    /* Image grid */
-    .image-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2px;
-      margin-top: 4px;
-    }
-    .grid-cell {
-      aspect-ratio: 1;
-      background: var(--bg-surface);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      overflow: hidden;
-      position: relative;
-    }
-    .grid-cell i { color: var(--border); font-size: 24px; }
-    .grid-cell:first-child {
-      grid-column: span 2;
-      grid-row: span 2;
-    }
+    /* ══════════════════════════════════════
+       SEARCH
+    ══════════════════════════════════════ */
+    .map-container { position:relative;height:calc(100dvh - 130px);background:var(--bg-surface);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text-muted);overflow:hidden; }
+    .map-container::before { content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 39px,var(--border) 39px,var(--border) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,var(--border) 39px,var(--border) 40px);opacity:0.5; }
+    .map-placeholder-icon { width:72px;height:72px;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--brand);position:relative;z-index:1; }
+    .search-topbar { padding:16px 20px 12px;background:var(--bg-base);display:flex;gap:10px;align-items:center; }
+    .search-input-wrap { flex:1;display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:10px 14px; }
+    .search-input-wrap i { color:var(--text-muted);font-size:14px; }
+    .search-input-wrap input { flex:1;background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:14px; }
+    .search-input-wrap input::placeholder { color:var(--text-muted); }
+    .distance-bar { padding:12px 20px 14px;background:var(--bg-base);display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border); }
+    .distance-bar label { font-size:12px;font-weight:500;color:var(--text-muted);white-space:nowrap;min-width:60px; }
+    .distance-val { font-size:12px;font-weight:600;color:var(--brand);min-width:44px;text-align:right; }
+    input[type="range"] { -webkit-appearance:none;flex:1;height:4px;background:var(--bg-surface);border-radius:99px;outline:none; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--brand);cursor:pointer;box-shadow:0 0 8px var(--brand-glow); }
 
-    /* ── ADMIN ── */
-    .admin-header {
-      padding: 28px 20px 20px;
-      background: linear-gradient(180deg, rgba(255,56,92,0.08) 0%, transparent 100%);
-      border-bottom: 1px solid var(--border);
-    }
-    .admin-eyebrow {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--brand);
-      margin-bottom: 6px;
-    }
-    .admin-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 30px;
-      letter-spacing: 0.04em;
-      line-height: 1;
-    }
-    .admin-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    /* ══════════════════════════════════════
+       MESSAGES
+    ══════════════════════════════════════ */
+    .msg-search { padding:14px 20px 10px;background:var(--bg-base); }
+    .msg-search-inner { display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:10px 14px; }
+    .msg-search-inner i { color:var(--text-muted);font-size:14px; }
+    .msg-search-inner input { flex:1;background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:14px; }
+    .msg-search-inner input::placeholder { color:var(--text-muted); }
+    .chat-item { display:flex;align-items:center;gap:14px;padding:14px 20px;cursor:pointer;transition:background 0.15s;border-bottom:1px solid var(--border); }
+    .chat-item:hover { background:var(--bg-card); }
+    .avatar { position:relative;flex-shrink:0; }
+    .avatar-img { width:50px;height:50px;border-radius:50%;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--text-muted);border:2px solid var(--border); }
+    .avatar-status { position:absolute;bottom:1px;right:1px;width:12px;height:12px;border-radius:50%;border:2px solid var(--bg-base); }
+    .avatar-status.online{background:#22C55E} .avatar-status.offline{background:var(--text-muted)}
+    .chat-meta { flex:1;min-width:0; }
+    .chat-name { font-weight:600;font-size:14px;margin-bottom:3px; }
+    .chat-preview { font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .chat-time { font-size:11px;color:var(--text-muted);flex-shrink:0; }
+    .unread-badge { width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center; }
 
-    .stat-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      transition: border-color 0.2s;
-    }
-    .stat-card:hover { border-color: rgba(255,56,92,0.3); }
-    .stat-card-label { font-size: 11px; color: var(--text-muted); font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px; }
-    .stat-card-value { font-family: 'Bebas Neue', sans-serif; font-size: 38px; color: var(--text-primary); line-height: 1; }
-    .stat-card-sub { font-size: 12px; color: #22C55E; margin-top: 4px; }
+    /* ══════════════════════════════════════
+       PROFILE
+    ══════════════════════════════════════ */
+    .cover-photo { position:relative;width:100%;height:200px;background:linear-gradient(135deg,#1a0a10 0%,#1C1C27 100%);overflow:hidden; }
+    .cover-photo::before { content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 80% at 50% 50%,rgba(255,56,92,0.12) 0%,transparent 70%); }
+    .cover-edit-btn { position:absolute;top:14px;right:14px;width:34px;height:34px;background:rgba(0,0,0,0.45);backdrop-filter:blur(8px);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border);color:#fff;font-size:13px; }
+    .profile-photo-wrap { position:relative;margin-top:-46px;margin-left:20px;display:inline-block; }
+    .profile-photo { width:92px;height:92px;border-radius:50%;background:var(--bg-surface);border:3px solid var(--bg-base);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--text-muted);overflow:hidden; }
+    .profile-photo-edit { position:absolute;bottom:4px;right:0;width:26px;height:26px;background:var(--brand);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;cursor:pointer;border:2px solid var(--bg-base); }
+    .profile-info { padding:12px 20px 0; }
+    .profile-name { font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.03em;color:var(--text-primary); }
+    .profile-handle { font-size:13px;color:var(--text-muted);margin-bottom:10px; }
+    .profile-bio { font-size:13px;line-height:1.55;color:rgba(245,245,247,0.75);margin-bottom:14px; }
+    .profile-stats { display:flex;gap:24px;padding:14px 20px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:0 0 4px; }
+    .stat { text-align:center; }
+    .stat-value { font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text-primary);letter-spacing:0.03em; }
+    .stat-label { font-size:11px;color:var(--text-muted);margin-top:1px; }
+    .status-toggle { display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--bg-card); }
+    .toggle-btn { flex:1;padding:9px 0;font-size:12px;font-weight:600;text-align:center;cursor:pointer;transition:all 0.2s;color:var(--text-muted);border:none;background:none;font-family:'DM Sans',sans-serif; }
+    .toggle-btn.active-avail { background:rgba(34,197,94,0.15);color:#22C55E; }
+    .toggle-btn.active-busy  { background:rgba(255,56,92,0.12);color:var(--brand); }
+    .image-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:4px; }
+    .grid-cell { aspect-ratio:1;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden; }
+    .grid-cell i { color:var(--border);font-size:24px; }
+    .grid-cell:first-child { grid-column:span 2;grid-row:span 2; }
 
-    .admin-section-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 18px;
-      letter-spacing: 0.06em;
-      color: var(--text-primary);
-      padding: 0 20px;
-      margin: 20px 0 10px;
-    }
+    /* ══════════════════════════════════════
+       ADMIN
+    ══════════════════════════════════════ */
+    .admin-header { padding:28px 20px 20px;background:linear-gradient(180deg,rgba(255,56,92,0.08) 0%,transparent 100%);border-bottom:1px solid var(--border); }
+    .admin-eyebrow { font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--brand);margin-bottom:6px; }
+    .admin-title { font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:0.04em;line-height:1; }
+    .admin-subtitle { font-size:13px;color:var(--text-muted);margin-top:4px; }
+    .stat-card { background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px;transition:border-color 0.2s; }
+    .stat-card:hover { border-color:rgba(255,56,92,0.3); }
+    .stat-card-label { font-size:11px;color:var(--text-muted);font-weight:500;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:8px; }
+    .stat-card-value { font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--text-primary);line-height:1; }
+    .stat-card-sub { font-size:12px;color:#22C55E;margin-top:4px; }
+    .admin-section-title { font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.06em;color:var(--text-primary);padding:0 20px;margin:20px 0 10px; }
+    .action-row { display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s; }
+    .action-row:hover { background:var(--bg-card); }
+    .action-row-left { display:flex;align-items:center;gap:12px; }
+    .action-icon { width:36px;height:36px;border-radius:10px;background:rgba(255,56,92,0.1);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--brand); }
+    .action-label { font-size:14px;font-weight:500; }
+    .action-sub { font-size:11px;color:var(--text-muted);margin-top:1px; }
 
-    .action-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .action-row:hover { background: var(--bg-card); }
-    .action-row-left { display: flex; align-items: center; gap: 12px; }
-    .action-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: rgba(255,56,92,0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      color: var(--brand);
-    }
-    .action-label { font-size: 14px; font-weight: 500; }
-    .action-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
-
-    /* Topbar */
-    .topbar {
-      padding: 20px 20px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .topbar-logo {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 26px;
-      letter-spacing: 0.06em;
-      color: var(--text-primary);
-    }
-    .topbar-logo span { color: var(--brand); }
-    .topbar-icon-btn {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      color: var(--text-muted);
-      font-size: 15px;
-      transition: all 0.2s;
-    }
-    .topbar-icon-btn:hover { color: var(--brand); border-color: var(--brand); }
-    .notif-dot {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      width: 7px;
-      height: 7px;
-      background: var(--brand);
-      border-radius: 50%;
-      border: 1.5px solid var(--bg-base);
-    }
+    .topbar { padding:20px 20px 12px;display:flex;align-items:center;justify-content:space-between; }
+    .topbar-logo { font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.06em;color:var(--text-primary); }
+    .topbar-logo span { color:var(--brand); }
+    .topbar-icon-btn { width:38px;height:38px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);font-size:15px;transition:all 0.2s; }
+    .topbar-icon-btn:hover { color:var(--brand);border-color:var(--brand); }
+    .notif-dot { position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--brand);border-radius:50%;border:1.5px solid var(--bg-base); }
   </style>
 
 </head>
-
 <body>
-<div id="app">
 
-  <!-- ═══════════════════════════════════════════
-       VIEW: HOME
-  ════════════════════════════════════════════ -->
+<!-- TOAST -->
 
-  <div id="view-home" class="view active">
+<div id="toast">
+  <i id="toast-icon" class="fa-solid fa-circle-exclamation"></i>
+  <span id="toast-msg"></span>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     AUTH OVERLAY
+════════════════════════════════════════════ -->
+
+<div id="auth-overlay">
+  <div class="auth-hero">
+    <div class="auth-hero-logo">GIGS<span>COURT</span></div>
+    <div class="auth-hero-tagline">Book &amp; be booked. Elite talent, near you.</div>
+  </div>
+
+  <div class="auth-card">
+    <!-- Tab switcher -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login"  onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab"        id="tab-signup" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
 
 ```
-<!-- Topbar -->
-<div class="topbar">
-  <div class="topbar-logo">GIGS<span>COURT</span></div>
-  <div style="display:flex;gap:8px">
-    <div class="topbar-icon-btn" style="position:relative">
-      <i class="fa-regular fa-bell"></i>
-      <span class="notif-dot"></span>
-    </div>
-    <div class="topbar-icon-btn">
-      <i class="fa-regular fa-bookmark"></i>
+<!-- LOGIN FORM -->
+<div id="form-login">
+  <div class="field-group">
+    <label class="field-label">Email Address</label>
+    <div class="field-wrap">
+      <i class="fa-regular fa-envelope"></i>
+      <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email" />
     </div>
   </div>
-</div>
-
-<!-- Hero Banner -->
-<div class="hero-banner">
-  <div class="hero-text">
-    <div class="hero-eyebrow">✦ Featured Talent</div>
-    <div class="hero-title">Book the<br/><span>Best.</span></div>
-  </div>
-</div>
-
-<!-- Category chips -->
-<div style="padding: 20px 0 16px">
-  <div class="chip-row">
-    <div class="chip active">All</div>
-    <div class="chip">Models</div>
-    <div class="chip">Creators</div>
-    <div class="chip">Artists</div>
-    <div class="chip">Photographers</div>
-    <div class="chip">MUAs</div>
-    <div class="chip">Stylists</div>
-  </div>
-</div>
-
-<!-- Section: Featured -->
-<div class="section-header">
-  <div class="section-title">Featured Talent</div>
-  <div class="section-link">See all <i class="fa-solid fa-arrow-right" style="font-size:10px"></i></div>
-</div>
-
-<div class="talent-grid" style="margin-bottom:24px">
-  <!-- Card 1 -->
-  <div class="talent-card">
-    <div class="talent-card-img"><i class="fa-regular fa-user"></i></div>
-    <div class="talent-card-overlay"></div>
-    <div class="talent-card-badge">
-      <span class="pill" style="background:rgba(34,197,94,0.2);color:#22C55E;font-size:10px;padding:3px 8px">
-        <span class="status-dot available"></span>Available
-      </span>
-    </div>
-    <div class="talent-card-info">
-      <div class="name">Amara Obi</div>
-      <div class="meta"><i class="fa-solid fa-location-dot" style="font-size:9px;color:var(--brand)"></i> 1.2km · Model</div>
+  <div class="field-group">
+    <label class="field-label">Password</label>
+    <div class="field-wrap">
+      <i class="fa-solid fa-lock"></i>
+      <input type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password" />
+      <button class="eye-btn" onclick="togglePwd('login-password',this)"><i class="fa-regular fa-eye"></i></button>
     </div>
   </div>
-
-  <!-- Card 2 -->
-  <div class="talent-card">
-    <div class="talent-card-img"><i class="fa-regular fa-user"></i></div>
-    <div class="talent-card-overlay"></div>
-    <div class="talent-card-badge">
-      <span class="pill" style="background:rgba(255,56,92,0.15);color:#FF385C;font-size:10px;padding:3px 8px">
-        <span class="status-dot busy"></span>Busy
-      </span>
-    </div>
-    <div class="talent-card-info">
-      <div class="name">Kemi Adara</div>
-      <div class="meta"><i class="fa-solid fa-location-dot" style="font-size:9px;color:var(--brand)"></i> 3.4km · Creator</div>
-    </div>
+  <div style="text-align:right;margin-bottom:16px">
+    <span onclick="handleForgotPassword()" style="font-size:12px;color:var(--brand);cursor:pointer;font-weight:500">Forgot password?</span>
   </div>
-
-  <!-- Card 3 -->
-  <div class="talent-card">
-    <div class="talent-card-img"><i class="fa-regular fa-user"></i></div>
-    <div class="talent-card-overlay"></div>
-    <div class="talent-card-badge">
-      <span class="pill" style="background:rgba(34,197,94,0.2);color:#22C55E;font-size:10px;padding:3px 8px">
-        <span class="status-dot available"></span>Available
-      </span>
-    </div>
-    <div class="talent-card-info">
-      <div class="name">Tunde Eko</div>
-      <div class="meta"><i class="fa-solid fa-location-dot" style="font-size:9px;color:var(--brand)"></i> 5.1km · Artist</div>
-    </div>
-  </div>
-
-  <!-- Card 4 -->
-  <div class="talent-card">
-    <div class="talent-card-img"><i class="fa-regular fa-user"></i></div>
-    <div class="talent-card-overlay"></div>
-    <div class="talent-card-badge">
-      <span class="pill" style="background:rgba(34,197,94,0.2);color:#22C55E;font-size:10px;padding:3px 8px">
-        <span class="status-dot available"></span>Available
-      </span>
-    </div>
-    <div class="talent-card-info">
-      <div class="name">Ngozi Uche</div>
-      <div class="meta"><i class="fa-solid fa-location-dot" style="font-size:9px;color:var(--brand)"></i> 7.8km · Photographer</div>
-    </div>
-  </div>
-</div>
-
-<!-- Section: Trending -->
-<div class="section-header">
-  <div class="section-title">Trending Near You</div>
-  <div class="section-link">See all <i class="fa-solid fa-arrow-right" style="font-size:10px"></i></div>
-</div>
-
-<!-- Horizontal scroll cards -->
-<div style="display:flex;gap:12px;overflow-x:auto;padding:0 20px 24px;scrollbar-width:none">
-  <div class="card" style="flex-shrink:0;width:140px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center">
-    <div style="width:56px;height:56px;border-radius:50%;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--text-muted);border:2px solid var(--border)">
-      <i class="fa-regular fa-user"></i>
-    </div>
-    <div>
-      <div style="font-weight:600;font-size:13px">Chioma N.</div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:2px">MUA · 2.3km</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:3px;font-size:11px;color:#FBBF24">
-      <i class="fa-solid fa-star"></i> 4.9
-    </div>
-  </div>
-  <div class="card" style="flex-shrink:0;width:140px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center">
-    <div style="width:56px;height:56px;border-radius:50%;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--text-muted);border:2px solid var(--border)">
-      <i class="fa-regular fa-user"></i>
-    </div>
-    <div>
-      <div style="font-weight:600;font-size:13px">Dami Ola.</div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Stylist · 4.1km</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:3px;font-size:11px;color:#FBBF24">
-      <i class="fa-solid fa-star"></i> 4.7
-    </div>
-  </div>
-  <div class="card" style="flex-shrink:0;width:140px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center">
-    <div style="width:56px;height:56px;border-radius:50%;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--text-muted);border:2px solid var(--border)">
-      <i class="fa-regular fa-user"></i>
-    </div>
-    <div>
-      <div style="font-weight:600;font-size:13px">Femi A.</div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Creator · 6.5km</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:3px;font-size:11px;color:#FBBF24">
-      <i class="fa-solid fa-star"></i> 4.8
-    </div>
-  </div>
-</div>
-```
-
-  </div><!-- /view-home -->
-
-  <!-- ═══════════════════════════════════════════
-       VIEW: SEARCH (Map Area)
-  ════════════════════════════════════════════ -->
-
-  <div id="view-search" class="view">
-
-```
-<!-- Search topbar -->
-<div class="search-topbar">
-  <div class="search-input-wrap">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <input type="text" placeholder="Search talent, skills, location…" />
-  </div>
-  <div class="topbar-icon-btn">
-    <i class="fa-solid fa-sliders"></i>
-  </div>
-</div>
-
-<!-- Distance slider -->
-<div class="distance-bar">
-  <label><i class="fa-solid fa-location-crosshairs" style="color:var(--brand);margin-right:5px"></i> Radius</label>
-  <input type="range" id="distanceSlider" min="1" max="50" value="10" oninput="document.getElementById('distVal').textContent=this.value+'km'" />
-  <span class="distance-val" id="distVal">10km</span>
-</div>
-
-<!-- Map Placeholder -->
-<div class="map-container" id="map-area">
-  <div class="map-placeholder-icon"><i class="fa-solid fa-map"></i></div>
-  <div style="position:relative;z-index:1;text-align:center">
-    <div style="font-weight:600;font-size:15px;margin-bottom:4px">Map Area</div>
-    <div style="font-size:13px;color:var(--text-muted)">Leaflet + OpenStreetMap will load here</div>
-  </div>
-  <button class="brand-btn" style="border-radius:12px;padding:11px 24px;font-size:13px;position:relative;z-index:1;margin-top:8px">
-    <i class="fa-solid fa-location-arrow"></i> &nbsp;Use My Location
+  <button class="brand-btn auth-submit" id="login-btn" onclick="handleLogin()">
+    <div class="spinner"></div>
+    <span class="btn-label">Sign In</span>
   </button>
 </div>
+
+<!-- SIGNUP FORM -->
+<div id="form-signup" style="display:none">
+  <div class="field-group">
+    <label class="field-label">Full Name</label>
+    <div class="field-wrap">
+      <i class="fa-regular fa-user"></i>
+      <input type="text" id="signup-name" placeholder="Your display name" autocomplete="name" />
+    </div>
+  </div>
+  <div class="field-group">
+    <label class="field-label">Email Address</label>
+    <div class="field-wrap">
+      <i class="fa-regular fa-envelope"></i>
+      <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email" />
+    </div>
+  </div>
+  <div class="field-group">
+    <label class="field-label">Password</label>
+    <div class="field-wrap">
+      <i class="fa-solid fa-lock"></i>
+      <input type="password" id="signup-password" placeholder="Min 8 characters" autocomplete="new-password" />
+      <button class="eye-btn" onclick="togglePwd('signup-password',this)"><i class="fa-regular fa-eye"></i></button>
+    </div>
+  </div>
+  <div class="field-group">
+    <label class="field-label">Phone Number <span style="color:var(--brand);font-size:9px">MFA</span></label>
+    <div class="phone-row">
+      <div class="country-wrap">
+        <i class="fa-solid fa-flag"></i>
+        <select id="country-code">
+          <option value="+234" selected>&#127475;&#127468; +234</option>
+          <option value="+1">&#127482;&#127480; +1</option>
+          <option value="+44">&#127468;&#127463; +44</option>
+          <option value="+27">&#127487;&#127462; +27</option>
+          <option value="+233">&#127468;&#127469; +233</option>
+          <option value="+254">&#127472;&#127466; +254</option>
+          <option value="+255">&#127481;&#127487; +255</option>
+          <option value="+256">&#127482;&#127468; +256</option>
+          <option value="+225">&#127464;&#127470; +225</option>
+          <option value="+221">&#127480;&#127475; +221</option>
+          <option value="+212">&#127474;&#127462; +212</option>
+          <option value="+20">&#127466;&#127468; +20</option>
+          <option value="+91">&#127470;&#127475; +91</option>
+          <option value="+971">&#127462;&#127466; +971</option>
+          <option value="+49">&#127465;&#127466; +49</option>
+          <option value="+33">&#127467;&#127479; +33</option>
+        </select>
+      </div>
+      <div class="num-wrap">
+        <input type="tel" id="signup-phone" placeholder="0801 234 5678" autocomplete="tel" />
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding-left:2px">
+      <i class="fa-solid fa-shield-halved" style="color:var(--brand);margin-right:4px"></i>
+      Used only for SMS verification. Never shared.
+    </div>
+  </div>
+  <div id="recaptcha-container"></div>
+  <button class="brand-btn auth-submit" id="signup-btn" onclick="handleSignup()">
+    <div class="spinner"></div>
+    <span class="btn-label">Create Account &amp; Secure</span>
+  </button>
+</div>
+
+<!-- MFA STEP -->
+<div id="mfa-step">
+  <div style="text-align:center;margin-bottom:6px">
+    <div style="width:60px;height:60px;background:rgba(255,56,92,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;color:var(--brand)">
+      <i class="fa-solid fa-mobile-screen"></i>
+    </div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.04em;margin-bottom:6px">Verify Your Phone</div>
+    <div id="mfa-phone-display" style="font-size:13px;color:var(--text-muted);margin-bottom:4px">Enter the 6-digit code sent to your number</div>
+  </div>
+  <div class="otp-row">
+    <input class="otp-input" type="tel" maxlength="1" id="otp0" oninput="otpNext(this,0)" onkeydown="otpBack(event,0)"/>
+    <input class="otp-input" type="tel" maxlength="1" id="otp1" oninput="otpNext(this,1)" onkeydown="otpBack(event,1)"/>
+    <input class="otp-input" type="tel" maxlength="1" id="otp2" oninput="otpNext(this,2)" onkeydown="otpBack(event,2)"/>
+    <input class="otp-input" type="tel" maxlength="1" id="otp3" oninput="otpNext(this,3)" onkeydown="otpBack(event,3)"/>
+    <input class="otp-input" type="tel" maxlength="1" id="otp4" oninput="otpNext(this,4)" onkeydown="otpBack(event,4)"/>
+    <input class="otp-input" type="tel" maxlength="1" id="otp5" oninput="otpNext(this,5)" onkeydown="otpBack(event,5)"/>
+  </div>
+  <button class="brand-btn auth-submit" id="verify-btn" onclick="handleVerifyOTP()">
+    <div class="spinner"></div>
+    <span class="btn-label"><i class="fa-solid fa-check"></i>&nbsp; Verify &amp; Enter App</span>
+  </button>
+  <div style="text-align:center;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:14px">
+    <span onclick="resendOTP()" style="font-size:12px;color:var(--brand);cursor:pointer;font-weight:500"><i class="fa-solid fa-rotate-right"></i> Resend Code</span>
+    <span style="color:var(--text-muted)">·</span>
+    <span onclick="cancelMFA()" style="font-size:12px;color:var(--text-muted);cursor:pointer">Cancel</span>
+  </div>
+</div>
+
+<!-- Social section (shown on login/signup, hidden on MFA) -->
+<div id="social-section">
+  <div class="auth-divider">or continue with</div>
+  <button class="social-btn" onclick="handleGoogleLogin()">
+    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    Continue with Google
+  </button>
+</div>
+<div style="height:12px"></div>
 ```
 
-  </div><!-- /view-search -->
+  </div>
+</div><!-- /auth-overlay -->
 
-  <!-- ═══════════════════════════════════════════
-       VIEW: MESSAGES
-  ════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════════ -->
+
+<div id="app">
+
+  <!-- HOME -->
+
+  <div id="view-home" class="view active">
+    <div class="topbar">
+      <div class="topbar-logo">GIGS<span>COURT</span></div>
+      <div style="display:flex;gap:8px">
+        <div class="topbar-icon-btn" style="position:relative"><i class="fa-regular fa-bell"></i><span class="notif-dot"></span></div>
+        <div class="topbar-icon-btn"><i class="fa-regular fa-bookmark"></i></div>
+      </div>
+    </div>
+    <div class="hero-banner">
+      <div class="hero-text">
+        <div class="hero-eyebrow">&#10022; Featured Talent</div>
+        <div class="hero-title">Book the<br/><span>Best.</span></div>
+      </div>
+    </div>
+    <div style="padding:20px 0 16px">
+      <div class="chip-row">
+        <div class="chip active">All</div><div class="chip">Models</div><div class="chip">Creators</div>
+        <div class="chip">Artists</div><div class="chip">Photographers</div><div class="chip">MUAs</div><div class="chip">Stylists</div>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">Featured Talent</div>
+      <div class="section-link">See all <i class="fa-solid fa-arrow-right" style="font-size:10px"></i></div>
+    </div>
+    <div class="talent-grid" style="margin-bottom:24px">
+      <div class="talent-card">
+        <div class="talent-card-img"><i class="fa-regular fa-user"></i></div><div class="talent-card-overlay"></div>
+        <div class="talent-card-badge"><span class="pill" style="background:rgba(34,197,94,0.2);color:#22C55E;font-size:10px;padding:3px 8px"><span class="status-dot available"></span>Available</span></div>
+        <div class="talent-card-info"><div class="name">Amara Obi</div><div class="meta"><i class="fa-solid fa-location-dot" style="font-size:9px;color:var(--brand)"></i> 1.2km · Model</div></div>
+      </div>
+      <div class="talent-card">
+        <div class="talent-card-img"><i class="fa-regular fa-user"></i></div><div class="talent-card-overlay"></div>
+        <div class="talent-card-badge"><span class="pill" style="background:rgba(255,56,92,0.15);color:#FF385C;font-size:10px;padding:3px 8px"><span class="status-dot busy"></span>Busy</span></div>
+        <div class="talent-card-info"><div class="name">Kemi Adara</div><div class="meta"><i class="fa-solid fa-location-dot" style="font-size:9px;color:var(--brand)"></i> 3.4km · Creator</div></div>
+      </div>
+      <div class="talent-card">
+        <div class="talent-card-img"><i class="fa-regular fa-user"></i></div><div class="talent-card-overlay"></div>
+        <div class="talent-card-badge"><span class="pill" style="background:rgba(34,197,94,0.2);color:#22C55E;font-size:10px;padding:3px 8px"><span class="status-dot available"></span>Available</span></div>
+        <div class="talent-card-info"><div class="name">Tunde Eko</div><div class="meta"><i class="fa-solid fa-location-dot" style="font-size:9px;color:var(--brand)"></i> 5.1km · Artist</div></div>
+      </div>
+      <div class="talent-card">
+        <div class="talent-card-img"><i class="fa-regular fa-user"></i></div><div class="talent-card-overlay"></div>
+        <div class="talent-card-badge"><span class="pill" style="background:rgba(34,197,94,0.2);color:#22C55E;font-size:10px;padding:3px 8px"><span class="status-dot available"></span>Available</span></div>
+        <div class="talent-card-info"><div class="name">Ngozi Uche</div><div class="meta"><i class="fa-solid fa-location-dot" style="font-size:9px;color:var(--brand)"></i> 7.8km · Photographer</div></div>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">Trending Near You</div>
+      <div class="section-link">See all <i class="fa-solid fa-arrow-right" style="font-size:10px"></i></div>
+    </div>
+    <div style="display:flex;gap:12px;overflow-x:auto;padding:0 20px 24px;scrollbar-width:none">
+      <div class="card" style="flex-shrink:0;width:140px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--text-muted);border:2px solid var(--border)"><i class="fa-regular fa-user"></i></div>
+        <div><div style="font-weight:600;font-size:13px">Chioma N.</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">MUA · 2.3km</div></div>
+        <div style="display:flex;align-items:center;gap:3px;font-size:11px;color:#FBBF24"><i class="fa-solid fa-star"></i> 4.9</div>
+      </div>
+      <div class="card" style="flex-shrink:0;width:140px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--text-muted);border:2px solid var(--border)"><i class="fa-regular fa-user"></i></div>
+        <div><div style="font-weight:600;font-size:13px">Dami Ola.</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Stylist · 4.1km</div></div>
+        <div style="display:flex;align-items:center;gap:3px;font-size:11px;color:#FBBF24"><i class="fa-solid fa-star"></i> 4.7</div>
+      </div>
+      <div class="card" style="flex-shrink:0;width:140px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--text-muted);border:2px solid var(--border)"><i class="fa-regular fa-user"></i></div>
+        <div><div style="font-weight:600;font-size:13px">Femi A.</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Creator · 6.5km</div></div>
+        <div style="display:flex;align-items:center;gap:3px;font-size:11px;color:#FBBF24"><i class="fa-solid fa-star"></i> 4.8</div>
+      </div>
+    </div>
+  </div><!-- /home -->
+
+  <!-- SEARCH -->
+
+  <div id="view-search" class="view">
+    <div class="search-topbar">
+      <div class="search-input-wrap"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Search talent, skills, location…" /></div>
+      <div class="topbar-icon-btn"><i class="fa-solid fa-sliders"></i></div>
+    </div>
+    <div class="distance-bar">
+      <label><i class="fa-solid fa-location-crosshairs" style="color:var(--brand);margin-right:5px"></i> Radius</label>
+      <input type="range" id="distanceSlider" min="1" max="50" value="10" oninput="document.getElementById('distVal').textContent=this.value+'km'"/>
+      <span class="distance-val" id="distVal">10km</span>
+    </div>
+    <div class="map-container" id="map-area">
+      <div class="map-placeholder-icon"><i class="fa-solid fa-map"></i></div>
+      <div style="position:relative;z-index:1;text-align:center">
+        <div style="font-weight:600;font-size:15px;margin-bottom:4px">Map Area</div>
+        <div style="font-size:13px;color:var(--text-muted)">Leaflet + OpenStreetMap loads here</div>
+      </div>
+      <button class="brand-btn" style="border-radius:12px;padding:11px 24px;font-size:13px;position:relative;z-index:1;margin-top:8px"><i class="fa-solid fa-location-arrow"></i> &nbsp;Use My Location</button>
+    </div>
+  </div><!-- /search -->
+
+  <!-- MESSAGES -->
 
   <div id="view-messages" class="view">
+    <div class="topbar" style="padding-bottom:0">
+      <div class="topbar-logo" style="font-size:22px">Messages</div>
+      <div class="topbar-icon-btn"><i class="fa-solid fa-pen-to-square"></i></div>
+    </div>
+    <div class="msg-search"><div class="msg-search-inner"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Search conversations…"/></div></div>
+    <div style="padding:10px 20px 6px"><div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted)">Recent</div></div>
+    <div class="chat-item">
+      <div class="avatar"><div class="avatar-img"><i class="fa-regular fa-user"></i></div><div class="avatar-status online"></div></div>
+      <div class="chat-meta"><div class="chat-name">Amara Obi</div><div class="chat-preview">Sure! I'm free this Saturday from noon onwards &#128248;</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="chat-time">2m</div><div class="unread-badge">3</div></div>
+    </div>
+    <div class="chat-item">
+      <div class="avatar"><div class="avatar-img"><i class="fa-regular fa-user"></i></div><div class="avatar-status offline"></div></div>
+      <div class="chat-meta"><div class="chat-name">Kemi Adara</div><div class="chat-preview">Thanks for the booking! I'll send the contract shortly.</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="chat-time">1h</div></div>
+    </div>
+    <div class="chat-item">
+      <div class="avatar"><div class="avatar-img"><i class="fa-regular fa-user"></i></div><div class="avatar-status online"></div></div>
+      <div class="chat-meta"><div class="chat-name">Tunde Eko</div><div class="chat-preview">My rate is &#8358;50k per half day. Let me know &#128588;</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="chat-time">3h</div><div class="unread-badge">1</div></div>
+    </div>
+    <div style="text-align:center;padding:32px 20px;color:var(--text-muted)">
+      <i class="fa-regular fa-comment-dots" style="font-size:36px;margin-bottom:10px;display:block;opacity:0.3"></i>
+      <div style="font-size:13px">Your other conversations will appear here</div>
+    </div>
+  </div><!-- /messages -->
 
-```
-<div class="topbar" style="padding-bottom:0">
-  <div class="topbar-logo" style="font-size:22px">Messages</div>
-  <div class="topbar-icon-btn"><i class="fa-solid fa-pen-to-square"></i></div>
-</div>
-
-<!-- Search -->
-<div class="msg-search">
-  <div class="msg-search-inner">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <input type="text" placeholder="Search conversations…" />
-  </div>
-</div>
-
-<!-- Active chats -->
-<div style="padding:10px 20px 6px">
-  <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted)">Recent</div>
-</div>
-
-<div class="chat-item">
-  <div class="avatar">
-    <div class="avatar-img"><i class="fa-regular fa-user"></i></div>
-    <div class="avatar-status online"></div>
-  </div>
-  <div class="chat-meta">
-    <div class="chat-name">Amara Obi</div>
-    <div class="chat-preview">Sure! I'm free this Saturday from noon onwards 📸</div>
-  </div>
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-    <div class="chat-time">2m</div>
-    <div class="unread-badge">3</div>
-  </div>
-</div>
-
-<div class="chat-item">
-  <div class="avatar">
-    <div class="avatar-img"><i class="fa-regular fa-user"></i></div>
-    <div class="avatar-status offline"></div>
-  </div>
-  <div class="chat-meta">
-    <div class="chat-name">Kemi Adara</div>
-    <div class="chat-preview">Thanks for the booking! I'll send the contract shortly.</div>
-  </div>
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-    <div class="chat-time">1h</div>
-  </div>
-</div>
-
-<div class="chat-item">
-  <div class="avatar">
-    <div class="avatar-img"><i class="fa-regular fa-user"></i></div>
-    <div class="avatar-status online"></div>
-  </div>
-  <div class="chat-meta">
-    <div class="chat-name">Tunde Eko</div>
-    <div class="chat-preview">My rate is ₦50k per half day. Let me know 🙌</div>
-  </div>
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-    <div class="chat-time">3h</div>
-    <div class="unread-badge">1</div>
-  </div>
-</div>
-
-<div class="chat-item">
-  <div class="avatar">
-    <div class="avatar-img"><i class="fa-regular fa-user"></i></div>
-    <div class="avatar-status offline"></div>
-  </div>
-  <div class="chat-meta">
-    <div class="chat-name">Ngozi Uche</div>
-    <div class="chat-preview">Sent you my portfolio. Let me know your thoughts!</div>
-  </div>
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-    <div class="chat-time">Yesterday</div>
-  </div>
-</div>
-
-<!-- Empty state placeholder below -->
-<div style="text-align:center;padding:32px 20px;color:var(--text-muted)">
-  <i class="fa-regular fa-comment-dots" style="font-size:36px;margin-bottom:10px;display:block;opacity:0.3"></i>
-  <div style="font-size:13px">Your other conversations will appear here</div>
-</div>
-```
-
-  </div><!-- /view-messages -->
-
-  <!-- ═══════════════════════════════════════════
-       VIEW: PROFILE
-  ════════════════════════════════════════════ -->
+  <!-- PROFILE -->
 
   <div id="view-profile" class="view">
-
-```
-<!-- Cover Photo -->
-<div class="cover-photo">
-  <div class="cover-edit-btn"><i class="fa-solid fa-camera"></i></div>
-</div>
-
-<!-- Profile Photo -->
-<div style="display:flex;align-items:flex-end;justify-content:space-between;padding-right:20px">
-  <div class="profile-photo-wrap">
-    <div class="profile-photo"><i class="fa-regular fa-user"></i></div>
-    <div class="profile-photo-edit"><i class="fa-solid fa-plus"></i></div>
-  </div>
-
-  <!-- Status Toggle -->
-  <div style="margin-bottom:8px">
-    <div class="status-toggle" id="statusToggle">
-      <button class="toggle-btn active-avail" onclick="setStatus('available')">
-        <i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px"></i>Available
-      </button>
-      <button class="toggle-btn" onclick="setStatus('busy')">
-        <i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px"></i>Busy
-      </button>
+    <div class="cover-photo"><div class="cover-edit-btn"><i class="fa-solid fa-camera"></i></div></div>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;padding-right:20px">
+      <div class="profile-photo-wrap">
+        <div class="profile-photo" id="profile-avatar-display"><i class="fa-regular fa-user"></i></div>
+        <div class="profile-photo-edit"><i class="fa-solid fa-plus"></i></div>
+      </div>
+      <div style="margin-bottom:8px">
+        <div class="status-toggle" id="statusToggle">
+          <button class="toggle-btn active-avail" onclick="setStatus('available')"><i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px"></i>Available</button>
+          <button class="toggle-btn" onclick="setStatus('busy')"><i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px"></i>Busy</button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
+    <div class="profile-info">
+      <div class="profile-name" id="profile-display-name">Your Name</div>
+      <div class="profile-handle" id="profile-handle">@yourhandle · Lagos, Nigeria</div>
+      <div class="profile-bio">Model · Content Creator · Available for brand deals, shoots &amp; collaborations. DM to book.</div>
+      <div style="display:flex;gap:8px;margin-bottom:4px">
+        <button class="brand-btn" style="flex:1;border-radius:10px;padding:10px;font-size:13px"><i class="fa-solid fa-pen"></i> &nbsp;Edit Profile</button>
+        <button onclick="handleLogout()" style="padding:0 14px;height:42px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-muted);display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="stat"><div class="stat-value">0</div><div class="stat-label">Posts</div></div>
+      <div class="stat"><div class="stat-value">0</div><div class="stat-label">Bookings</div></div>
+      <div class="stat"><div class="stat-value">&#8212;</div><div class="stat-label">Rating</div></div>
+      <div class="stat"><div class="stat-value">0</div><div class="stat-label">Reviews</div></div>
+    </div>
+    <div class="image-grid">
+      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
+      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
+      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
+      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
+      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
+      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
+      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
+      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
+      <div class="grid-cell" style="border:2px dashed var(--border)"><i class="fa-solid fa-plus" style="color:var(--text-muted);font-size:20px"></i></div>
+    </div>
+    <div style="height:24px"></div>
+  </div><!-- /profile -->
 
-<!-- Profile Info -->
-<div class="profile-info">
-  <div class="profile-name">Your Name</div>
-  <div class="profile-handle">@yourhandle · Lagos, Nigeria</div>
-  <div class="profile-bio">Model · Content Creator · Available for brand deals, shoots & collaborations. DM to book.</div>
-
-  <div style="display:flex;gap:8px;margin-bottom:4px">
-    <button class="brand-btn" style="flex:1;border-radius:10px;padding:10px;font-size:13px">
-      <i class="fa-solid fa-pen"></i> &nbsp;Edit Profile
-    </button>
-    <button style="width:42px;height:42px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px">
-      <i class="fa-solid fa-share-nodes"></i>
-    </button>
-  </div>
-</div>
-
-<!-- Stats -->
-<div class="profile-stats">
-  <div class="stat">
-    <div class="stat-value">0</div>
-    <div class="stat-label">Posts</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value">0</div>
-    <div class="stat-label">Bookings</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value">—</div>
-    <div class="stat-label">Rating</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value">0</div>
-    <div class="stat-label">Reviews</div>
-  </div>
-</div>
-
-<!-- 3-Column Image Grid -->
-<div class="image-grid">
-  <!-- First cell (2x2) -->
-  <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-  <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-  <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-  <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-  <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-  <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-  <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-  <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-  <!-- Add Photo cell -->
-  <div class="grid-cell" style="border:2px dashed var(--border)">
-    <i class="fa-solid fa-plus" style="color:var(--text-muted);font-size:20px"></i>
-  </div>
-</div>
-
-<div style="height:24px"></div>
-```
-
-  </div><!-- /view-profile -->
-
-  <!-- ═══════════════════════════════════════════
-       VIEW: ADMIN (hidden by default)
-  ════════════════════════════════════════════ -->
+  <!-- ADMIN -->
 
   <div id="view-admin" class="view">
-
-```
-<div class="admin-header">
-  <div class="admin-eyebrow">⚡ Restricted Access</div>
-  <div class="admin-title">GigsCourt Command Center</div>
-  <div class="admin-subtitle">Logged in as agboghidiaugust@gmail.com</div>
-</div>
-
-<!-- Stats grid -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:20px 20px 0">
-  <div class="stat-card">
-    <div class="stat-card-label">Total Users</div>
-    <div class="stat-card-value">0</div>
-    <div class="stat-card-sub">↑ Platform launching</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-card-label">Bookings</div>
-    <div class="stat-card-value">0</div>
-    <div class="stat-card-sub" style="color:var(--text-muted)">Awaiting launch</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-card-label">Active Talent</div>
-    <div class="stat-card-value">0</div>
-    <div class="stat-card-sub" style="color:var(--text-muted)">Awaiting signups</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-card-label">Revenue (₦)</div>
-    <div class="stat-card-value">—</div>
-    <div class="stat-card-sub" style="color:var(--text-muted)">Not yet tracked</div>
-  </div>
-</div>
-
-<!-- Quick Actions -->
-<div class="admin-section-title">Quick Actions</div>
-
-<div class="action-row">
-  <div class="action-row-left">
-    <div class="action-icon"><i class="fa-solid fa-users"></i></div>
-    <div>
-      <div class="action-label">Manage Users</div>
-      <div class="action-sub">View, ban, or verify accounts</div>
+    <div class="admin-header">
+      <div class="admin-eyebrow">&#9889; Restricted Access</div>
+      <div class="admin-title">GigsCourt Command Center</div>
+      <div class="admin-subtitle" id="admin-email-display">Logged in as admin</div>
     </div>
-  </div>
-  <i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i>
-</div>
-
-<div class="action-row">
-  <div class="action-row-left">
-    <div class="action-icon"><i class="fa-solid fa-calendar-check"></i></div>
-    <div>
-      <div class="action-label">All Bookings</div>
-      <div class="action-sub">Monitor & resolve disputes</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:20px 20px 0">
+      <div class="stat-card"><div class="stat-card-label">Total Users</div><div class="stat-card-value">0</div><div class="stat-card-sub">&#8593; Platform launching</div></div>
+      <div class="stat-card"><div class="stat-card-label">Bookings</div><div class="stat-card-value">0</div><div class="stat-card-sub" style="color:var(--text-muted)">Awaiting launch</div></div>
+      <div class="stat-card"><div class="stat-card-label">Active Talent</div><div class="stat-card-value">0</div><div class="stat-card-sub" style="color:var(--text-muted)">Awaiting signups</div></div>
+      <div class="stat-card"><div class="stat-card-label">Revenue (&#8358;)</div><div class="stat-card-value">&#8212;</div><div class="stat-card-sub" style="color:var(--text-muted)">Not yet tracked</div></div>
     </div>
-  </div>
-  <i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i>
-</div>
+    <div class="admin-section-title">Quick Actions</div>
+    <div class="action-row"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-users"></i></div><div><div class="action-label">Manage Users</div><div class="action-sub">View, ban, or verify accounts</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
+    <div class="action-row"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-calendar-check"></i></div><div><div class="action-label">All Bookings</div><div class="action-sub">Monitor &amp; resolve disputes</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
+    <div class="action-row"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-bell"></i></div><div><div class="action-label">Send Notification</div><div class="action-sub">Broadcast to all users via Resend</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
+    <div class="action-row"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-flag"></i></div><div><div class="action-label">Reported Content</div><div class="action-sub">Review &amp; moderate flagged posts</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
+    <div class="action-row"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-gear"></i></div><div><div class="action-label">Platform Settings</div><div class="action-sub">Configure fees, categories &amp; more</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
+    <div style="height:24px"></div>
+  </div><!-- /admin -->
 
-<div class="action-row">
-  <div class="action-row-left">
-    <div class="action-icon"><i class="fa-solid fa-bell"></i></div>
-    <div>
-      <div class="action-label">Send Notification</div>
-      <div class="action-sub">Broadcast to all users via Resend</div>
-    </div>
-  </div>
-  <i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i>
-</div>
-
-<div class="action-row">
-  <div class="action-row-left">
-    <div class="action-icon"><i class="fa-solid fa-flag"></i></div>
-    <div>
-      <div class="action-label">Reported Content</div>
-      <div class="action-sub">Review & moderate flagged posts</div>
-    </div>
-  </div>
-  <i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i>
-</div>
-
-<div class="action-row">
-  <div class="action-row-left">
-    <div class="action-icon"><i class="fa-solid fa-gear"></i></div>
-    <div>
-      <div class="action-label">Platform Settings</div>
-      <div class="action-sub">Configure fees, categories & more</div>
-    </div>
-  </div>
-  <i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i>
-</div>
-
-<div style="height:24px"></div>
-```
-
-  </div><!-- /view-admin -->
-
-  <!-- ═══════════════════════════════════════════
-       BOTTOM NAVIGATION
-  ════════════════════════════════════════════ -->
+  <!-- BOTTOM NAV -->
 
   <nav id="bottom-nav">
-    <button class="nav-btn active" onclick="showView('home', this)">
-      <i class="fa-solid fa-house"></i>
-      <span>Home</span>
-    </button>
-    <button class="nav-btn" onclick="showView('search', this)">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <span>Search</span>
-    </button>
-    <button class="nav-btn" onclick="showView('messages', this)">
-      <i class="fa-regular fa-comment-dots"></i>
-      <span>Messages</span>
-    </button>
-    <button class="nav-btn" onclick="showView('profile', this)">
-      <i class="fa-regular fa-user"></i>
-      <span>Profile</span>
-    </button>
-    <!-- Admin tab: hidden by default, revealed only for admin email -->
-    <button class="nav-btn" id="admin-tab" onclick="showView('admin', this)" style="display:none">
-      <i class="fa-solid fa-shield-halved"></i>
-      <span>Admin</span>
-    </button>
+    <button class="nav-btn active" onclick="showView('home',this)"><i class="fa-solid fa-house"></i><span>Home</span></button>
+    <button class="nav-btn" onclick="showView('search',this)"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></button>
+    <button class="nav-btn" onclick="showView('messages',this)"><i class="fa-regular fa-comment-dots"></i><span>Messages</span></button>
+    <button class="nav-btn" onclick="showView('profile',this)"><i class="fa-regular fa-user"></i><span>Profile</span></button>
+    <button class="nav-btn" id="admin-tab" onclick="showView('admin',this)" style="display:none"><i class="fa-solid fa-shield-halved"></i><span>Admin</span></button>
   </nav>
 
 </div><!-- /app -->
 
 <script>
-  /* ─────────────────────────────────────────
-     AUTH / USER STATE
-  ───────────────────────────────────────── */
-  const ADMIN_EMAIL = 'agboghidiaugust@gmail.com';
+/* ═══════════════════════════════════════════════
+   FIREBASE INIT
+═══════════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey:            "AIzaSyD7dRYpXukVlyV6ipmCfbCXEJ4kp8t1Gmg",
+  authDomain:        "gigscourt.firebaseapp.com",
+  projectId:         "gigscourt",
+  storageBucket:     "gigscourt.firebasestorage.app",
+  messagingSenderId: "1055157379736",
+  appId:             "1:1055157379736:web:215763c63606c2c5a966ed",
+  measurementId:     "G-BY1YBSYJHV"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
 
-  // Replace this with the authenticated user's email once Firebase is integrated
-  let currentUserEmail = 'agboghidiaugust@gmail.com'; // ← swap dynamically post-login
+// Persist login across page refreshes
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-  /* ─────────────────────────────────────────
-     ADMIN TAB VISIBILITY
-  ───────────────────────────────────────── */
-  function checkAdminAccess() {
+const ADMIN_EMAIL = 'agboghidiaugust@gmail.com';
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+let _toastTimer = null;
+function showToast(msg, type = 'error', duration = 4200) {
+  const el   = document.getElementById('toast');
+  const icon = document.getElementById('toast-icon');
+  const txt  = document.getElementById('toast-msg');
+  const icons = { error:'fa-circle-exclamation', success:'fa-circle-check', info:'fa-circle-info' };
+  icon.className = 'fa-solid ' + (icons[type] || icons.error);
+  txt.textContent = msg;
+  el.className = 'show ' + type;
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.className = type; }, duration);
+}
+
+/* ═══════════════════════════════════════════════
+   FIREBASE ERROR → READABLE MESSAGE
+═══════════════════════════════════════════════ */
+function fbErr(code) {
+  const map = {
+    'auth/invalid-email':             'Please enter a valid email address.',
+    'auth/user-not-found':            'No account found with this email.',
+    'auth/wrong-password':            'Incorrect password. Please try again.',
+    'auth/invalid-credential':        'Email or password is incorrect.',
+    'auth/email-already-in-use':      'An account with this email already exists. Sign in instead.',
+    'auth/weak-password':             'Password must be at least 6 characters.',
+    'auth/too-many-requests':         'Too many attempts. Please wait a moment and try again.',
+    'auth/network-request-failed':    'Network error — check your internet connection.',
+    'auth/popup-closed-by-user':      'Google sign-in was cancelled.',
+    'auth/invalid-verification-code': 'Invalid code. Please check and try again.',
+    'auth/code-expired':              'Code expired. Please request a new one.',
+    'auth/missing-phone-number':      'Please enter a valid phone number.',
+    'auth/invalid-phone-number':      'Phone number format is invalid.',
+    'auth/quota-exceeded':            'SMS quota exceeded. Try again later.',
+  };
+  return map[code] || 'Something went wrong (' + (code || 'unknown') + '). Please try again.';
+}
+
+/* ═══════════════════════════════════════════════
+   AUTH TAB SWITCHER
+═══════════════════════════════════════════════ */
+function switchAuthTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active',  tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('form-login').style.display   = tab === 'login'  ? 'block' : 'none';
+  document.getElementById('form-signup').style.display  = tab === 'signup' ? 'block' : 'none';
+  document.getElementById('mfa-step').classList.remove('visible');
+  document.getElementById('social-section').style.display = 'block';
+}
+
+/* ═══════════════════════════════════════════════
+   PASSWORD TOGGLE
+═══════════════════════════════════════════════ */
+function togglePwd(id, btn) {
+  const inp = document.getElementById(id);
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.querySelector('i').className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+}
+
+/* ═══════════════════════════════════════════════
+   LOADING STATE
+═══════════════════════════════════════════════ */
+function setLoading(btnId, on) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.classList.toggle('loading', on);
+  btn.disabled = on;
+}
+
+/* ═══════════════════════════════════════════════
+   RECAPTCHA (needed for phone MFA)
+═══════════════════════════════════════════════ */
+let _recaptcha = null;
+function initRecaptcha() {
+  if (_recaptcha) { try { _recaptcha.clear(); } catch(e){} _recaptcha = null; }
+  _recaptcha = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+    size: 'invisible',
+    callback: () => {}
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   STATE: MFA
+═══════════════════════════════════════════════ */
+let _confirmResult = null;
+let _pendingUser   = null;
+
+/* ═══════════════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════════════ */
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-password').value;
+  if (!email || !pass) { showToast('Please enter your email and password.'); return; }
+  setLoading('login-btn', true);
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+    // onAuthStateChanged fires → hides overlay
+  } catch(err) {
+    showToast(fbErr(err.code));
+    setLoading('login-btn', false);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   SIGNUP + MFA ENROLL
+═══════════════════════════════════════════════ */
+async function handleSignup() {
+  const name    = document.getElementById('signup-name').value.trim();
+  const email   = document.getElementById('signup-email').value.trim();
+  const pass    = document.getElementById('signup-password').value;
+  const code    = document.getElementById('country-code').value;
+  const rawNum  = document.getElementById('signup-phone').value.trim();
+
+  if (!name)          { showToast('Please enter your full name.'); return; }
+  if (!email)         { showToast('Please enter your email address.'); return; }
+  if (pass.length < 6){ showToast('Password must be at least 6 characters.'); return; }
+  if (!rawNum)        { showToast('Please enter your phone number for MFA.'); return; }
+
+  // Normalise Nigerian number (strip leading 0)
+  let num = rawNum.replace(/\D/g, '');
+  if (code === '+234' && num.startsWith('0')) num = num.slice(1);
+  const fullPhone = code + num;
+
+  setLoading('signup-btn', true);
+  try {
+    // 1. Create Firebase Auth user
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    _pendingUser = cred.user;
+
+    // 2. Set display name
+    await _pendingUser.updateProfile({ displayName: name });
+
+    // 3. Save profile to Firestore
+    await db.collection('users').doc(_pendingUser.uid).set({
+      uid: _pendingUser.uid, name, email,
+      phone: fullPhone, role: 'talent', status: 'available',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // 4. Initiate phone MFA enrolment
+    initRecaptcha();
+    const mfaSession = await _pendingUser.multiFactor.getSession();
+    const phoneOpts  = { phoneNumber: fullPhone, session: mfaSession };
+    const verifier   = new firebase.auth.PhoneAuthProvider();
+    _confirmResult   = await verifier.verifyPhoneNumber(phoneOpts, _recaptcha);
+
+    // 5. Show OTP step
+    document.getElementById('form-signup').style.display    = 'none';
+    document.getElementById('social-section').style.display = 'none';
+    document.getElementById('mfa-phone-display').textContent = 'Code sent to ' + fullPhone;
+    document.getElementById('mfa-step').classList.add('visible');
+    document.getElementById('otp0').focus();
+    showToast('Verification code sent to ' + fullPhone, 'success');
+
+  } catch(err) {
+    console.error('[GigsCourt signup]', err);
+    // Graceful fallback if MFA / phone-auth not yet enabled in Firebase console
+    if (['auth/operation-not-allowed','auth/unsupported-first-factor',
+         'auth/missing-multi-factor-info'].includes(err.code)) {
+      showToast('Account created! Enable Phone Auth in Firebase Console to activate MFA.', 'info', 7000);
+      setLoading('signup-btn', false);
+      return; // onAuthStateChanged will open the app
+    }
+    showToast(fbErr(err.code));
+    setLoading('signup-btn', false);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   OTP HELPERS
+═══════════════════════════════════════════════ */
+function otpNext(inp, idx) {
+  inp.value = inp.value.replace(/\D/, '');
+  if (inp.value && idx < 5) document.getElementById('otp' + (idx+1)).focus();
+  const full = Array.from({length:6}, (_,i) => document.getElementById('otp'+i).value).join('');
+  if (full.length === 6) handleVerifyOTP();
+}
+function otpBack(e, idx) {
+  if (e.key === 'Backspace' && !e.target.value && idx > 0)
+    document.getElementById('otp' + (idx-1)).focus();
+}
+function getOTP() {
+  return Array.from({length:6}, (_,i) => document.getElementById('otp'+i).value).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   VERIFY OTP  →  enroll MFA factor
+═══════════════════════════════════════════════ */
+async function handleVerifyOTP() {
+  const code = getOTP();
+  if (code.length < 6) { showToast('Please enter all 6 digits.'); return; }
+  setLoading('verify-btn', true);
+  try {
+    const phoneCred   = firebase.auth.PhoneAuthProvider.credential(_confirmResult, code);
+    const mfaAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(phoneCred);
+    await _pendingUser.multiFactor.enroll(mfaAssertion, 'Phone Number');
+    showToast('Phone verified! Welcome to GigsCourt 🎉', 'success');
+    // onAuthStateChanged fires now
+  } catch(err) {
+    showToast(fbErr(err.code));
+    setLoading('verify-btn', false);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   RESEND OTP
+═══════════════════════════════════════════════ */
+async function resendOTP() {
+  if (!_pendingUser) return;
+  try {
+    initRecaptcha();
+    const code    = document.getElementById('country-code').value;
+    const raw     = document.getElementById('signup-phone').value.replace(/\D/,'').replace(/^0/,'');
+    const phone   = code + raw;
+    const session = await _pendingUser.multiFactor.getSession();
+    const prov    = new firebase.auth.PhoneAuthProvider();
+    _confirmResult = await prov.verifyPhoneNumber({ phoneNumber: phone, session }, _recaptcha);
+    showToast('New code sent!', 'success');
+    // Clear OTP inputs
+    for (let i=0;i<6;i++) document.getElementById('otp'+i).value='';
+    document.getElementById('otp0').focus();
+  } catch(err) { showToast(fbErr(err.code)); }
+}
+
+/* ═══════════════════════════════════════════════
+   CANCEL MFA
+═══════════════════════════════════════════════ */
+function cancelMFA() {
+  document.getElementById('mfa-step').classList.remove('visible');
+  document.getElementById('form-signup').style.display    = 'block';
+  document.getElementById('social-section').style.display = 'block';
+  setLoading('signup-btn', false);
+  if (_pendingUser) { _pendingUser.delete().catch(()=>{}); _pendingUser = null; }
+}
+
+/* ═══════════════════════════════════════════════
+   GOOGLE LOGIN
+═══════════════════════════════════════════════ */
+async function handleGoogleLogin() {
+  try {
+    await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  } catch(err) { showToast(fbErr(err.code)); }
+}
+
+/* ═══════════════════════════════════════════════
+   FORGOT PASSWORD
+═══════════════════════════════════════════════ */
+async function handleForgotPassword() {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) { showToast('Enter your email above first.', 'info'); return; }
+  try {
+    await auth.sendPasswordResetEmail(email);
+    showToast('Password reset email sent to ' + email, 'success');
+  } catch(err) { showToast(fbErr(err.code)); }
+}
+
+/* ═══════════════════════════════════════════════
+   LOGOUT
+═══════════════════════════════════════════════ */
+async function handleLogout() {
+  await auth.signOut();
+  showToast('You have been signed out.', 'info');
+}
+
+/* ═══════════════════════════════════════════════
+   AUTH STATE OBSERVER  ←  the nerve centre
+═══════════════════════════════════════════════ */
+auth.onAuthStateChanged(user => {
+  const overlay = document.getElementById('auth-overlay');
+
+  if (user) {
+    /* ── Authenticated ── */
+    overlay.classList.add('hidden');
+    setLoading('login-btn', false);
+    setLoading('signup-btn', false);
+
+    // Populate profile panel
+    const displayName = user.displayName || user.email.split('@')[0];
+    const handle = '@' + displayName.toLowerCase().replace(/\s+/g,'');
+    document.getElementById('profile-display-name').textContent = displayName;
+    document.getElementById('profile-handle').textContent = handle + ' · Lagos, Nigeria';
+
+    // Admin tab: show only for admin email
     const adminTab = document.getElementById('admin-tab');
-    if (currentUserEmail === ADMIN_EMAIL) {
+    if (user.email === ADMIN_EMAIL) {
       adminTab.style.display = 'flex';
+      document.getElementById('admin-email-display').textContent = 'Logged in as ' + user.email;
     } else {
       adminTab.style.display = 'none';
     }
+
+  } else {
+    /* ── Logged out ── */
+    overlay.classList.remove('hidden');
+    document.getElementById('admin-tab').style.display = 'none';
+    switchAuthTab('login');
+    ['login-email','login-password','signup-name','signup-email','signup-password','signup-phone']
+      .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   }
+});
 
-  /* ─────────────────────────────────────────
-     SPA NAVIGATION
-  ───────────────────────────────────────── */
-  function showView(viewName, clickedBtn) {
-    // Hide all views
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    // Deactivate all nav buttons
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+/* ═══════════════════════════════════════════════
+   SPA NAVIGATION
+═══════════════════════════════════════════════ */
+function showView(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const t = document.getElementById('view-' + name);
+  if (t) { t.classList.add('active'); t.scrollTop = 0; }
+  if (btn) btn.classList.add('active');
+}
 
-    // Show target view
-    const target = document.getElementById('view-' + viewName);
-    if (target) {
-      target.classList.add('active');
-      target.scrollTop = 0;
-    }
+/* ═══════════════════════════════════════════════
+   STATUS TOGGLE
+═══════════════════════════════════════════════ */
+function setStatus(status) {
+  const btns = document.querySelectorAll('#statusToggle .toggle-btn');
+  btns.forEach(b => b.classList.remove('active-avail','active-busy'));
+  btns[status === 'available' ? 0 : 1].classList.add(status === 'available' ? 'active-avail' : 'active-busy');
+  // TODO: Firestore write in Step 3
+}
 
-    // Activate clicked button
-    if (clickedBtn) clickedBtn.classList.add('active');
-  }
-
-  /* ─────────────────────────────────────────
-     STATUS TOGGLE (Available / Busy)
-  ───────────────────────────────────────── */
-  function setStatus(status) {
-    const btns = document.querySelectorAll('#statusToggle .toggle-btn');
-    btns.forEach(b => {
-      b.classList.remove('active-avail', 'active-busy');
-    });
-    if (status === 'available') {
-      btns[0].classList.add('active-avail');
-    } else {
-      btns[1].classList.add('active-busy');
-    }
-    // TODO: write status to Firestore in Step 3
-    console.log('[GigsCourt] Status set to:', status);
-  }
-
-  /* ─────────────────────────────────────────
-     CATEGORY CHIPS (Home)
-  ───────────────────────────────────────── */
-  document.querySelectorAll('.chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-    });
+/* ═══════════════════════════════════════════════
+   CHIP FILTER
+═══════════════════════════════════════════════ */
+document.querySelectorAll('.chip').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
   });
+});
 
-  /* ─────────────────────────────────────────
-     INIT
-  ───────────────────────────────────────── */
-  checkAdminAccess();
+/* ═══════════════════════════════════════════════
+   ENTER KEY SHORTCUT
+═══════════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('form-login').style.display  !== 'none') handleLogin();
+  if (document.getElementById('form-signup').style.display !== 'none') handleSignup();
+});
 </script>
 
 </body>
