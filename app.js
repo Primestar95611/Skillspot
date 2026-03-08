@@ -15,7 +15,6 @@ function showView(name, btn) {
   if (name === 'admin' && auth.currentUser?.email === ADMIN_EMAIL) loadAdminData();
 }
 
-// Auth State Observer
 auth.onAuthStateChanged(async user => {
   const overlay = document.getElementById('auth-overlay');
   if (user) {
@@ -25,11 +24,11 @@ auth.onAuthStateChanged(async user => {
 
     const adminTab = document.getElementById('admin-tab');
     if (user.email === ADMIN_EMAIL) {
-      adminTab.style.display = 'flex';
+      if (adminTab) adminTab.style.display = 'flex';
       document.getElementById('admin-email-display').textContent = 'Logged in as ' + user.email;
       loadAdminData();
     } else {
-      adminTab.style.display = 'none';
+      if (adminTab) adminTab.style.display = 'none';
     }
 
     const emailEl = document.getElementById('profile-email-display');
@@ -40,11 +39,13 @@ auth.onAuthStateChanged(async user => {
 
   } else {
     overlay.classList.remove('hidden');
-    document.getElementById('admin-tab').style
+    const adminTab = document.getElementById('admin-tab');
+    if (adminTab) adminTab.style.display = 'none';
     switchAuthTab('login');
-    // Clear form fields
+    
     ['login-email','login-password','signup-name','signup-email','signup-password','signup-phone']
-      .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+      .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    
     _profileData = {};
     toggleEditMode(false);
   }
