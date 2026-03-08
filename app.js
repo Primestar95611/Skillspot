@@ -40,7 +40,7 @@ auth.onAuthStateChanged(async user => {
 
   } else {
     overlay.classList.remove('hidden');
-    document.getElementById('admin-tab').style.display = 'none';
+    document.getElementById('admin-tab').style
     switchAuthTab('login');
     // Clear form fields
     ['login-email','login-password','signup-name','signup-email','signup-password','signup-phone']
