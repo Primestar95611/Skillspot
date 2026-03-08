@@ -1,9 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>GigsCourt · soft premium</title>
+    <title>GigsCourt · professional loop</title>
     <!-- Firebase SDK (v9 modular) -->
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
@@ -22,8 +23,8 @@
         }
 
         body {
-            background-color: #0c0c10;
-            color: #ffffff;
+            background-color: #F3F5F9;
+            color: #1A1A1A;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -35,12 +36,13 @@
         #app {
             width: 100%;
             max-width: 430px;
-            background: #121217;
+            background: #FFFFFF;
             height: 100vh;
             display: flex;
             flex-direction: column;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 0 40px rgba(0,0,0,0.05);
         }
 
         /* main scrollable panel */
@@ -48,7 +50,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 0;
-            background: #121217;
+            background: #FFFFFF;
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
@@ -56,20 +58,17 @@
             display: none;
         }
 
-        /* bottom nav – frosted glass with central compass */
+        /* clean 4-tab bottom navigation - flat, elegant, blue active */
         .bottom-nav {
-            background: rgba(18, 18, 23, 0.7);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border-top: 1px solid rgba(255, 77, 109, 0.2);
+            background: #FFFFFF;
+            border-top: 1px solid #E5E9F0;
             display: flex;
             justify-content: space-around;
             align-items: center;
             padding: 12px 0 24px 0;
             margin: 0;
-            box-shadow: 0 -8px 30px rgba(0,0,0,0.8);
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.02);
             z-index: 10;
-            position: relative;
         }
 
         .nav-item {
@@ -77,7 +76,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #6B6B78;
+            color: #8A94A6;
             font-size: 0.7rem;
             font-weight: 500;
             background: transparent;
@@ -92,42 +91,14 @@
         .nav-item i {
             font-size: 1.6rem;
             margin-bottom: 3px;
-            color: #6B6B78;
+            color: #8A94A6;
         }
 
         .nav-item.active {
-            color: #FF4D6D;
+            color: #0077B5;
         }
         .nav-item.active i {
-            color: #FF4D6D;
-            filter: drop-shadow(0 0 8px #FF4D6D);
-        }
-
-        /* Central compass button (glowing) */
-        .compass-btn {
-            position: absolute;
-            bottom: 54px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 64px;
-            height: 64px;
-            background: #FF4D6D;
-            border-radius: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 30px #FF4D6D, 0 10px 30px rgba(0,0,0,0.8);
-            border: 2px solid rgba(255,255,255,0.2);
-            z-index: 20;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .compass-btn i {
-            font-size: 2.2rem;
-            color: white;
-        }
-        .compass-btn:active {
-            transform: translateX(-50%) scale(0.95);
+            color: #0077B5;
         }
 
         /* LANDSCAPE FEED (16:9 cards) */
@@ -140,11 +111,11 @@
         .landscape-card {
             aspect-ratio: 16/9;
             width: 100%;
-            border-radius: 28px;
+            border-radius: 15px;
             overflow: hidden;
             position: relative;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.7);
-            background: #1E1E26;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            background: #F8FAFF;
         }
         .card-bg {
             position: absolute;
@@ -160,7 +131,7 @@
             left: 0;
             right: 0;
             height: 60%;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 70%, transparent 100%);
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 70%, transparent 100%);
             pointer-events: none;
         }
         .card-content {
@@ -169,74 +140,79 @@
             left: 20px;
             right: 20px;
             z-index: 2;
+            color: white;
         }
         .card-name {
             font-size: 1.8rem;
             font-weight: 700;
             color: white;
             line-height: 1.2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         .card-category {
             font-size: 1rem;
-            color: #FF4D6D;
-            font-weight: 600;
+            color: #FFFFFF;
+            font-weight: 500;
             display: flex;
             align-items: center;
             gap: 8px;
             margin-top: 6px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
         .premium-badge-card {
             position: absolute;
             top: 16px;
             right: 16px;
-            background: rgba(255,77,109,0.2);
-            backdrop-filter: blur(8px);
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(4px);
             padding: 6px 14px;
             border-radius: 40px;
             font-size: 0.75rem;
             font-weight: 600;
-            color: #FF4D6D;
-            border: 1px solid #FF4D6D40;
+            color: #0077B5;
+            border: 1px solid rgba(0,119,181,0.2);
             z-index: 3;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .premium-badge-card i {
             margin-right: 4px;
+            color: #0077B5;
         }
 
-        /* SEARCH MAP ENGINE */
+        /* SEARCH MAP ENGINE - light theme */
         .map-container {
             height: 240px;
             width: 100%;
-            background: #1E1E26;
-            border-radius: 0 0 28px 28px;
+            background: #F0F2F5;
+            border-radius: 0;
             overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
         }
         #map {
             height: 100%;
             width: 100%;
-            background: #1a1a24;
+            background: #F0F2F5;
         }
         .radius-slider-container {
             padding: 24px 20px 16px 20px;
-            background: #121217;
+            background: #FFFFFF;
+            border-bottom: 1px solid #E5E9F0;
         }
         .slider-label {
             display: flex;
             justify-content: space-between;
-            color: #9A9AA5;
+            color: #4A5568;
             font-size: 0.9rem;
             margin-bottom: 12px;
         }
         .slider-label span i {
-            color: #FF4D6D;
+            color: #0077B5;
             margin-right: 4px;
         }
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
             height: 6px;
-            background: #2A2A33;
+            background: #E5E9F0;
             border-radius: 10px;
             outline: none;
         }
@@ -244,51 +220,56 @@
             -webkit-appearance: none;
             width: 24px;
             height: 24px;
-            background: #FF4D6D;
+            background: #0077B5;
             border-radius: 12px;
-            box-shadow: 0 0 15px #FF4D6D;
+            box-shadow: 0 2px 8px rgba(0,119,181,0.3);
             border: 2px solid white;
             cursor: pointer;
             margin-top: -8px;
         }
         .nearby-list {
             padding: 0 20px 30px 20px;
+            background: #FFFFFF;
         }
         .nearby-item {
             display: flex;
             align-items: center;
             gap: 16px;
             padding: 16px 0;
-            border-bottom: 1px solid #26262E;
+            border-bottom: 1px solid #E5E9F0;
+        }
+        .nearby-item:last-child {
+            border-bottom: none;
         }
         .nearby-avatar {
             width: 56px;
             height: 56px;
             border-radius: 28px;
-            background: #1E1E26;
+            background: #F0F5FA;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
-            color: #FF4D6D;
-            border: 2px solid #FF4D6D40;
+            color: #0077B5;
+            border: 2px solid #E1ECF5;
         }
         .nearby-info h4 {
             font-weight: 600;
             margin-bottom: 4px;
+            color: #1A1A1A;
         }
         .nearby-info p {
-            color: #9A9AA5;
+            color: #64748B;
             font-size: 0.85rem;
         }
         .nearby-distance {
             margin-left: auto;
-            color: #FF4D6D;
+            color: #0077B5;
             font-weight: 500;
             font-size: 0.9rem;
         }
 
-        /* PROFILE – cinematic cover + 3‑col grid with 2px gap */
+        /* PROFILE – cinematic cover + 3‑col grid with white gaps */
         .profile-header {
             position: relative;
             width: 100%;
@@ -296,10 +277,9 @@
         .cover-photo {
             width: 100%;
             height: 160px;
-            background: linear-gradient(135deg, #1E1E26, #2A2A33);
+            background: linear-gradient(135deg, #E1ECF5, #F0F5FA);
             position: relative;
             overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
         }
         .cover-photo img {
             width: 100%;
@@ -310,18 +290,19 @@
             position: absolute;
             bottom: 16px;
             right: 16px;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid #FF4D6D40;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid #E5E9F0;
             width: 40px;
             height: 40px;
             border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: #0077B5;
             cursor: pointer;
             z-index: 3;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .profile-avatar-section {
             position: relative;
@@ -336,9 +317,9 @@
             width: 96px;
             height: 96px;
             border-radius: 48px;
-            background: #1E1E26;
-            border: 3px solid #FF4D6D;
-            box-shadow: 0 0 0 4px #121217, 0 10px 30px rgba(255,77,109,0.6);
+            background: #FFFFFF;
+            border: 3px solid #0077B5;
+            box-shadow: 0 0 0 4px #FFFFFF, 0 8px 20px rgba(0,119,181,0.15);
             overflow: hidden;
         }
         .profile-avatar img {
@@ -347,26 +328,26 @@
             object-fit: cover;
         }
         .avatar-upload-btn {
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid #FF4D6D40;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid #E5E9F0;
             width: 36px;
             height: 36px;
             border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: #0077B5;
             cursor: pointer;
             margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .profile-stats {
             display: flex;
             gap: 32px;
             padding: 16px 20px;
-            border-bottom: 1px solid #26262E;
-            background: rgba(22,22,28,0.5);
-            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #E5E9F0;
+            background: #FFFFFF;
             margin-top: 8px;
         }
         .stat-item {
@@ -375,26 +356,28 @@
         .stat-value {
             font-size: 1.3rem;
             font-weight: 700;
+            color: #1A1A1A;
         }
         .stat-label {
             font-size: 0.8rem;
-            color: #9A9AA5;
+            color: #64748B;
         }
 
-        /* 3‑column grid with 2px gaps (rose accents) */
+        /* 3‑column grid with 2px white gaps */
         .portfolio-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 2px;
-            background: #121217;
-            padding: 2px 0;
+            background: #FFFFFF;
+            padding: 2px;
         }
         .grid-item {
             aspect-ratio: 1/1;
-            background: #1E1E26;
+            background: #F5F8FC;
             overflow: hidden;
             position: relative;
             cursor: pointer;
+            border-radius: 0;
         }
         .grid-item img {
             width: 100%;
@@ -404,8 +387,7 @@
         .grid-item .overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,77,109,0.1);
-            backdrop-filter: blur(2px);
+            background: rgba(0,119,181,0.05);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -424,18 +406,18 @@
             align-items: center;
             gap: 12px;
             padding: 16px 0;
-            border-bottom: 1px solid #26262E;
+            border-bottom: 1px solid #E5E9F0;
         }
         .message-avatar {
             width: 56px;
             height: 56px;
             border-radius: 28px;
-            background: #1E1E26;
+            background: #F0F5FA;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
-            color: #FF4D6D;
+            color: #0077B5;
             position: relative;
         }
         .notification-dot {
@@ -444,9 +426,9 @@
             right: 2px;
             width: 12px;
             height: 12px;
-            background: #FF4D6D;
+            background: #0077B5;
             border-radius: 6px;
-            border: 2px solid #121217;
+            border: 2px solid #FFFFFF;
         }
         .message-content { flex:1; }
         .message-header {
@@ -454,94 +436,91 @@
             justify-content: space-between;
             margin-bottom: 4px;
         }
-        .message-name { font-weight: 600; }
-        .message-time { font-size:0.75rem; color:#9A9AA5; }
+        .message-name { font-weight: 600; color: #1A1A1A; }
+        .message-time { font-size:0.75rem; color:#64748B; }
         .message-preview {
-            color:#9A9AA5; font-size:0.85rem;
+            color:#64748B; font-size:0.85rem;
             display:flex; align-items:center; gap:4px;
         }
 
-        /* edit profile */
-        .edit-profile-form { padding:20px; }
+        /* edit profile - clean white */
+        .edit-profile-form { padding:20px; background:#FFFFFF; }
         .form-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
-        .form-header h3 { font-size:1.3rem; font-weight:600; }
-        .edit-icon { color:#FF4D6D; font-size:1.2rem; }
+        .form-header h3 { font-size:1.3rem; font-weight:600; color:#1A1A1A; }
+        .edit-icon { color:#0077B5; font-size:1.2rem; }
         .form-group { margin-bottom:20px; }
-        .form-group label { color:#9A9AA5; font-size:0.85rem; margin-bottom:8px; display:block; }
+        .form-group label { color:#64748B; font-size:0.85rem; margin-bottom:8px; display:block; }
         .form-control {
-            width:100%; padding:16px 18px; background:#1E1E26;
-            border:1px solid #2E2E38; border-radius:28px; color:white;
-            font-size:1rem; outline:none; box-shadow:0 8px 20px rgba(0,0,0,0.5);
+            width:100%; padding:16px 18px; background:#F8FAFF;
+            border:1px solid #E5E9F0; border-radius:15px; color:#1A1A1A;
+            font-size:1rem; outline:none; box-shadow:0 2px 6px rgba(0,0,0,0.02);
         }
-        .form-control:focus { border-color:#FF4D6D; box-shadow:0 0 0 3px #FF4D6D30; }
+        .form-control:focus { border-color:#0077B5; box-shadow:0 0 0 3px rgba(0,119,181,0.1); }
         select.form-control {
             appearance:none;
-            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF4D6D' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230077B5' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat:no-repeat; background-position:right 1rem center;
         }
         .btn {
-            background:#FF4D6D; color:white; border:none; border-radius:40px;
+            background:#0077B5; color:white; border:none; border-radius:15px;
             padding:16px 20px; font-weight:600; font-size:1rem; width:100%;
-            margin:8px 0; cursor:pointer; box-shadow:0 10px 25px rgba(255,77,109,0.3);
+            margin:8px 0; cursor:pointer; box-shadow:0 4px 12px rgba(0,119,181,0.2);
         }
-        .btn:active { transform:scale(0.97); }
-        .btn-secondary { background:#1E1E26; border:1px solid #2E2E38; }
-        .btn-secondary i { color:#FF4D6D; margin-right:8px; }
+        .btn:active { transform:scale(0.98); }
+        .btn-secondary { background:#F8FAFF; border:1px solid #E5E9F0; color:#1A1A1A; }
+        .btn-secondary i { color:#0077B5; margin-right:8px; }
 
-        /* auth overlay */
+        /* auth overlay - clean white */
         .auth-overlay {
             position:fixed; top:0; left:0; width:100%; height:100%;
-            background:rgba(0,0,0,0.95); backdrop-filter:blur(25px);
+            background:rgba(255,255,255,0.98); backdrop-filter:blur(10px);
             display:flex; align-items:center; justify-content:center;
             z-index:1000; padding:20px; visibility:hidden; opacity:0;
             transition:0.2s;
         }
         .auth-overlay.show { visibility:visible; opacity:1; }
         .auth-card {
-            background:#1E1E26; max-width:420px; width:100%;
-            border-radius:48px; padding:32px 24px; border:1px solid #2E2E38;
-            box-shadow:0 30px 60px rgba(255,77,109,0.3);
+            background:#FFFFFF; max-width:420px; width:100%;
+            border-radius:30px; padding:32px 24px; border:1px solid #E5E9F0;
+            box-shadow:0 20px 40px rgba(0,0,0,0.05);
         }
-        .close-auth { background:none; border:none; color:#fff; font-size:2rem; float:right; cursor:pointer; }
+        .close-auth { background:none; border:none; color:#64748B; font-size:2rem; float:right; cursor:pointer; }
         .input-field {
-            background:#121217; border:1px solid #2E2E38; border-radius:40px;
-            padding:16px 22px; width:100%; color:white; font-size:1rem; margin:8px 0;
+            background:#F8FAFF; border:1px solid #E5E9F0; border-radius:15px;
+            padding:16px 22px; width:100%; color:#1A1A1A; font-size:1rem; margin:8px 0;
             outline:none;
         }
-        .input-field:focus { border-color:#FF4D6D; }
-        .text-small { color:#9A9AA5; font-size:0.85rem; }
+        .input-field:focus { border-color:#0077B5; }
+        .text-small { color:#64748B; font-size:0.85rem; }
     </style>
 </head>
 <body>
     <div id="app">
         <div id="panel"></div>
 
-        <!-- bottom nav with central compass -->
-        <div style="position:relative;">
-            <div class="bottom-nav" id="bottomNav">
-                <button class="nav-item" data-tab="home" id="tabHome"><i class="fas fa-home"></i><span>Home</span></button>
-                <button class="nav-item" data-tab="search" id="tabSearch"><i class="fas fa-search"></i><span>Search</span></button>
-                <button class="nav-item" data-tab="messages" id="tabMessages"><i class="fas fa-envelope"></i><span>Messages</span></button>
-                <button class="nav-item" data-tab="profile" id="tabProfile"><i class="fas fa-user-circle"></i><span>Profile</span></button>
-            </div>
-            <div class="compass-btn" id="compassBtn"><i class="fas fa-compass"></i></div>
+        <!-- clean 4-tab bottom navigation -->
+        <div class="bottom-nav" id="bottomNav">
+            <button class="nav-item" data-tab="home" id="tabHome"><i class="fas fa-home"></i><span>Home</span></button>
+            <button class="nav-item" data-tab="search" id="tabSearch"><i class="fas fa-search"></i><span>Search</span></button>
+            <button class="nav-item" data-tab="messages" id="tabMessages"><i class="fas fa-envelope"></i><span>Messages</span></button>
+            <button class="nav-item" data-tab="profile" id="tabProfile"><i class="fas fa-user-circle"></i><span>Profile</span></button>
         </div>
     </div>
 
     <div class="auth-overlay" id="authOverlay">
         <div class="auth-card">
             <button class="close-auth" id="closeAuthBtn">&times;</button>
-            <h2 style="color:white;"><i class="fa-regular fa-gem" style="color:#FF4D6D;"></i> GigsCourt</h2>
-            <p class="text-small mb-2">soft premium loop</p>
+            <h2 style="color:#1A1A1A;"><i class="fa-regular fa-gem" style="color:#0077B5;"></i> GigsCourt</h2>
+            <p class="text-small mb-2">professional talent loop</p>
             <div><input type="email" id="authEmail" class="input-field" placeholder="Email"></div>
             <div><input type="password" id="authPassword" class="input-field" placeholder="Password"></div>
             <button class="btn" id="authPrimaryBtn">Login</button>
             <button class="btn btn-secondary" id="googleSignInBtn"><i class="fab fa-google"></i> Continue with Google</button>
             <div style="text-align:center; margin-top:20px;">
-                <span id="authToggleText" style="color:#9A9AA5;">Don't have an account?</span>
-                <button id="authToggleBtn" style="background:none; border:none; color:#FF4D6D; font-weight:600; cursor:pointer;">Sign up</button>
+                <span id="authToggleText" style="color:#64748B;">Don't have an account?</span>
+                <button id="authToggleBtn" style="background:none; border:none; color:#0077B5; font-weight:600; cursor:pointer;">Sign up</button>
             </div>
-            <p id="authMessage" style="color:#FF4D6D; font-size:0.8rem; margin-top:12px;"></p>
+            <p id="authMessage" style="color:#0077B5; font-size:0.8rem; margin-top:12px;"></p>
         </div>
     </div>
 
@@ -590,7 +569,6 @@
         const authToggleBtn = document.getElementById('authToggleBtn');
         const authToggleText = document.getElementById('authToggleText');
         const authMessage = document.getElementById('authMessage');
-        const compassBtn = document.getElementById('compassBtn');
 
         const tabHome = document.getElementById('tabHome');
         const tabSearch = document.getElementById('tabSearch');
@@ -603,7 +581,7 @@
         let currentTab = 'home';
         let userProfileData = {};
         let mapInitialized = false;
-        let map, radiusSlider;
+        let map;
 
         async function loadUserProfile(uid) {
             try {
@@ -639,12 +617,18 @@
 
         function initMap() {
             if (!mapInitialized && document.getElementById('map')) {
-                map = L.map('map').setView([40.7128, -74.0060], 12);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                map = L.map('map', {
+                    preferCanvas: true,
+                    zoomControl: false,
+                    attributionControl: false
+                }).setView([40.7128, -74.0060], 12);
+                
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                     attribution: '&copy; OpenStreetMap, CartoDB',
                     subdomains: 'abcd',
                     maxZoom: 19
                 }).addTo(map);
+                
                 mapInitialized = true;
             }
         }
@@ -705,11 +689,11 @@
                             valSpan.innerText = e.target.value + ' km';
                         });
                     }
-                }, 50);
+                }, 100);
             } else if (tabId === 'messages') {
                 panel.innerHTML = `
                     <div class="inbox-list">
-                        <div class="message-item"><div class="message-avatar"><i class="fas fa-user-circle"></i><span class="notification-dot"></span></div><div class="message-content"><div class="message-header"><span class="message-name">Alex Rivera</span><span class="message-time">2h ago</span></div><div class="message-preview"><i class="fas fa-circle" style="color:#FF4D6D; font-size:6px;"></i> RE: proposal · Looking forward</div></div></div>
+                        <div class="message-item"><div class="message-avatar"><i class="fas fa-user-circle"></i><span class="notification-dot"></span></div><div class="message-content"><div class="message-header"><span class="message-name">Alex Rivera</span><span class="message-time">2h ago</span></div><div class="message-preview"><i class="fas fa-circle" style="color:#0077B5; font-size:6px;"></i> RE: proposal · Looking forward</div></div></div>
                         <div class="message-item"><div class="message-avatar"><i class="fas fa-user-circle"></i></div><div class="message-content"><div class="message-header"><span class="message-name">Talent team</span><span class="message-time">5h ago</span></div><div class="message-preview">welcome to gigscourt · Complete your profile</div></div></div>
                         <div class="message-item"><div class="message-avatar"><i class="fas fa-user-circle"></i><span class="notification-dot"></span></div><div class="message-content"><div class="message-header"><span class="message-name">Support</span><span class="message-time">1d ago</span></div><div class="message-preview">your verification ✅ · Account verified</div></div></div>
                     </div>
@@ -719,7 +703,7 @@
                     loadUserProfile(currentUser.uid).then(() => renderProfileEditor());
                     renderProfileEditor();
                 } else {
-                    panel.innerHTML = `<div style="padding:40px; text-align:center;"><i class="fas fa-user-circle" style="font-size:5rem; color:#FF4D6D40;"></i><h3 style="margin:20px 0;">sign in</h3><button class="btn" id="showAuthFromProfile">Login / Sign up</button></div>`;
+                    panel.innerHTML = `<div style="padding:40px; text-align:center;"><i class="fas fa-user-circle" style="font-size:5rem; color:#0077B520;"></i><h3 style="margin:20px 0; color:#1A1A1A;">sign in</h3><button class="btn" id="showAuthFromProfile">Login / Sign up</button></div>`;
                     document.getElementById('showAuthFromProfile')?.addEventListener('click',()=> overlay.classList.add('show'));
                 }
             }
@@ -731,7 +715,7 @@
                 <div class="profile-header">
                     <div class="cover-photo" id="coverPreview">${data.coverUrl ? `<img src="${data.coverUrl}">` : ''}<input type="file" id="coverUpload" accept="image/*" style="display:none;"><div class="cover-upload-btn" id="uploadCoverBtn"><i class="fas fa-camera"></i></div></div>
                     <div class="profile-avatar-section">
-                        <div class="profile-avatar" id="avatarPreview">${data.avatarUrl ? `<img src="${data.avatarUrl}">` : '<i class="fas fa-user" style="font-size:3rem; line-height:96px; width:100%; text-align:center; color:#FF4D6D;"></i>'}</div>
+                        <div class="profile-avatar" id="avatarPreview">${data.avatarUrl ? `<img src="${data.avatarUrl}">` : '<i class="fas fa-user" style="font-size:3rem; line-height:96px; width:100%; text-align:center; color:#0077B5;"></i>'}</div>
                         <input type="file" id="avatarUpload" accept="image/*" style="display:none;"><div class="avatar-upload-btn" id="uploadAvatarBtn"><i class="fas fa-camera"></i></div>
                         <div class="premium-badge-card" style="position:static; margin-bottom:8px;"><i class="fas fa-crown"></i> PREMIUM</div>
                     </div>
@@ -748,7 +732,7 @@
                     </div>
                     <button class="btn" id="saveProfileBtn">Save Profile</button>
                     <button class="btn btn-secondary" id="signOutBtnProfile"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
-                    <div id="profileMessage" style="text-align:center; margin-top:12px;"></div>
+                    <div id="profileMessage" style="text-align:center; margin-top:12px; color:#0077B5;"></div>
                 </div>
             `;
 
@@ -776,7 +760,7 @@
                 const updates = {displayName: document.getElementById('displayName')?.value, category: document.getElementById('category')?.value, bio: document.getElementById('bio')?.value, hourlyRate: parseFloat(document.getElementById('hourlyRate')?.value)||null, updatedAt: new Date().toISOString()};
                 const ok = await saveUserProfile(currentUser.uid, updates);
                 const msg = document.getElementById('profileMessage');
-                if(ok) { msg.innerHTML='Saved!'; msg.style.color='#00ff88'; setTimeout(()=>msg.innerHTML='',2000); }
+                if(ok) { msg.innerHTML='Saved!'; msg.style.color='#00aa55'; setTimeout(()=>msg.innerHTML='',2000); }
             });
             document.getElementById('signOutBtnProfile')?.addEventListener('click', async ()=>{ try{ await signOut(auth); }catch(e){}});
         }
@@ -789,7 +773,6 @@
         tabSearch.addEventListener('click', (e) => { e.preventDefault(); currentTab='search'; setActiveTab('search'); renderPanel('search'); });
         tabMessages.addEventListener('click', (e) => { e.preventDefault(); currentTab='messages'; setActiveTab('messages'); renderPanel('messages'); });
         tabProfile.addEventListener('click', (e) => { e.preventDefault(); currentTab='profile'; setActiveTab('profile'); renderPanel('profile'); });
-        compassBtn.addEventListener('click', () => { currentTab='home'; setActiveTab('home'); renderPanel('home'); });
 
         function setAuthMode(mode) {
             currentAuthMode = mode; authPrimaryBtn.innerText = mode==='login'? 'Login' : 'Sign up';
