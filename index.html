@@ -1,9 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>GigsCourt · provider/client</title>
+    <title>GigsCourt · chat & proposals</title>
     <!-- Firebase SDK (v9 modular) -->
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
@@ -55,6 +56,157 @@
         }
         #panel::-webkit-scrollbar {
             display: none;
+        }
+
+        /* chat container (when chat is open) */
+        #chatContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #FFFFFF;
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+        }
+        #chatContainer.active {
+            display: flex;
+        }
+        .chat-header {
+            padding: 16px 20px;
+            background: #FFFFFF;
+            border-bottom: 1px solid #E5E9F0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .chat-back-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #0077B5;
+            cursor: pointer;
+            padding: 8px;
+        }
+        .chat-partner-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .chat-partner-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 24px;
+            background: #F0F5FA;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0077B5;
+            font-size: 1.5rem;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .message-bubble {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 20px;
+            position: relative;
+        }
+        .message-bubble.sent {
+            background: #0077B5;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .message-bubble.received {
+            background: #F0F5FA;
+            color: #1A1A1A;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .proposal-card {
+            background: white;
+            border: 1px solid #0077B5;
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 8px;
+        }
+        .proposal-card h4 {
+            color: #0077B5;
+            margin-bottom: 8px;
+        }
+        .proposal-card .budget {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1A1A1A;
+            margin-bottom: 8px;
+        }
+        .chat-input-area {
+            padding: 16px;
+            border-top: 1px solid #E5E9F0;
+            background: #FFFFFF;
+        }
+        .chat-input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 14px 18px;
+            background: #F8FAFF;
+            border: 1px solid #E5E9F0;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+        }
+        .chat-input:focus {
+            border-color: #0077B5;
+        }
+        .send-btn {
+            background: #0077B5;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 14px 24px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .proposal-toggle-btn {
+            background: #F8FAFF;
+            border: 1px solid #0077B5;
+            color: #0077B5;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        .proposal-form {
+            background: #F8FAFF;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: none;
+        }
+        .proposal-form.active {
+            display: block;
+        }
+        .proposal-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #E5E9F0;
+            border-radius: 12px;
+            font-size: 0.95rem;
         }
 
         /* clean 4-tab bottom navigation */
@@ -115,6 +267,7 @@
             position: relative;
             box-shadow: 0 8px 20px rgba(0,0,0,0.06);
             background: #F8FAFF;
+            cursor: pointer;
         }
         .card-bg {
             position: absolute;
@@ -178,7 +331,34 @@
             color: #0077B5;
         }
 
-        /* SEARCH MAP ENGINE - with live GPS */
+        /* talent detail overlay */
+        .talent-detail-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .talent-detail-overlay.active {
+            display: flex;
+        }
+        .talent-detail-card {
+            background: #FFFFFF;
+            border-radius: 30px;
+            padding: 24px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+        }
+
+        /* SEARCH MAP ENGINE */
         .map-container {
             height: 240px;
             width: 100%;
@@ -218,9 +398,6 @@
             gap: 6px;
             margin-bottom: 12px;
         }
-        .gps-indicator i {
-            font-size: 0.9rem;
-        }
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
@@ -250,6 +427,7 @@
             gap: 16px;
             padding: 16px 0;
             border-bottom: 1px solid #E5E9F0;
+            cursor: pointer;
         }
         .nearby-item:last-child {
             border-bottom: none;
@@ -287,7 +465,7 @@
             font-size: 0.9rem;
         }
 
-        /* PROFILE – with workplace location */
+        /* PROFILE */
         .profile-header {
             position: relative;
             width: 100%;
@@ -320,7 +498,6 @@
             color: #0077B5;
             cursor: pointer;
             z-index: 3;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .profile-avatar-section {
             position: relative;
@@ -358,7 +535,6 @@
             color: #0077B5;
             cursor: pointer;
             margin-bottom: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .profile-stats {
             display: flex;
@@ -381,7 +557,7 @@
             color: #64748B;
         }
 
-        /* 3‑column grid with 2px white gaps */
+        /* 3‑column grid */
         .portfolio-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -395,66 +571,14 @@
             overflow: hidden;
             position: relative;
             cursor: pointer;
-            border-radius: 0;
         }
         .grid-item img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        .grid-item .overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,119,181,0.05);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-        }
-        .grid-item:hover .overlay {
-            opacity: 1;
-        }
 
-        /* edit profile with workplace location */
-        .edit-profile-form { padding:20px; background:#FFFFFF; }
-        .form-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
-        .form-header h3 { font-size:1.3rem; font-weight:600; color:#1A1A1A; }
-        .edit-icon { color:#0077B5; font-size:1.2rem; }
-        .form-group { margin-bottom:20px; }
-        .form-group label { color:#64748B; font-size:0.85rem; margin-bottom:8px; display:block; }
-        .form-control {
-            width:100%; padding:16px 18px; background:#F8FAFF;
-            border:1px solid #E5E9F0; border-radius:15px; color:#1A1A1A;
-            font-size:1rem; outline:none; box-shadow:0 2px 6px rgba(0,0,0,0.02);
-        }
-        .form-control:focus { border-color:#0077B5; box-shadow:0 0 0 3px rgba(0,119,181,0.1); }
-        select.form-control {
-            appearance:none;
-            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230077B5' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat:no-repeat; background-position:right 1rem center;
-        }
-        .location-group {
-            background: #F0F7FC;
-            border-radius: 15px;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-        .btn {
-            background:#0077B5; color:white; border:none; border-radius:15px;
-            padding:16px 20px; font-weight:600; font-size:1rem; width:100%;
-            margin:8px 0; cursor:pointer; box-shadow:0 4px 12px rgba(0,119,181,0.2);
-        }
-        .btn:active { transform:scale(0.98); }
-        .btn-secondary { background:#F8FAFF; border:1px solid #E5E9F0; color:#1A1A1A; }
-        .btn-secondary i { color:#0077B5; margin-right:8px; }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #0077B5;
-            color: #0077B5;
-            box-shadow: none;
-        }
-
-        /* messages */
+        /* messages inbox */
         .inbox-list {
             padding: 0 16px;
         }
@@ -464,6 +588,7 @@
             gap: 12px;
             padding: 16px 0;
             border-bottom: 1px solid #E5E9F0;
+            cursor: pointer;
         }
         .message-avatar {
             width: 56px;
@@ -497,8 +622,32 @@
         .message-time { font-size:0.75rem; color:#64748B; }
         .message-preview {
             color:#64748B; font-size:0.85rem;
-            display:flex; align-items:center; gap:4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
         }
+
+        /* edit profile */
+        .edit-profile-form { padding:20px; background:#FFFFFF; }
+        .form-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+        .form-header h3 { font-size:1.3rem; font-weight:600; color:#1A1A1A; }
+        .edit-icon { color:#0077B5; font-size:1.2rem; }
+        .form-group { margin-bottom:20px; }
+        .form-group label { color:#64748B; font-size:0.85rem; margin-bottom:8px; display:block; }
+        .form-control {
+            width:100%; padding:16px 18px; background:#F8FAFF;
+            border:1px solid #E5E9F0; border-radius:15px; color:#1A1A1A;
+            font-size:1rem; outline:none;
+        }
+        .form-control:focus { border-color:#0077B5; }
+        .btn {
+            background:#0077B5; color:white; border:none; border-radius:15px;
+            padding:16px 20px; font-weight:600; font-size:1rem; width:100%;
+            margin:8px 0; cursor:pointer;
+        }
+        .btn-secondary { background:#F8FAFF; border:1px solid #E5E9F0; color:#1A1A1A; }
+        .btn-secondary i { color:#0077B5; margin-right:8px; }
 
         /* auth overlay */
         .auth-overlay {
@@ -512,7 +661,6 @@
         .auth-card {
             background:#FFFFFF; max-width:420px; width:100%;
             border-radius:30px; padding:32px 24px; border:1px solid #E5E9F0;
-            box-shadow:0 20px 40px rgba(0,0,0,0.05);
         }
         .close-auth { background:none; border:none; color:#64748B; font-size:2rem; float:right; cursor:pointer; }
         .input-field {
@@ -522,12 +670,57 @@
         }
         .input-field:focus { border-color:#0077B5; }
         .text-small { color:#64748B; font-size:0.85rem; }
-        .mb-2 { margin-bottom:8px; }
     </style>
 </head>
 <body>
     <div id="app">
         <div id="panel"></div>
+        
+        <!-- Chat Container -->
+        <div id="chatContainer">
+            <div class="chat-header">
+                <button class="chat-back-btn" id="chatBackBtn"><i class="fas fa-arrow-left"></i></button>
+                <div class="chat-partner-info" id="chatPartnerInfo">
+                    <div class="chat-partner-avatar"><i class="fas fa-user"></i></div>
+                    <div>
+                        <h4 id="chatPartnerName">Loading...</h4>
+                        <p class="text-small" id="chatPartnerCategory"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-area">
+                <button class="proposal-toggle-btn" id="proposalToggleBtn"><i class="fas fa-file-invoice"></i> Send Proposal</button>
+                <div class="proposal-form" id="proposalForm">
+                    <input type="number" id="proposalBudget" class="proposal-input" placeholder="Budget ($)">
+                    <textarea id="proposalDescription" class="proposal-input" placeholder="Job description..." rows="3"></textarea>
+                    <button class="btn" id="sendProposalBtn">Send Proposal</button>
+                </div>
+                <div class="chat-input-row">
+                    <input type="text" id="chatInput" class="chat-input" placeholder="Type a message...">
+                    <button class="send-btn" id="sendMessageBtn">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Talent Detail Overlay -->
+        <div class="talent-detail-overlay" id="talentDetailOverlay">
+            <div class="talent-detail-card">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div class="nearby-avatar" style="width:80px; height:80px; margin:0 auto 16px;">
+                        <i class="fas fa-user-tie" id="detailAvatar"></i>
+                    </div>
+                    <h3 id="detailName">Talent Name</h3>
+                    <p id="detailCategory" class="text-small" style="margin:8px 0;">Category</p>
+                    <p id="detailLocation" class="text-small"><i class="fas fa-map-pin"></i> <span id="detailLocationLabel">Workplace</span></p>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn" style="flex:1;" id="messageTalentBtn"><i class="fas fa-comment"></i> Message</button>
+                    <button class="btn btn-secondary" style="flex:1;" id="closeDetailBtn">Close</button>
+                </div>
+            </div>
+        </div>
+
         <div class="bottom-nav" id="bottomNav">
             <button class="nav-item" data-tab="home" id="tabHome"><i class="fas fa-home"></i><span>Home</span></button>
             <button class="nav-item" data-tab="search" id="tabSearch"><i class="fas fa-search"></i><span>Search</span></button>
@@ -540,7 +733,7 @@
         <div class="auth-card">
             <button class="close-auth" id="closeAuthBtn">&times;</button>
             <h2 style="color:#1A1A1A;"><i class="fa-regular fa-gem" style="color:#0077B5;"></i> GigsCourt</h2>
-            <p class="text-small mb-2">provider · client</p>
+            <p class="text-small mb-2">chat & proposals</p>
             <div><input type="email" id="authEmail" class="input-field" placeholder="Email"></div>
             <div><input type="password" id="authPassword" class="input-field" placeholder="Password"></div>
             <button class="btn" id="authPrimaryBtn">Login</button>
@@ -570,7 +763,14 @@
             setDoc,
             getDoc,
             collection,
-            getDocs
+            getDocs,
+            query,
+            where,
+            orderBy,
+            onSnapshot,
+            addDoc,
+            updateDoc,
+            serverTimestamp
         } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
 
         const firebaseConfig = {
@@ -590,6 +790,7 @@
         const UPLOAD_PRESET = 'Gigscourt';
         const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
+        // DOM Elements
         const panel = document.getElementById('panel');
         const overlay = document.getElementById('authOverlay');
         const closeAuthBtn = document.getElementById('closeAuthBtn');
@@ -607,6 +808,23 @@
         const tabProfile = document.getElementById('tabProfile');
         const navItems = [tabHome, tabSearch, tabMessages, tabProfile];
 
+        // Chat elements
+        const chatContainer = document.getElementById('chatContainer');
+        const chatBackBtn = document.getElementById('chatBackBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const proposalToggleBtn = document.getElementById('proposalToggleBtn');
+        const proposalForm = document.getElementById('proposalForm');
+        const sendProposalBtn = document.getElementById('sendProposalBtn');
+        const chatPartnerName = document.getElementById('chatPartnerName');
+        const chatPartnerCategory = document.getElementById('chatPartnerCategory');
+
+        // Talent detail overlay
+        const talentDetailOverlay = document.getElementById('talentDetailOverlay');
+        const closeDetailBtn = document.getElementById('closeDetailBtn');
+        const messageTalentBtn = document.getElementById('messageTalentBtn');
+
         let currentAuthMode = 'login';
         let currentUser = null;
         let currentTab = 'home';
@@ -615,8 +833,11 @@
         let map;
         let liveGPS = null;
         let allUsers = [];
+        let currentChatPartner = null;
+        let chatUnsubscribe = null;
+        let conversationsListener = null;
 
-        // Haversine distance in km
+        // Haversine distance
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -684,6 +905,161 @@
             }
         }
 
+        // Chat Functions
+        async function getOrCreateChat(partnerId) {
+            if (!currentUser) return null;
+            
+            const chatId = [currentUser.uid, partnerId].sort().join('_');
+            const chatRef = doc(db, 'chats', chatId);
+            const chatSnap = await getDoc(chatRef);
+            
+            if (!chatSnap.exists()) {
+                await setDoc(chatRef, {
+                    participants: [currentUser.uid, partnerId],
+                    createdAt: serverTimestamp(),
+                    lastMessage: '',
+                    lastMessageTime: serverTimestamp()
+                });
+            }
+            
+            return chatId;
+        }
+
+        async function loadMessages(chatId) {
+            if (chatUnsubscribe) chatUnsubscribe();
+            
+            const messagesRef = collection(db, 'chats', chatId, 'messages');
+            const q = query(messagesRef, orderBy('timestamp', 'asc'));
+            
+            chatUnsubscribe = onSnapshot(q, (snapshot) => {
+                chatMessages.innerHTML = '';
+                snapshot.forEach((doc) => {
+                    const msg = doc.data();
+                    const bubble = document.createElement('div');
+                    bubble.className = `message-bubble ${msg.senderId === currentUser.uid ? 'sent' : 'received'}`;
+                    
+                    if (msg.type === 'proposal') {
+                        bubble.innerHTML = `
+                            <div class="proposal-card">
+                                <h4><i class="fas fa-file-invoice"></i> Proposal</h4>
+                                <div class="budget">$${msg.budget}</div>
+                                <p>${msg.description}</p>
+                            </div>
+                        `;
+                    } else {
+                        bubble.textContent = msg.text;
+                    }
+                    
+                    chatMessages.appendChild(bubble);
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
+        }
+
+        async function sendMessage(chatId, text) {
+            if (!text.trim() || !currentUser) return;
+            
+            const messagesRef = collection(db, 'chats', chatId, 'messages');
+            await addDoc(messagesRef, {
+                text: text,
+                senderId: currentUser.uid,
+                timestamp: serverTimestamp(),
+                type: 'text'
+            });
+            
+            await updateDoc(doc(db, 'chats', chatId), {
+                lastMessage: text,
+                lastMessageTime: serverTimestamp()
+            });
+        }
+
+        async function sendProposal(chatId, budget, description) {
+            if (!budget || !description || !currentUser) return;
+            
+            const messagesRef = collection(db, 'chats', chatId, 'messages');
+            await addDoc(messagesRef, {
+                type: 'proposal',
+                budget: parseFloat(budget),
+                description: description,
+                senderId: currentUser.uid,
+                timestamp: serverTimestamp()
+            });
+            
+            const proposalText = `Proposal: $${budget}`;
+            await updateDoc(doc(db, 'chats', chatId), {
+                lastMessage: proposalText,
+                lastMessageTime: serverTimestamp()
+            });
+        }
+
+        // Load conversations for inbox
+        function loadConversations() {
+            if (conversationsListener) conversationsListener();
+            if (!currentUser) return;
+            
+            const chatsRef = collection(db, 'chats');
+            const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
+            
+            conversationsListener = onSnapshot(q, async (snapshot) => {
+                const conversations = [];
+                for (const docSnap of snapshot.docs) {
+                    const chat = docSnap.data();
+                    const partnerId = chat.participants.find(id => id !== currentUser.uid);
+                    
+                    // Get partner details
+                    const partnerDoc = await getDoc(doc(db, 'users', partnerId));
+                    const partner = partnerDoc.data();
+                    
+                    conversations.push({
+                        id: docSnap.id,
+                        partnerId,
+                        partnerName: partner?.displayName || 'User',
+                        partnerAvatar: partner?.avatarUrl,
+                        lastMessage: chat.lastMessage || '',
+                        lastMessageTime: chat.lastMessageTime?.toDate() || new Date()
+                    });
+                }
+                
+                renderInbox(conversations);
+            });
+        }
+
+        function renderInbox(conversations) {
+            const inboxHtml = conversations.map(conv => `
+                <div class="message-item" data-chat-id="${conv.id}" data-partner-id="${conv.partnerId}">
+                    <div class="message-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-name">${conv.partnerName}</span>
+                            <span class="message-time">${conv.lastMessageTime.toLocaleTimeString()}</span>
+                        </div>
+                        <div class="message-preview">${conv.lastMessage || 'No messages yet'}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            panel.innerHTML = `<div class="inbox-list">${inboxHtml || '<div style="padding:40px; text-align:center;">No conversations yet</div>'}</div>`;
+            
+            document.querySelectorAll('.message-item').forEach(item => {
+                item.addEventListener('click', async () => {
+                    const chatId = item.dataset.chatId;
+                    const partnerId = item.dataset.partnerId;
+                    
+                    const partnerDoc = await getDoc(doc(db, 'users', partnerId));
+                    const partner = partnerDoc.data();
+                    
+                    currentChatPartner = { id: partnerId, ...partner };
+                    chatPartnerName.textContent = partner?.displayName || 'User';
+                    chatPartnerCategory.textContent = partner?.category || '';
+                    
+                    chatContainer.classList.add('active');
+                    await loadMessages(chatId);
+                });
+            });
+        }
+
         function initMap() {
             if (!mapInitialized && document.getElementById('map')) {
                 map = L.map('map', {
@@ -702,39 +1078,77 @@
             }
         }
 
+        function updateNearbyList(radiusKm) {
+            if (!liveGPS) return;
+            
+            const providers = allUsers.filter(u => u.workplaceCoords?.lat && u.workplaceCoords?.lng);
+            const withDistance = providers.map(p => ({
+                ...p,
+                distance: getDistance(liveGPS.lat, liveGPS.lng, p.workplaceCoords.lat, p.workplaceCoords.lng)
+            })).filter(p => p.distance <= radiusKm).sort((a,b) => a.distance - b.distance);
+            
+            const listEl = document.getElementById('nearbyList');
+            if (!listEl) return;
+            
+            listEl.innerHTML = withDistance.map(p => `
+                <div class="nearby-item" data-user-id="${p.id}">
+                    <div class="nearby-avatar"><i class="fas fa-user-tie"></i></div>
+                    <div class="nearby-info">
+                        <h4>${p.displayName || 'Provider'}</h4>
+                        <p>${p.category || 'Talent'}</p>
+                        <div class="location-label"><i class="fas fa-map-pin"></i> ${p.locationLabel || 'Workplace'}</div>
+                    </div>
+                    <div class="nearby-distance">${p.distance.toFixed(1)} km</div>
+                </div>
+            `).join('');
+            
+            document.querySelectorAll('.nearby-item').forEach(item => {
+                item.addEventListener('click', () => showTalentDetail(item.dataset.userId));
+            });
+        }
+
+        function showTalentDetail(userId) {
+            const talent = allUsers.find(u => u.id === userId);
+            if (!talent) return;
+            
+            document.getElementById('detailName').textContent = talent.displayName || 'Talent';
+            document.getElementById('detailCategory').textContent = talent.category || 'Professional';
+            document.getElementById('detailLocationLabel').textContent = talent.locationLabel || 'Workplace';
+            
+            messageTalentBtn.onclick = async () => {
+                talentDetailOverlay.classList.remove('active');
+                const chatId = await getOrCreateChat(userId);
+                currentChatPartner = { id: userId, ...talent };
+                chatPartnerName.textContent = talent.displayName || 'User';
+                chatPartnerCategory.textContent = talent.category || '';
+                chatContainer.classList.add('active');
+                await loadMessages(chatId);
+            };
+            
+            talentDetailOverlay.classList.add('active');
+        }
+
         function renderPanel(tabId) {
             if (tabId === 'home') {
                 panel.innerHTML = `
                     <div class="landscape-feed">
-                        <div class="landscape-card">
-                            <img class="card-bg" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format">
-                            <div class="card-gradient"></div>
-                            <div class="premium-badge-card"><i class="fas fa-crown"></i> PREMIUM</div>
-                            <div class="card-content">
-                                <div class="card-name">Aisha Karim</div>
-                                <div class="card-category"><i class="fas fa-bolt"></i> Full‑stack · AI</div>
+                        ${allUsers.map(user => `
+                            <div class="landscape-card" data-user-id="${user.id}">
+                                <img class="card-bg" src="${user.portfolio_0 || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format'}">
+                                <div class="card-gradient"></div>
+                                <div class="premium-badge-card"><i class="fas fa-crown"></i> PREMIUM</div>
+                                <div class="card-content">
+                                    <div class="card-name">${user.displayName || 'Talent'}</div>
+                                    <div class="card-category"><i class="fas fa-bolt"></i> ${user.category || 'Professional'}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="landscape-card">
-                            <img class="card-bg" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&auto=format">
-                            <div class="card-gradient"></div>
-                            <div class="premium-badge-card"><i class="fas fa-crown"></i> PREMIUM</div>
-                            <div class="card-content">
-                                <div class="card-name">Marcus V.</div>
-                                <div class="card-category"><i class="fas fa-bolt"></i> UX / product</div>
-                            </div>
-                        </div>
-                        <div class="landscape-card">
-                            <img class="card-bg" src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f9e?w=600&auto=format">
-                            <div class="card-gradient"></div>
-                            <div class="premium-badge-card"><i class="fas fa-crown"></i> PREMIUM</div>
-                            <div class="card-content">
-                                <div class="card-name">Elena Rossi</div>
-                                <div class="card-category"><i class="fas fa-bolt"></i> growth marketing</div>
-                            </div>
-                        </div>
+                        `).join('')}
                     </div>
                 `;
+                
+                document.querySelectorAll('.landscape-card').forEach(card => {
+                    card.addEventListener('click', () => showTalentDetail(card.dataset.userId));
+                });
             } else if (tabId === 'search') {
                 panel.innerHTML = `
                     <div class="map-container"><div id="map"></div></div>
@@ -755,9 +1169,7 @@
                         document.getElementById('gpsStatus').innerHTML = '<i class="fas fa-check-circle"></i> GPS: live active';
                         if (map) {
                             map.setView([liveGPS.lat, liveGPS.lng], 12);
-                            L.marker([liveGPS.lat, liveGPS.lng], {
-                                icon: L.divIcon({ className: 'gps-marker', html: '<i class="fas fa-circle" style="color:#0077B5; font-size:1.5rem;"></i>' })
-                            }).addTo(map);
+                            L.marker([liveGPS.lat, liveGPS.lng]).addTo(map);
                         }
                         await loadAllUsers();
                         updateNearbyList(25);
@@ -775,52 +1187,16 @@
                     }
                 }, 100);
             } else if (tabId === 'messages') {
-                panel.innerHTML = `
-                    <div class="inbox-list">
-                        <div class="message-item"><div class="message-avatar"><i class="fas fa-user-circle"></i><span class="notification-dot"></span></div><div class="message-content"><div class="message-header"><span class="message-name">Alex Rivera</span><span class="message-time">2h ago</span></div><div class="message-preview"><i class="fas fa-circle" style="color:#0077B5; font-size:6px;"></i> RE: proposal · Looking forward</div></div></div>
-                        <div class="message-item"><div class="message-avatar"><i class="fas fa-user-circle"></i></div><div class="message-content"><div class="message-header"><span class="message-name">Talent team</span><span class="message-time">5h ago</span></div><div class="message-preview">welcome to gigscourt · Complete your profile</div></div></div>
-                        <div class="message-item"><div class="message-avatar"><i class="fas fa-user-circle"></i><span class="notification-dot"></span></div><div class="message-content"><div class="message-header"><span class="message-name">Support</span><span class="message-time">1d ago</span></div><div class="message-preview">your verification ✅ · Account verified</div></div></div>
-                    </div>
-                `;
+                loadConversations();
             } else if (tabId === 'profile') {
                 if (currentUser) {
                     loadUserProfile(currentUser.uid).then(() => renderProfileEditor());
                     renderProfileEditor();
                 } else {
-                    panel.innerHTML = `<div style="padding:40px; text-align:center;"><i class="fas fa-user-circle" style="font-size:5rem; color:#0077B520;"></i><h3 style="margin:20px 0; color:#1A1A1A;">sign in</h3><button class="btn" id="showAuthFromProfile">Login / Sign up</button></div>`;
+                    panel.innerHTML = `<div style="padding:40px; text-align:center;"><i class="fas fa-user-circle" style="font-size:5rem; color:#0077B520;"></i><h3 style="margin:20px 0;">sign in</h3><button class="btn" id="showAuthFromProfile">Login / Sign up</button></div>`;
                     document.getElementById('showAuthFromProfile')?.addEventListener('click',()=> overlay.classList.add('show'));
                 }
             }
-        }
-
-        function updateNearbyList(radiusKm) {
-            if (!liveGPS) return;
-            
-            const providers = allUsers.filter(u => u.workplaceCoords?.lat && u.workplaceCoords?.lng);
-            const withDistance = providers.map(p => ({
-                ...p,
-                distance: getDistance(liveGPS.lat, liveGPS.lng, p.workplaceCoords.lat, p.workplaceCoords.lng)
-            })).filter(p => p.distance <= radiusKm).sort((a,b) => a.distance - b.distance);
-            
-            const listEl = document.getElementById('nearbyList');
-            if (!listEl) return;
-            
-            if (withDistance.length === 0) {
-                listEl.innerHTML = '<div class="nearby-item"><div class="nearby-avatar"><i class="fas fa-map-pin"></i></div><div class="nearby-info"><h4>No providers within radius</h4></div></div>';
-                return;
-            }
-            
-            listEl.innerHTML = withDistance.map(p => `
-                <div class="nearby-item">
-                    <div class="nearby-avatar"><i class="fas fa-user-tie"></i></div>
-                    <div class="nearby-info">
-                        <h4>${p.displayName || 'Provider'}</h4>
-                        <p>${p.category || 'Talent'}</p>
-                        <div class="location-label"><i class="fas fa-map-pin"></i> ${p.locationLabel || 'Workplace'}</div>
-                    </div>
-                    <div class="nearby-distance">${p.distance.toFixed(1)} km</div>
-                </div>
-            `).join('');
         }
 
         function renderProfileEditor() {
@@ -831,9 +1207,13 @@
                     <div class="profile-avatar-section">
                         <div class="profile-avatar" id="avatarPreview">${data.avatarUrl ? `<img src="${data.avatarUrl}">` : '<i class="fas fa-user" style="font-size:3rem; line-height:96px; width:100%; text-align:center; color:#0077B5;"></i>'}</div>
                         <input type="file" id="avatarUpload" accept="image/*" style="display:none;"><div class="avatar-upload-btn" id="uploadAvatarBtn"><i class="fas fa-camera"></i></div>
-                        <div class="premium-badge-card" style="position:static; margin-bottom:8px;"><i class="fas fa-crown"></i> PREMIUM</div>
+                        <div class="premium-badge-card" style="position:static;"><i class="fas fa-crown"></i> PREMIUM</div>
                     </div>
-                    <div class="profile-stats"><div class="stat-item"><div class="stat-value">48</div><div class="stat-label">gigs</div></div><div class="stat-item"><div class="stat-value">12</div><div class="stat-label">clients</div></div><div class="stat-item"><div class="stat-value">4.9</div><div class="stat-label">rating</div></div></div>
+                    <div class="profile-stats">
+                        <div class="stat-item"><div class="stat-value">48</div><div class="stat-label">gigs</div></div>
+                        <div class="stat-item"><div class="stat-value">12</div><div class="stat-label">clients</div></div>
+                        <div class="stat-item"><div class="stat-value">4.9</div><div class="stat-label">rating</div></div>
+                    </div>
                 </div>
                 <div class="edit-profile-form">
                     <div class="form-header"><h3>Edit Profile <i class="fas fa-pen edit-icon"></i></h3></div>
@@ -841,27 +1221,21 @@
                     <div class="form-group"><label>Category</label><select id="category" class="form-control"><option value="Music">Music</option><option value="Tech">Tech</option><option value="Events">Events</option><option value="Design">Design</option><option value="Consulting">Consulting</option></select></div>
                     <div class="form-group"><label>Bio</label><textarea id="bio" class="form-control">${data.bio || ''}</textarea></div>
                     <div class="form-group"><label>Hourly Rate ($)</label><input type="number" id="hourlyRate" class="form-control" value="${data.hourlyRate || ''}"></div>
-                    
                     <div class="location-group">
-                        <h4 style="margin-bottom:12px; color:#0077B5;"><i class="fas fa-map-marker-alt"></i> Workplace Location</h4>
-                        <div class="form-group">
-                            <label>Address Label (e.g. "Sabo Auchi")</label>
-                            <input type="text" id="locationLabel" class="form-control" value="${data.locationLabel || ''}" placeholder="e.g. Sabo Auchi">
-                        </div>
-                        <button class="btn btn-outline" id="setLocationBtn"><i class="fas fa-crosshairs"></i> Set Current Location as Workplace</button>
-                        <div id="locationStatus" style="margin-top:12px; font-size:0.9rem; color:#64748B;"></div>
+                        <h4 style="margin-bottom:12px; color:#0077B5;"><i class="fas fa-map-marker-alt"></i> Workplace</h4>
+                        <div class="form-group"><label>Address Label</label><input type="text" id="locationLabel" class="form-control" value="${data.locationLabel || ''}"></div>
+                        <button class="btn btn-secondary" id="setLocationBtn"><i class="fas fa-crosshairs"></i> Set Current Location</button>
                     </div>
-
                     <div class="portfolio-grid" id="portfolioGrid">
                         ${[1,2,3,4,5,6].map(i => `<div class="grid-item" data-index="${i-1}">${data[`portfolio_${i-1}`] ? `<img src="${data[`portfolio_${i-1}`]}">` : ''}<input type="file" class="portfolio-upload" data-index="${i-1}" accept="image/*" style="display:none;"><div class="overlay"><i class="fas fa-plus"></i></div></div>`).join('')}
                     </div>
-                    
                     <button class="btn" id="saveProfileBtn">Save Profile</button>
                     <button class="btn btn-secondary" id="signOutBtnProfile"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
-                    <div id="profileMessage" style="text-align:center; margin-top:12px; color:#0077B5;"></div>
+                    <div id="profileMessage" style="text-align:center; margin-top:12px;"></div>
                 </div>
             `;
 
+            // Event listeners for profile
             document.getElementById('uploadCoverBtn')?.addEventListener('click', ()=>document.getElementById('coverUpload')?.click());
             document.getElementById('uploadAvatarBtn')?.addEventListener('click', ()=>document.getElementById('avatarUpload')?.click());
             
@@ -873,9 +1247,9 @@
                         workplaceCoords: { lat: pos.lat, lng: pos.lng },
                         locationLabel: locationLabel
                     });
-                    document.getElementById('locationStatus').innerHTML = '<i class="fas fa-check-circle" style="color:#00aa55;"></i> Workplace set!';
+                    document.getElementById('profileMessage').innerHTML = 'Location saved!';
                 } catch (err) {
-                    document.getElementById('locationStatus').innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#dc3545;"></i> Failed to get location';
+                    document.getElementById('profileMessage').innerHTML = 'Failed to get location';
                 }
             });
 
@@ -884,18 +1258,26 @@
                 const url = await uploadToCloudinary(file); await saveUserProfile(currentUser.uid,{coverUrl:url});
                 document.getElementById('coverPreview').innerHTML = `<img src="${url}"><input type="file" id="coverUpload" accept="image/*" style="display:none;"><div class="cover-upload-btn" id="uploadCoverBtn"><i class="fas fa-camera"></i></div>`;
             });
+            
             document.getElementById('avatarUpload')?.addEventListener('change', async (e) => {
                 const file = e.target.files?.[0]; if(!file||!currentUser) return;
                 const url = await uploadToCloudinary(file); await saveUserProfile(currentUser.uid,{avatarUrl:url});
                 document.getElementById('avatarPreview').innerHTML = `<img src="${url}">`;
             });
-            document.querySelectorAll('.grid-item').forEach(item => item.addEventListener('click', ()=> item.querySelector('.portfolio-upload')?.click()));
-            document.querySelectorAll('.portfolio-upload').forEach(input => input.addEventListener('change', async (e) => {
-                const file = e.target.files?.[0]; const idx = input.dataset.index; if(!file||!currentUser) return;
-                const url = await uploadToCloudinary(file); await saveUserProfile(currentUser.uid,{[`portfolio_${idx}`]:url});
-                const gridItem = input.closest('.grid-item');
-                if(gridItem) gridItem.innerHTML = `<img src="${url}"><input type="file" class="portfolio-upload" data-index="${idx}" accept="image/*" style="display:none;"><div class="overlay"><i class="fas fa-plus"></i></div>`;
-            }));
+            
+            document.querySelectorAll('.grid-item').forEach(item => {
+                item.addEventListener('click', ()=> item.querySelector('.portfolio-upload')?.click());
+            });
+            
+            document.querySelectorAll('.portfolio-upload').forEach(input => {
+                input.addEventListener('change', async (e) => {
+                    const file = e.target.files?.[0]; const idx = input.dataset.index; if(!file||!currentUser) return;
+                    const url = await uploadToCloudinary(file); await saveUserProfile(currentUser.uid,{[`portfolio_${idx}`]:url});
+                    const gridItem = input.closest('.grid-item');
+                    if(gridItem) gridItem.innerHTML = `<img src="${url}"><input type="file" class="portfolio-upload" data-index="${idx}" accept="image/*" style="display:none;"><div class="overlay"><i class="fas fa-plus"></i></div>`;
+                });
+            });
+            
             document.getElementById('saveProfileBtn')?.addEventListener('click', async ()=>{
                 if(!currentUser) return;
                 const updates = {
@@ -910,6 +1292,7 @@
                 const msg = document.getElementById('profileMessage');
                 if(ok) { msg.innerHTML='Saved!'; msg.style.color='#00aa55'; setTimeout(()=>msg.innerHTML='',2000); }
             });
+            
             document.getElementById('signOutBtnProfile')?.addEventListener('click', async ()=>{ try{ await signOut(auth); }catch(e){}});
         }
 
@@ -917,17 +1300,56 @@
             navItems.forEach(item => { if(item.dataset.tab===activeId) item.classList.add('active'); else item.classList.remove('active'); });
         }
 
+        // Navigation
         tabHome.addEventListener('click', (e) => { e.preventDefault(); currentTab='home'; setActiveTab('home'); renderPanel('home'); });
         tabSearch.addEventListener('click', (e) => { e.preventDefault(); currentTab='search'; setActiveTab('search'); renderPanel('search'); });
         tabMessages.addEventListener('click', (e) => { e.preventDefault(); currentTab='messages'; setActiveTab('messages'); renderPanel('messages'); });
         tabProfile.addEventListener('click', (e) => { e.preventDefault(); currentTab='profile'; setActiveTab('profile'); renderPanel('profile'); });
 
+        // Chat handlers
+        chatBackBtn.addEventListener('click', () => {
+            chatContainer.classList.remove('active');
+            if (chatUnsubscribe) chatUnsubscribe();
+        });
+
+        sendMessageBtn.addEventListener('click', async () => {
+            if (!currentChatPartner) return;
+            const chatId = await getOrCreateChat(currentChatPartner.id);
+            await sendMessage(chatId, chatInput.value);
+            chatInput.value = '';
+        });
+
+        proposalToggleBtn.addEventListener('click', () => {
+            proposalForm.classList.toggle('active');
+        });
+
+        sendProposalBtn.addEventListener('click', async () => {
+            const budget = document.getElementById('proposalBudget').value;
+            const description = document.getElementById('proposalDescription').value;
+            if (!budget || !description || !currentChatPartner) return;
+            
+            const chatId = await getOrCreateChat(currentChatPartner.id);
+            await sendProposal(chatId, budget, description);
+            
+            proposalForm.classList.remove('active');
+            document.getElementById('proposalBudget').value = '';
+            document.getElementById('proposalDescription').value = '';
+        });
+
+        // Close detail overlay
+        closeDetailBtn.addEventListener('click', () => {
+            talentDetailOverlay.classList.remove('active');
+        });
+
+        // Auth functions
         function setAuthMode(mode) {
             currentAuthMode = mode; authPrimaryBtn.innerText = mode==='login'? 'Login' : 'Sign up';
             authToggleText.innerText = mode==='login'? "Don't have an account?" : 'Already have an account?';
             authToggleBtn.innerText = mode==='login'? 'Sign up' : 'Login';
         }
+        
         authToggleBtn.addEventListener('click', ()=> setAuthMode(currentAuthMode==='login'? 'signup':'login'));
+        
         authPrimaryBtn.addEventListener('click', async ()=>{
             const email = authEmail.value.trim(), pass = authPassword.value.trim();
             if(!email||!pass) { authMessage.innerText='fill all fields'; return; }
@@ -937,25 +1359,37 @@
                 overlay.classList.remove('show'); authEmail.value=''; authPassword.value='';
             } catch(error) { authMessage.innerText=error.message; }
         });
+        
         googleBtn.addEventListener('click', async ()=>{
             try{ await signInWithPopup(auth,provider); overlay.classList.remove('show'); }catch(error){ authMessage.innerText=error.message; }
         });
+        
         closeAuthBtn.addEventListener('click', ()=> overlay.classList.remove('show'));
         window.addEventListener('click', (e)=> { if(e.target===overlay) overlay.classList.remove('show'); });
 
+        // Auth state observer
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
             if(user) {
                 overlay.classList.remove('show');
                 await loadUserProfile(user.uid);
+                await loadAllUsers();
                 if(currentTab==='profile') renderPanel('profile');
+                else if(currentTab==='home') renderPanel('home');
+                else if(currentTab==='search') renderPanel('search');
+                else if(currentTab==='messages') renderPanel('messages');
             } else {
                 userProfileData = {};
                 if(currentTab==='profile') renderPanel('profile');
+                else if(currentTab==='home') renderPanel('home');
+                else if(currentTab==='search') renderPanel('search');
+                else if(currentTab==='messages') renderPanel('messages');
             }
         });
 
+        // Initialize
         setAuthMode('login'); setActiveTab('home'); renderPanel('home'); overlay.classList.remove('show');
     </script>
 </body>
 </html>
+```
