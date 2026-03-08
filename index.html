@@ -21,6 +21,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <!-- Cloudinary Upload Widget -->
+  <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
 
   <script>
     tailwind.config = {
@@ -296,6 +298,145 @@
     .topbar-icon-btn { width:38px;height:38px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);font-size:15px;transition:all 0.2s; }
     .topbar-icon-btn:hover { color:var(--brand);border-color:var(--brand); }
     .notif-dot { position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--brand);border-radius:50%;border:1.5px solid var(--bg-base); }
+
+    /* ══════════════════════════════════════
+       PROFILE — ENHANCED STEP 3
+    ══════════════════════════════════════ */
+
+    /* Cover — clickable in edit mode */
+    .cover-photo { position:relative;width:100%;height:210px;background:linear-gradient(135deg,#1a0a10 0%,#1C1C27 100%);overflow:hidden;cursor:default; }
+    .cover-photo::before { content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 80% at 50% 50%,rgba(255,56,92,0.12) 0%,transparent 70%); }
+    .cover-photo img { width:100%;height:100%;object-fit:cover;display:block; }
+    .cover-edit-overlay {
+      position:absolute;inset:0;background:rgba(0,0,0,0.45);
+      display:none;align-items:center;justify-content:center;
+      flex-direction:column;gap:6px;color:#fff;font-size:13px;font-weight:500;
+      cursor:pointer;
+    }
+    .cover-edit-overlay i { font-size:26px; }
+    .cover-photo.edit-mode { cursor:pointer; }
+    .cover-photo.edit-mode .cover-edit-overlay { display:flex; }
+
+    /* Profile photo ring pulse in edit mode */
+    .profile-photo { width:92px;height:92px;border-radius:50%;background:var(--bg-surface);border:3px solid var(--bg-base);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--text-muted);overflow:hidden;cursor:default;transition:box-shadow 0.2s; }
+    .profile-photo img { width:100%;height:100%;object-fit:cover; }
+    .profile-photo.edit-mode { cursor:pointer;box-shadow:0 0 0 3px var(--brand); }
+    .profile-photo-edit { position:absolute;bottom:4px;right:0;width:26px;height:26px;background:var(--brand);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;cursor:pointer;border:2px solid var(--bg-base);transition:transform 0.2s; }
+    .profile-photo-edit:hover { transform:scale(1.15); }
+
+    /* Edit mode action bar */
+    .profile-edit-bar {
+      display:none;
+      align-items:center;justify-content:space-between;
+      padding:10px 20px;
+      background:rgba(255,56,92,0.07);
+      border-top:1px solid rgba(255,56,92,0.18);
+      border-bottom:1px solid rgba(255,56,92,0.18);
+      margin-bottom:2px;
+    }
+    .profile-edit-bar.visible { display:flex; }
+    .edit-bar-label { font-size:12px;font-weight:600;color:var(--brand);letter-spacing:0.04em; }
+
+    /* Bio textarea */
+    .bio-textarea {
+      width:100%;background:var(--bg-card);border:1px solid var(--border);
+      border-radius:12px;padding:11px 14px;color:var(--text-primary);
+      font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.55;
+      resize:none;outline:none;transition:border-color 0.2s;min-height:72px;
+    }
+    .bio-textarea:focus { border-color:var(--brand); }
+    .bio-view { font-size:13px;line-height:1.55;color:rgba(245,245,247,0.75);cursor:default; }
+
+    /* Category select */
+    .category-select-wrap {
+      display:flex;align-items:center;gap:10px;
+      background:var(--bg-card);border:1px solid var(--border);
+      border-radius:12px;padding:0 14px;transition:border-color 0.2s;
+    }
+    .category-select-wrap:focus-within { border-color:var(--brand); }
+    .category-select-wrap i { color:var(--text-muted);font-size:14px; }
+    .category-select-wrap select {
+      flex:1;background:none;border:none;outline:none;
+      color:var(--text-primary);font-family:'DM Sans',sans-serif;
+      font-size:14px;padding:13px 0;cursor:pointer;
+    }
+
+    /* Category badge (view mode) */
+    .category-badge {
+      display:inline-flex;align-items:center;gap:5px;
+      padding:4px 10px;border-radius:99px;font-size:11px;font-weight:600;
+      background:rgba(255,56,92,0.12);color:var(--brand);border:1px solid rgba(255,56,92,0.2);
+      margin-bottom:10px;
+    }
+
+    /* Grid — edit mode */
+    .image-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:4px; }
+    .grid-cell {
+      aspect-ratio:1;background:var(--bg-surface);
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;overflow:hidden;position:relative;
+      transition:opacity 0.2s;
+    }
+    .grid-cell i { color:var(--border);font-size:24px; }
+    .grid-cell img { width:100%;height:100%;object-fit:cover;display:block; }
+    .grid-cell:first-child { grid-column:span 2;grid-row:span 2; }
+    .grid-cell .del-btn {
+      position:absolute;top:5px;right:5px;
+      width:22px;height:22px;border-radius:50%;
+      background:rgba(0,0,0,0.75);border:none;color:#fff;
+      font-size:11px;cursor:pointer;display:none;
+      align-items:center;justify-content:center;
+      z-index:5;transition:background 0.15s;
+    }
+    .grid-cell .del-btn:hover { background:var(--brand); }
+    .image-grid.edit-mode .grid-cell .del-btn { display:flex; }
+    .image-grid.edit-mode .grid-cell.empty-cell { border:2px dashed rgba(255,56,92,0.3); }
+    .image-grid.edit-mode .grid-cell.empty-cell i { color:rgba(255,56,92,0.3); }
+
+    /* Add slot */
+    .grid-add-slot {
+      aspect-ratio:1;background:var(--bg-surface);
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;overflow:hidden;border:2px dashed var(--border);
+      transition:border-color 0.2s,background 0.2s;
+    }
+    .grid-add-slot:hover { border-color:var(--brand);background:rgba(255,56,92,0.05); }
+    .grid-add-slot i { color:var(--text-muted);font-size:22px; }
+
+    /* Upload spinner overlay on cells */
+    .cell-uploading::after {
+      content:'';position:absolute;inset:0;background:rgba(10,10,14,0.6);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .cell-spinner {
+      position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      width:28px;height:28px;border:3px solid rgba(255,255,255,0.25);
+      border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;
+      z-index:10;display:none;
+    }
+    .cell-uploading .cell-spinner { display:block; }
+
+    /* Profile info layout refinements */
+    .profile-info { padding:12px 20px 0; }
+    .profile-name { font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.03em;color:var(--text-primary);line-height:1; }
+    .profile-handle { font-size:13px;color:var(--text-muted);margin-bottom:8px; }
+    .profile-stats { display:flex;gap:24px;padding:14px 20px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:12px 0 4px; }
+    .stat { text-align:center; }
+    .stat-value { font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text-primary);letter-spacing:0.03em; }
+    .stat-label { font-size:11px;color:var(--text-muted);margin-top:1px; }
+
+    /* Status toggle — Action Red styled */
+    .status-toggle { display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--bg-card); }
+    .toggle-btn { flex:1;padding:9px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--text-muted);border:none;background:none;font-family:'DM Sans',sans-serif;white-space:nowrap; }
+    .toggle-btn.active-avail { background:rgba(34,197,94,0.15);color:#22C55E; }
+    .toggle-btn.active-busy  { background:rgba(255,56,92,0.12);color:var(--brand); }
+
+    /* Save indicator */
+    .save-indicator {
+      display:none;align-items:center;gap:6px;
+      font-size:11px;color:#22C55E;font-weight:500;
+    }
+    .save-indicator.visible { display:flex; }
   </style>
 
 </head>
@@ -590,48 +731,145 @@
   <!-- PROFILE -->
 
   <div id="view-profile" class="view">
-    <div class="cover-photo"><div class="cover-edit-btn"><i class="fa-solid fa-camera"></i></div></div>
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;padding-right:20px">
-      <div class="profile-photo-wrap">
-        <div class="profile-photo" id="profile-avatar-display"><i class="fa-regular fa-user"></i></div>
-        <div class="profile-photo-edit"><i class="fa-solid fa-plus"></i></div>
-      </div>
-      <div style="margin-bottom:8px">
-        <div class="status-toggle" id="statusToggle">
-          <button class="toggle-btn active-avail" onclick="setStatus('available')"><i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px"></i>Available</button>
-          <button class="toggle-btn" onclick="setStatus('busy')"><i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px"></i>Busy</button>
-        </div>
-      </div>
+
+```
+<!-- ── Cover Photo ── -->
+<div class="cover-photo" id="cover-photo-wrap" onclick="profileEditAction('cover')">
+  <div class="cover-edit-overlay">
+    <i class="fa-solid fa-camera"></i>
+    <span>Change Cover</span>
+  </div>
+  <!-- Actual cover img injected here by JS -->
+</div>
+
+<!-- ── Avatar row + Status ── -->
+<div style="display:flex;align-items:flex-end;justify-content:space-between;padding-right:20px">
+  <div class="profile-photo-wrap" style="position:relative;margin-top:-46px;margin-left:20px;display:inline-block">
+    <div class="profile-photo" id="profile-avatar-display" onclick="profileEditAction('avatar')">
+      <i class="fa-regular fa-user" id="avatar-placeholder-icon"></i>
     </div>
-    <div class="profile-info">
-      <div class="profile-name" id="profile-display-name">Your Name</div>
-      <div class="profile-handle" id="profile-handle">@yourhandle · Lagos, Nigeria</div>
-      <div class="profile-bio">Model · Content Creator · Available for brand deals, shoots &amp; collaborations. DM to book.</div>
-      <div style="display:flex;gap:8px;margin-bottom:4px">
-        <button class="brand-btn" style="flex:1;border-radius:10px;padding:10px;font-size:13px"><i class="fa-solid fa-pen"></i> &nbsp;Edit Profile</button>
-        <button onclick="handleLogout()" style="padding:0 14px;height:42px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-muted);display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500">
-          <i class="fa-solid fa-right-from-bracket"></i> Logout
-        </button>
-      </div>
+    <div class="profile-photo-edit" onclick="profileEditAction('avatar')">
+      <i class="fa-solid fa-camera"></i>
     </div>
-    <div class="profile-stats">
-      <div class="stat"><div class="stat-value">0</div><div class="stat-label">Posts</div></div>
-      <div class="stat"><div class="stat-value">0</div><div class="stat-label">Bookings</div></div>
-      <div class="stat"><div class="stat-value">&#8212;</div><div class="stat-label">Rating</div></div>
-      <div class="stat"><div class="stat-value">0</div><div class="stat-label">Reviews</div></div>
+  </div>
+  <div style="margin-bottom:8px">
+    <div class="status-toggle" id="statusToggle">
+      <button class="toggle-btn active-avail" onclick="setStatus('available')">
+        <i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px"></i>Available
+      </button>
+      <button class="toggle-btn" onclick="setStatus('busy')">
+        <i class="fa-solid fa-moon" style="font-size:10px;margin-right:4px"></i>Busy
+      </button>
     </div>
-    <div class="image-grid">
-      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-      <div class="grid-cell"><i class="fa-regular fa-image"></i></div>
-      <div class="grid-cell" style="border:2px dashed var(--border)"><i class="fa-solid fa-plus" style="color:var(--text-muted);font-size:20px"></i></div>
+  </div>
+</div>
+
+<!-- ── Edit Mode Banner ── -->
+<div class="profile-edit-bar" id="profile-edit-bar">
+  <div style="display:flex;align-items:center;gap:8px">
+    <i class="fa-solid fa-pen-to-square" style="color:var(--brand);font-size:13px"></i>
+    <span class="edit-bar-label">EDITING PROFILE</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="save-indicator" id="save-indicator">
+      <i class="fa-solid fa-circle-check"></i> Saved
     </div>
-    <div style="height:24px"></div>
+    <button onclick="saveProfileEdits()" style="background:var(--brand);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
+      Save
+    </button>
+    <button onclick="toggleEditMode(false)" style="background:var(--bg-card);color:var(--text-muted);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">
+      Cancel
+    </button>
+  </div>
+</div>
+
+<!-- ── Profile Info ── -->
+<div class="profile-info">
+  <!-- Name -->
+  <div class="profile-name" id="profile-display-name">Your Name</div>
+  <div class="profile-handle" id="profile-handle">@yourhandle</div>
+
+  <!-- Category badge (view) / select (edit) -->
+  <div id="category-view">
+    <span class="category-badge" id="category-badge-text">
+      <i class="fa-solid fa-star" style="font-size:9px"></i> Model
+    </span>
+  </div>
+  <div id="category-edit" style="display:none;margin-bottom:10px">
+    <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px">Service Category</label>
+    <div class="category-select-wrap">
+      <i class="fa-solid fa-tag"></i>
+      <select id="category-select">
+        <option value="Model">Model</option>
+        <option value="Content Creator">Content Creator</option>
+        <option value="Artist">Artist</option>
+        <option value="Photographer">Photographer</option>
+        <option value="Videographer">Videographer</option>
+        <option value="MUA">MUA (Makeup Artist)</option>
+        <option value="Stylist">Stylist</option>
+        <option value="Hair Stylist">Hair Stylist</option>
+        <option value="Dancer">Dancer</option>
+        <option value="Actor">Actor / Actress</option>
+        <option value="DJ">DJ</option>
+        <option value="Musician">Musician</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Bio -->
+  <div id="bio-view" class="bio-view" style="margin-bottom:14px">
+    Tap <strong>Edit Profile</strong> to add your bio.
+  </div>
+  <div id="bio-edit" style="display:none;margin-bottom:14px">
+    <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px">Bio</label>
+    <textarea class="bio-textarea" id="bio-input" placeholder="Tell clients about yourself — your skills, style, and what makes you unique..." maxlength="200" rows="3"></textarea>
+    <div style="text-align:right;font-size:10px;color:var(--text-muted);margin-top:3px"><span id="bio-char-count">0</span>/200</div>
+  </div>
+
+  <!-- Name edit (shown in edit mode) -->
+  <div id="name-edit" style="display:none;margin-bottom:10px">
+    <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px">Display Name</label>
+    <div style="display:flex;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:0 14px;gap:10px;transition:border-color 0.2s" onfocusin="this.style.borderColor='var(--brand)'" onfocusout="this.style.borderColor='rgba(255,255,255,0.07)'">
+      <i class="fa-regular fa-user" style="color:var(--text-muted);font-size:14px"></i>
+      <input type="text" id="name-input" placeholder="Your display name" style="flex:1;background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:14px;padding:13px 0" />
+    </div>
+  </div>
+
+  <!-- Action buttons row -->
+  <div style="display:flex;gap:8px;margin-bottom:4px">
+    <button id="edit-profile-btn" class="brand-btn" onclick="toggleEditMode(true)" style="flex:1;border-radius:10px;padding:10px;font-size:13px">
+      <i class="fa-solid fa-pen"></i> &nbsp;Edit Profile
+    </button>
+    <button onclick="handleLogout()" style="padding:0 14px;height:42px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-muted);display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </button>
+  </div>
+</div>
+
+<!-- ── Stats ── -->
+<div class="profile-stats">
+  <div class="stat"><div class="stat-value" id="stat-posts">0</div><div class="stat-label">Posts</div></div>
+  <div class="stat"><div class="stat-value">0</div><div class="stat-label">Bookings</div></div>
+  <div class="stat"><div class="stat-value">&#8212;</div><div class="stat-label">Rating</div></div>
+  <div class="stat"><div class="stat-value">0</div><div class="stat-label">Reviews</div></div>
+</div>
+
+<!-- ── Portfolio Grid Header ── -->
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.04em;color:var(--text-primary)">Portfolio</div>
+  <div id="grid-edit-hint" style="font-size:11px;color:var(--text-muted);display:none">
+    <i class="fa-solid fa-circle-info" style="color:var(--brand);margin-right:3px"></i>Tap ✕ to remove · Tap + to add
+  </div>
+</div>
+
+<!-- ── 3-Column Portfolio Grid (max 9) ── -->
+<div class="image-grid" id="portfolio-grid">
+  <!-- Cells injected dynamically by renderGrid() -->
+</div>
+
+<div style="height:30px"></div>
+```
+
   </div><!-- /profile -->
 
   <!-- ADMIN -->
@@ -961,22 +1199,15 @@ async function handleLogout() {
 /* ═══════════════════════════════════════════════
    AUTH STATE OBSERVER  ←  the nerve centre
 ═══════════════════════════════════════════════ */
-auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged(async user => {
   const overlay = document.getElementById('auth-overlay');
 
   if (user) {
-    /* ── Authenticated ── */
     overlay.classList.add('hidden');
     setLoading('login-btn', false);
     setLoading('signup-btn', false);
 
-    // Populate profile panel
-    const displayName = user.displayName || user.email.split('@')[0];
-    const handle = '@' + displayName.toLowerCase().replace(/\s+/g,'');
-    document.getElementById('profile-display-name').textContent = displayName;
-    document.getElementById('profile-handle').textContent = handle + ' · Lagos, Nigeria';
-
-    // Admin tab: show only for admin email
+    // Admin tab visibility
     const adminTab = document.getElementById('admin-tab');
     if (user.email === ADMIN_EMAIL) {
       adminTab.style.display = 'flex';
@@ -985,13 +1216,17 @@ auth.onAuthStateChanged(user => {
       adminTab.style.display = 'none';
     }
 
+    // Load Firestore profile
+    await loadUserProfile(user);
+
   } else {
-    /* ── Logged out ── */
     overlay.classList.remove('hidden');
     document.getElementById('admin-tab').style.display = 'none';
     switchAuthTab('login');
     ['login-email','login-password','signup-name','signup-email','signup-password','signup-phone']
       .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+    _profileData = {};
+    toggleEditMode(false);
   }
 });
 
@@ -1007,13 +1242,20 @@ function showView(name, btn) {
 }
 
 /* ═══════════════════════════════════════════════
-   STATUS TOGGLE
+   STATUS TOGGLE  — writes to Firestore
 ═══════════════════════════════════════════════ */
-function setStatus(status) {
+async function setStatus(status) {
   const btns = document.querySelectorAll('#statusToggle .toggle-btn');
   btns.forEach(b => b.classList.remove('active-avail','active-busy'));
-  btns[status === 'available' ? 0 : 1].classList.add(status === 'available' ? 'active-avail' : 'active-busy');
-  // TODO: Firestore write in Step 3
+  btns[status === 'available' ? 0 : 1].classList.add(
+    status === 'available' ? 'active-avail' : 'active-busy'
+  );
+  _profileData.status = status;
+  const user = auth.currentUser;
+  if (user) {
+    try { await db.collection('users').doc(user.uid).update({ status }); }
+    catch(e) { console.warn('Status update failed:', e); }
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -1034,6 +1276,399 @@ document.addEventListener('keydown', e => {
   if (document.getElementById('form-login').style.display  !== 'none') handleLogin();
   if (document.getElementById('form-signup').style.display !== 'none') handleSignup();
 });
+
+/* ═══════════════════════════════════════════════════════════════
+   ███████╗████████╗███████╗██████╗      ██████╗
+   ██╔════╝╚══██╔══╝██╔════╝██╔══██╗    ╚════██╗
+   ███████╗   ██║   █████╗  ██████╔╝        ██╔╝
+   ╚════██║   ██║   ██╔══╝  ██╔═══╝        ██╔╝
+   ███████║   ██║   ███████╗██║            ██║
+   ╚══════╝   ╚═╝   ╚══════╝╚═╝           ╚═╝
+   PROFILE & MEDIA HUB — STEP 3
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Constants ── */
+const CLOUDINARY_CLOUD  = 'dszdwnuua';
+const CLOUDINARY_PRESET = 'Gigscourt';
+const MAX_GRID_IMAGES   = 9;
+
+/* ── In-memory profile state ── */
+let _profileData    = {};
+let _editMode       = false;
+let _gridImages     = []; // array of { url, publicId }
+
+/* ─────────────────────────────────────────────
+   LOAD USER PROFILE FROM FIRESTORE
+───────────────────────────────────────────── */
+async function loadUserProfile(user) {
+  try {
+    const snap = await db.collection('users').doc(user.uid).get();
+    if (snap.exists) {
+      _profileData = snap.data();
+    } else {
+      // Create skeleton doc for new Google/social sign-ins
+      _profileData = {
+        uid: user.uid,
+        name: user.displayName || user.email.split('@')[0],
+        email: user.email,
+        bio: '',
+        category: 'Model',
+        status: 'available',
+        avatarUrl: '',
+        coverUrl: '',
+        gridImages: [],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+      await db.collection('users').doc(user.uid).set(_profileData);
+    }
+    _gridImages = Array.isArray(_profileData.gridImages) ? [..._profileData.gridImages] : [];
+    renderProfile();
+  } catch(e) {
+    console.error('loadUserProfile:', e);
+    showToast('Could not load profile data.', 'error');
+  }
+}
+
+/* ─────────────────────────────────────────────
+   RENDER PROFILE UI FROM _profileData
+───────────────────────────────────────────── */
+function renderProfile() {
+  const p = _profileData;
+
+  // Name & handle
+  const name   = p.name || 'Your Name';
+  const handle = '@' + name.toLowerCase().replace(/\s+/g, '');
+  document.getElementById('profile-display-name').textContent = name;
+  document.getElementById('profile-handle').textContent = handle;
+
+  // Category badge
+  const cat = p.category || 'Model';
+  document.getElementById('category-badge-text').innerHTML =
+    '<i class="fa-solid fa-star" style="font-size:9px"></i> ' + cat;
+  const sel = document.getElementById('category-select');
+  if (sel) { for (let o of sel.options) { if (o.value === cat) { o.selected = true; break; } } }
+
+  // Bio
+  const bioView = document.getElementById('bio-view');
+  if (p.bio) {
+    bioView.textContent = p.bio;
+    bioView.style.fontStyle = 'normal';
+  } else {
+    bioView.innerHTML = 'Tap <strong>Edit Profile</strong> to add your bio.';
+  }
+
+  // Status toggle
+  setStatusUI(p.status || 'available');
+
+  // Avatar
+  const avatarWrap = document.getElementById('profile-avatar-display');
+  if (p.avatarUrl) {
+    avatarWrap.innerHTML = '<img src="' + p.avatarUrl + '" alt="avatar" />';
+  } else {
+    avatarWrap.innerHTML = '<i class="fa-regular fa-user" id="avatar-placeholder-icon"></i>';
+  }
+
+  // Cover
+  const coverWrap = document.getElementById('cover-photo-wrap');
+  // Remove any existing img
+  const existingCoverImg = coverWrap.querySelector('img.cover-img');
+  if (existingCoverImg) existingCoverImg.remove();
+  if (p.coverUrl) {
+    const img = document.createElement('img');
+    img.src = p.coverUrl; img.className = 'cover-img';
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+    coverWrap.insertBefore(img, coverWrap.firstChild);
+  }
+
+  // Grid
+  renderGrid();
+
+  // Stats
+  document.getElementById('stat-posts').textContent = _gridImages.length;
+}
+
+/* ─────────────────────────────────────────────
+   SET STATUS UI  (without Firestore write)
+───────────────────────────────────────────── */
+function setStatusUI(status) {
+  const btns = document.querySelectorAll('#statusToggle .toggle-btn');
+  btns.forEach(b => b.classList.remove('active-avail','active-busy'));
+  btns[status === 'available' ? 0 : 1].classList.add(
+    status === 'available' ? 'active-avail' : 'active-busy'
+  );
+}
+
+/* ─────────────────────────────────────────────
+   RENDER PORTFOLIO GRID
+───────────────────────────────────────────── */
+function renderGrid() {
+  const grid = document.getElementById('portfolio-grid');
+  const hint = document.getElementById('grid-edit-hint');
+  grid.innerHTML = '';
+
+  // Fill existing images
+  _gridImages.forEach((item, idx) => {
+    const cell = document.createElement('div');
+    cell.className = 'grid-cell';
+    cell.innerHTML = `
+      <img src="${item.url}" alt="portfolio" loading="lazy" />
+      <div class="cell-spinner"></div>
+      <button class="del-btn" onclick="deleteGridImage(${idx})" title="Remove">
+        <i class="fa-solid fa-xmark"></i>
+      </button>`;
+    grid.appendChild(cell);
+  });
+
+  // Add slot — only show if < max AND in edit mode
+  if (_gridImages.length < MAX_GRID_IMAGES) {
+    const addSlot = document.createElement('div');
+    addSlot.className = 'grid-add-slot';
+    addSlot.id = 'grid-add-slot';
+    addSlot.onclick = () => openCloudinaryWidget('grid');
+    addSlot.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text-muted)">
+        <i class="fa-solid fa-plus" style="font-size:22px"></i>
+        <span style="font-size:10px;font-weight:600;letter-spacing:0.05em">ADD PHOTO</span>
+      </div>`;
+    if (!_editMode) addSlot.style.display = 'none';
+    grid.appendChild(addSlot);
+  }
+
+  // Empty placeholder cells (view mode only, up to 3 to fill a row)
+  if (!_editMode && _gridImages.length === 0) {
+    for (let i = 0; i < 6; i++) {
+      const ph = document.createElement('div');
+      ph.className = 'grid-cell empty-cell';
+      ph.innerHTML = '<i class="fa-regular fa-image"></i>';
+      grid.appendChild(ph);
+    }
+  }
+
+  // Edit mode classes
+  grid.classList.toggle('edit-mode', _editMode);
+  if (hint) hint.style.display = _editMode ? 'block' : 'none';
+}
+
+/* ─────────────────────────────────────────────
+   TOGGLE EDIT MODE
+───────────────────────────────────────────── */
+function toggleEditMode(on) {
+  _editMode = on;
+
+  const bar          = document.getElementById('profile-edit-bar');
+  const editBtn      = document.getElementById('edit-profile-btn');
+  const bioView      = document.getElementById('bio-view');
+  const bioEdit      = document.getElementById('bio-edit');
+  const bioInput     = document.getElementById('bio-input');
+  const nameEdit     = document.getElementById('name-edit');
+  const nameInput    = document.getElementById('name-input');
+  const catView      = document.getElementById('category-view');
+  const catEdit      = document.getElementById('category-edit');
+  const coverWrap    = document.getElementById('cover-photo-wrap');
+  const avatarEl     = document.getElementById('profile-avatar-display');
+  const saveInd      = document.getElementById('save-indicator');
+
+  if (on) {
+    bar.classList.add('visible');
+    editBtn.style.display = 'none';
+    bioView.style.display  = 'none';
+    bioEdit.style.display  = 'block';
+    nameEdit.style.display = 'block';
+    catView.style.display  = 'none';
+    catEdit.style.display  = 'block';
+    coverWrap.classList.add('edit-mode');
+    avatarEl.classList.add('edit-mode');
+    if (saveInd) saveInd.classList.remove('visible');
+
+    // Populate edit fields
+    bioInput.value  = _profileData.bio  || '';
+    nameInput.value = _profileData.name || '';
+    updateBioCount();
+
+    // Char counter
+    bioInput.oninput = updateBioCount;
+  } else {
+    bar.classList.remove('visible');
+    editBtn.style.display = '';
+    bioView.style.display  = '';
+    bioEdit.style.display  = 'none';
+    nameEdit.style.display = 'none';
+    catView.style.display  = '';
+    catEdit.style.display  = 'none';
+    coverWrap.classList.remove('edit-mode');
+    avatarEl.classList.remove('edit-mode');
+  }
+
+  renderGrid();
+}
+
+function updateBioCount() {
+  const inp = document.getElementById('bio-input');
+  const cnt = document.getElementById('bio-char-count');
+  if (inp && cnt) cnt.textContent = inp.value.length;
+}
+
+/* ─────────────────────────────────────────────
+   SAVE PROFILE EDITS TO FIRESTORE
+───────────────────────────────────────────── */
+async function saveProfileEdits() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const newName = (document.getElementById('name-input').value.trim()) || _profileData.name;
+  const newBio  = document.getElementById('bio-input').value.trim();
+  const newCat  = document.getElementById('category-select').value;
+
+  _profileData.name     = newName;
+  _profileData.bio      = newBio;
+  _profileData.category = newCat;
+
+  try {
+    await db.collection('users').doc(user.uid).update({
+      name: newName, bio: newBio, category: newCat,
+    });
+    // Update Firebase Auth display name
+    await user.updateProfile({ displayName: newName });
+    showSaveIndicator();
+    renderProfile();
+    toggleEditMode(false);
+    showToast('Profile updated!', 'success');
+  } catch(e) {
+    console.error('saveProfileEdits:', e);
+    showToast('Could not save. Please try again.', 'error');
+  }
+}
+
+function showSaveIndicator() {
+  const ind = document.getElementById('save-indicator');
+  if (!ind) return;
+  ind.classList.add('visible');
+  setTimeout(() => ind.classList.remove('visible'), 2500);
+}
+
+/* ─────────────────────────────────────────────
+   CLOUDINARY WIDGET LAUNCHER
+   type: 'avatar' | 'cover' | 'grid'
+───────────────────────────────────────────── */
+function openCloudinaryWidget(type) {
+  const user = auth.currentUser;
+  if (!user) { showToast('You must be logged in to upload.', 'error'); return; }
+  if (!_editMode && type !== 'grid') { return; } // guard: grid add slot always allowed in edit
+
+  const widget = cloudinary.createUploadWidget({
+    cloudName:     CLOUDINARY_CLOUD,
+    uploadPreset:  CLOUDINARY_PRESET,
+    sources:       ['local', 'camera', 'url'],
+    multiple:      type === 'grid',
+    maxFiles:      type === 'grid' ? (MAX_GRID_IMAGES - _gridImages.length) : 1,
+    cropping:      type === 'avatar',
+    croppingAspectRatio: type === 'avatar' ? 1 : undefined,
+    maxFileSize:   8000000, // 8 MB
+    clientAllowedFormats: ['jpg','jpeg','png','webp'],
+    styles: {
+      palette: {
+        window:      '#13131A',
+        windowBorder:'#FF385C',
+        tabIcon:     '#FF385C',
+        menuIcons:   '#7A7A8C',
+        textDark:    '#F5F5F7',
+        textLight:   '#0A0A0E',
+        link:        '#FF385C',
+        action:      '#FF385C',
+        inactiveTabIcon: '#7A7A8C',
+        error:       '#FF385C',
+        inProgress:  '#FF385C',
+        complete:    '#22C55E',
+        sourceBg:    '#1C1C27',
+      },
+      fonts: { default: { active: true } }
+    },
+  }, async (err, result) => {
+    if (err) { console.error('Cloudinary error:', err); showToast('Upload failed. Please try again.', 'error'); return; }
+    if (result && result.event === 'success') {
+      const url = result.info.secure_url;
+      await handleUploadSuccess(type, url, user);
+    }
+  });
+
+  widget.open();
+}
+
+/* ─────────────────────────────────────────────
+   HANDLE SUCCESSFUL UPLOAD
+───────────────────────────────────────────── */
+async function handleUploadSuccess(type, url, user) {
+  const uid = user.uid;
+
+  if (type === 'avatar') {
+    _profileData.avatarUrl = url;
+    // Immediately update UI
+    const avatarEl = document.getElementById('profile-avatar-display');
+    avatarEl.innerHTML = '<img src="' + url + '" alt="avatar" />';
+    // Save to Firestore + Auth
+    await Promise.all([
+      db.collection('users').doc(uid).update({ avatarUrl: url }),
+      user.updateProfile({ photoURL: url }),
+    ]);
+    showToast('Profile photo updated!', 'success');
+  }
+
+  else if (type === 'cover') {
+    _profileData.coverUrl = url;
+    // Update UI
+    const coverWrap = document.getElementById('cover-photo-wrap');
+    let img = coverWrap.querySelector('img.cover-img');
+    if (!img) {
+      img = document.createElement('img');
+      img.className = 'cover-img';
+      img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+      coverWrap.insertBefore(img, coverWrap.firstChild);
+    }
+    img.src = url;
+    await db.collection('users').doc(uid).update({ coverUrl: url });
+    showToast('Cover photo updated!', 'success');
+  }
+
+  else if (type === 'grid') {
+    if (_gridImages.length >= MAX_GRID_IMAGES) {
+      showToast('Portfolio is full (max 9 photos).', 'info'); return;
+    }
+    _gridImages.push({ url });
+    _profileData.gridImages = [..._gridImages];
+    renderGrid();
+    // Save grid to Firestore
+    await db.collection('users').doc(uid).update({
+      gridImages: _profileData.gridImages
+    });
+    document.getElementById('stat-posts').textContent = _gridImages.length;
+    showToast('Photo added to portfolio!', 'success');
+  }
+}
+
+/* ─────────────────────────────────────────────
+   PROFILE EDIT ACTION (called by cover/avatar clicks)
+───────────────────────────────────────────── */
+function profileEditAction(type) {
+  if (!_editMode) return; // clicks only active in edit mode
+  openCloudinaryWidget(type);
+}
+
+/* ─────────────────────────────────────────────
+   DELETE GRID IMAGE
+───────────────────────────────────────────── */
+async function deleteGridImage(idx) {
+  if (!_editMode) return;
+  _gridImages.splice(idx, 1);
+  _profileData.gridImages = [..._gridImages];
+  renderGrid();
+  const user = auth.currentUser;
+  if (user) {
+    try {
+      await db.collection('users').doc(user.uid).update({ gridImages: _profileData.gridImages });
+      document.getElementById('stat-posts').textContent = _gridImages.length;
+    } catch(e) { console.warn('deleteGridImage Firestore:', e); }
+  }
+}
 </script>
 
 </body>
