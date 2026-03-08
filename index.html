@@ -1349,13 +1349,15 @@ function MFAEnrollModal({ user, onClose, onSuccess }) {
 
   const Spinner = () => <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent spin inline-block" />;
 
-  // Country options — same list as phone signup tab
+  // Country options — stored as objects to avoid array destructuring in JSX
+  // (Babel standalone misparses ([a,b]) => arrow params as JSX fragments)
   const COUNTRIES = [
-    ['+234','🇳🇬 +234'],['+1','🇺🇸 +1'],['+44','🇬🇧 +44'],['+233','🇬🇭 +233'],
-    ['+254','🇰🇪 +254'],['+27','🇿🇦 +27'],['+251','🇪🇹 +251'],['+255','🇹🇿 +255'],
-    ['+256','🇺🇬 +256'],['+237','🇨🇲 +237'],['+225','🇨🇮 +225'],['+221','🇸🇳 +221'],
-    ['+49','🇩🇪 +49'],['+33','🇫🇷 +33'],['+91','🇮🇳 +91'],['+86','🇨🇳 +86'],
-    ['+55','🇧🇷 +55'],['+61','🇦🇺 +61'],
+    {code:'+234',label:'🇳🇬 +234'},{code:'+1',label:'🇺🇸 +1'},{code:'+44',label:'🇬🇧 +44'},
+    {code:'+233',label:'🇬🇭 +233'},{code:'+254',label:'🇰🇪 +254'},{code:'+27',label:'🇿🇦 +27'},
+    {code:'+251',label:'🇪🇹 +251'},{code:'+255',label:'🇹🇿 +255'},{code:'+256',label:'🇺🇬 +256'},
+    {code:'+237',label:'🇨🇲 +237'},{code:'+225',label:'🇨🇮 +225'},{code:'+221',label:'🇸🇳 +221'},
+    {code:'+49',label:'🇩🇪 +49'},{code:'+33',label:'🇫🇷 +33'},{code:'+91',label:'🇮🇳 +91'},
+    {code:'+86',label:'🇨🇳 +86'},{code:'+55',label:'🇧🇷 +55'},{code:'+61',label:'🇦🇺 +61'},
   ];
 
   return (
@@ -1382,9 +1384,9 @@ function MFAEnrollModal({ user, onClose, onSuccess }) {
               <select value={countryCode} onChange={e => setCountryCode(e.target.value)}
                 className="px-3 py-3.5 rounded-2xl text-sm outline-none font-semibold flex-shrink-0"
                 style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', width:120 }}>
-                {COUNTRIES.map(([code, label]) => (
-                  <option key={code} value={code}>{label}</option>
-                ))}
+                {COUNTRIES.map(function(c) { return (
+                  <option key={c.code} value={c.code}>{c.label}</option>
+                ); })}
               </select>
               <input type="tel" value={phone}
                 onChange={e => setPhone(e.target.value.replace(/[^\d]/g, ''))}
