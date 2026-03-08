@@ -144,7 +144,10 @@ async function sendOwnerAlert(subject, body) {
 // ════════════════════════════════════════════════════════════
 async function handleFirebaseSignup(email, password, displayName) {
   const cred = await auth.createUserWithEmailAndPassword(email, password);
-  await cred.user.updateProfile({ displayName });
+  // Set Auth displayName to 'GigsCourt' — this is what appears as the sender name
+  // in Firebase transactional emails, which dramatically reduces spam-folder delivery.
+  // The provider's real name is stored only in Firestore.
+  await cred.user.updateProfile({ displayName: 'GigsCourt' });
 
   // Send Firebase email verification — link returns to Vercel app
   await cred.user.sendEmailVerification({
@@ -153,7 +156,7 @@ async function handleFirebaseSignup(email, password, displayName) {
   });
   console.log('[Firebase Auth] Verification email sent to:', email);
 
-  // Write provider profile to Firestore
+  // Write provider profile to Firestore (real name stored here)
   await db.collection('providers').doc(cred.user.uid).set({
     name:          displayName,
     service:       'New Provider',
@@ -232,20 +235,29 @@ let _recaptchaVerifier = null;
 let _phoneConfirmation = null;
 
 async function initRecaptcha() {
-  if (_recaptchaVerifier) return _recaptchaVerifier;
+  // Always clear and re-create — prevents stale widget errors on retry
+  if (_recaptchaVerifier) {
+    try { _recaptchaVerifier.clear(); } catch(e) {}
+    _recaptchaVerifier = null;
+  }
   _recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
     size: 'invisible',
     callback: () => console.log('[reCAPTCHA] Solved'),
     'expired-callback': () => {
+      if (_recaptchaVerifier) { try { _recaptchaVerifier.clear(); } catch(e) {} }
       _recaptchaVerifier = null;
-      console.warn('[reCAPTCHA] Expired — will re-init next call');
+      console.warn('[reCAPTCHA] Expired — cleared for next attempt');
     },
   });
   await _recaptchaVerifier.render();
   return _recaptchaVerifier;
 }
 
+// phoneNumber MUST be E.164 format, e.g. +2348012345678
 async function handlePhoneSendOTP(phoneNumber) {
+  if (!phoneNumber.startsWith('+')) {
+    throw new Error('Phone number must start with + (E.164 format)');
+  }
   const verifier = await initRecaptcha();
   _phoneConfirmation = await auth.signInWithPhoneNumber(phoneNumber, verifier);
   console.log('[Firebase Auth] OTP sent to:', phoneNumber);
@@ -1449,12 +1461,17 @@ function SecurityDashboard({ user, providerData, onOpenAuth }) {
           </div>
           {!emailVerified && isEmailUser && (
             <button onClick={resendVerification} disabled={resendLoading}
-              className="text-xs font-bold px-3 py-1.5 rounded-xl"
+              className="text-xs font-bold px-3 py-1.5 rounded-xl flex-shrink-0"
               style={{ background:'var(--red)', color:'white', opacity:resendLoading?0.6:1 }}>
               {resendLoading ? '…' : 'Resend'}
             </button>
           )}
-          {emailVerified && <span style={{ color:'var(--green)', fontSize:18 }}>✓</span>}
+          {emailVerified && (
+            <span className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold"
+              style={{ background:'rgba(0,196,140,0.12)', color:'var(--green)' }}>
+              ✓ Verified
+            </span>
+          )}
         </div>
 
         {/* MFA status */}
@@ -1471,12 +1488,17 @@ function SecurityDashboard({ user, providerData, onOpenAuth }) {
           </div>
           {!mfaActive && isEmailUser && (
             <button onClick={() => setShowMFAEnroll(true)}
-              className="text-xs font-bold px-3 py-1.5 rounded-xl"
+              className="text-xs font-bold px-3 py-1.5 rounded-xl flex-shrink-0"
               style={{ background:'var(--red)', color:'white' }}>
               Enable
             </button>
           )}
-          {mfaActive && <span style={{ color:'var(--green)', fontSize:18 }}>✓</span>}
+          {mfaActive && (
+            <span className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold"
+              style={{ background:'rgba(0,196,140,0.12)', color:'var(--green)' }}>
+              ✓ Active
+            </span>
+          )}
         </div>
 
         {/* Change email — only for email/password users */}
@@ -1536,9 +1558,10 @@ function AuthModal({ mode, onClose, onSuccess }) {
   const [name,       setName]       = React.useState('');
   const [email,      setEmail]      = React.useState('');
   const [password,   setPassword]   = React.useState('');
-  const [phone,      setPhone]      = React.useState('');
-  const [otp,        setOtp]        = React.useState('');
-  const [otpSent,    setOtpSent]    = React.useState(false);
+  const [phone,       setPhone]       = React.useState('');
+  const [countryCode, setCountryCode] = React.useState('+234'); // default Nigeria
+  const [otp,         setOtp]         = React.useState('');
+  const [otpSent,     setOtpSent]     = React.useState(false);
   const [loading,    setLoading]    = React.useState(false);
   const [error,      setError]      = React.useState('');
   const [successMsg, setSuccessMsg] = React.useState('');
@@ -1581,10 +1604,13 @@ function AuthModal({ mode, onClose, onSuccess }) {
 
   // ── Phone OTP flow — Step 1: Send OTP ─────────────────────
   async function submitPhoneSend() {
-    if (!phone) { setError('Enter a phone number with country code, e.g. +447...'); return; }
+    if (!phone) { setError('Enter your phone number (digits only, no leading 0).'); return; }
+    // Build E.164: strip any leading zeros from local number, prepend country code
+    const localNum  = phone.replace(/^0+/, '');
+    const e164      = countryCode + localNum;
     setLoading(true); setError('');
     try {
-      await handlePhoneSendOTP(phone);
+      await handlePhoneSendOTP(e164);
       setOtpSent(true);
       setSuccessMsg('✓ OTP sent! Check your messages.');
     } catch(err) { setError(cleanErr(err)); }
@@ -1708,16 +1734,50 @@ function AuthModal({ mode, onClose, onSuccess }) {
                         className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
                         style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
                     )}
-                    <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+44 7700 900000"
-                      className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
-                      style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+
+                    {/* ── Country code dropdown + number input (E.164 builder) ── */}
+                    <div className="flex gap-2 mb-3">
+                      <select value={countryCode} onChange={e => setCountryCode(e.target.value)}
+                        className="px-3 py-3.5 rounded-2xl text-sm outline-none font-semibold flex-shrink-0"
+                        style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', width:120 }}>
+                        <option value="+234">🇳🇬 +234</option>
+                        <option value="+1">🇺🇸 +1</option>
+                        <option value="+44">🇬🇧 +44</option>
+                        <option value="+233">🇬🇭 +233</option>
+                        <option value="+254">🇰🇪 +254</option>
+                        <option value="+27">🇿🇦 +27</option>
+                        <option value="+251">🇪🇹 +251</option>
+                        <option value="+255">🇹🇿 +255</option>
+                        <option value="+256">🇺🇬 +256</option>
+                        <option value="+237">🇨🇲 +237</option>
+                        <option value="+225">🇨🇮 +225</option>
+                        <option value="+221">🇸🇳 +221</option>
+                        <option value="+49">🇩🇪 +49</option>
+                        <option value="+33">🇫🇷 +33</option>
+                        <option value="+91">🇮🇳 +91</option>
+                        <option value="+86">🇨🇳 +86</option>
+                        <option value="+55">🇧🇷 +55</option>
+                        <option value="+61">🇦🇺 +61</option>
+                      </select>
+                      <input type="tel" value={phone}
+                        onChange={e => setPhone(e.target.value.replace(/[^\d]/g, ''))}
+                        placeholder="8012345678"
+                        className="flex-1 px-4 py-3.5 rounded-2xl text-sm outline-none"
+                        style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+                    </div>
+                    <p className="text-xs text-gray-400 mb-3 -mt-1 pl-1">
+                      Enter number without leading 0 — e.g. 8012345678
+                    </p>
+
+                    {/* Button triggers invisible reCAPTCHA, then Firebase OTP */}
+                    <div id="recaptcha-container-inline" />
                     <button onClick={submitPhoneSend} disabled={loading}
                       className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2"
                       style={{ background:'var(--red)', fontFamily:'Syne', opacity:loading?0.7:1 }}>
                       {loading ? <><Spinner /> Sending OTP…</> : 'Send Verification Code'}
                     </button>
                     <p className="text-xs text-gray-400 text-center mt-3">
-                      Standard SMS rates may apply. reCAPTCHA protected.
+                      Protected by invisible reCAPTCHA · standard SMS rates may apply
                     </p>
                   </>
                 ) : (
@@ -1725,11 +1785,12 @@ function AuthModal({ mode, onClose, onSuccess }) {
                     <div className="rounded-xl px-4 py-3 mb-3 text-sm flex items-center gap-2"
                       style={{ background:'rgba(0,196,140,0.08)', color:'var(--green)' }}>
                       <Icon.Check size={15} color="var(--green)" />
-                      OTP sent to {phone}
+                      OTP sent to {countryCode}{phone}
                     </div>
-                    <input type="text" inputMode="numeric" maxLength="6" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g,''))}
+                    <input type="text" inputMode="numeric" maxLength="6" value={otp}
+                      onChange={e => setOtp(e.target.value.replace(/\D/g,''))}
                       placeholder="6-digit code"
-                      className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3 text-center font-bold tracking-widest"
+                      className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3 text-center font-bold"
                       style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', fontSize:22, letterSpacing:8 }} />
                     <button onClick={submitPhoneVerify} disabled={loading}
                       className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2"
