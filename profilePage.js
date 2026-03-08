@@ -26,3 +26,4 @@ function openCloudinaryWidget(type) {
 async function setStatus(status) {
   // Set user status
 }
+window.toggleEditMode = toggleEditMode;
