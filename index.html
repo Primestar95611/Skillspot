@@ -1,9 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GigsCourt · Phase 1</title>
+  <title>GigsCourt · Phase 2</title>
   <style>
     * {
       margin: 0;
@@ -58,21 +59,106 @@
     .welcome { text-align: center; padding: 40px 0; }
     .welcome h1 { font-size: 28px; margin-bottom: 16px; }
     .welcome p { color: #6b7280; margin-bottom: 32px; }
+    .auth-toggle {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+      background: #f0f3f8;
+      border-radius: 60px;
+      padding: 6px;
+    }
+    .auth-toggle button {
+      flex: 1;
+      padding: 14px;
+      border-radius: 60px;
+      border: none;
+      font-weight: 600;
+      background: transparent;
+      color: #6b7280;
+      cursor: pointer;
+    }
+    .auth-toggle button.active {
+      background: #0066ff;
+      color: white;
+    }
+    .phone-input-container {
+      display: flex;
+      gap: 10px;
+    }
+    .phone-input-container select {
+      width: 30%;
+      padding: 16px;
+      border-radius: 30px;
+      border: 1px solid #e5e9f0;
+      background: #fafbfc;
+      font-size: 16px;
+    }
+    .phone-input-container input {
+      width: 70%;
+    }
+    .skill-tag {
+      display: inline-block;
+      background: #f0f3f8;
+      padding: 10px 20px;
+      border-radius: 40px;
+      margin: 5px 6px 0 0;
+      font-size: 14px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .skill-tag.selected {
+      background: #0066ff;
+      color: white;
+    }
   </style>
 </head>
 <body>
 <div id="app">
-  <!-- Signup View -->
-  <div id="signupView">
-    <h2>Create account</h2>
-    <input type="text" id="businessName" class="input-field" placeholder="Business name" value="Test User">
-    <input type="email" id="email" class="input-field" placeholder="Email" value="test@example.com">
-    <input type="password" id="password" class="input-field" placeholder="Password" value="password123">
-    <button class="btn" id="signupBtn">Sign up</button>
-    <p style="text-align: center; margin: 20px 0;">
-      <button id="gotoLoginBtn" style="background: none; border: none; color: #0066ff;">Already have an account?</button>
-    </p>
-    <div id="authError" class="error-msg"></div>
+  <!-- Auth Toggle -->
+  <div class="auth-toggle">
+    <button id="toggleEmailSignup" class="active">Email</button>
+    <button id="togglePhoneSignup">Phone</button>
+  </div>
+
+  <!-- Email Signup View -->
+  <div id="emailSignupView">
+    <h2>Create with email</h2>
+    <input type="text" id="emailBusinessName" class="input-field" placeholder="Business name" value="Test User">
+    <input type="email" id="emailAddress" class="input-field" placeholder="Email" value="test@example.com">
+    <input type="password" id="emailPassword" class="input-field" placeholder="Password" value="password123">
+    <div style="margin: 12px 0;">Skills (select multiple)</div>
+    <div id="emailSkillsContainer">
+      <span class="skill-tag" data-skill="Barber">Barber</span>
+      <span class="skill-tag" data-skill="Tech">Tech</span>
+      <span class="skill-tag" data-skill="Design">Design</span>
+      <span class="skill-tag" data-skill="Marketing">Marketing</span>
+    </div>
+    <button class="btn" id="signupWithEmailBtn">Sign up with Email</button>
+  </div>
+
+  <!-- Phone Signup View -->
+  <div id="phoneSignupView" class="hidden">
+    <h2>Create with phone</h2>
+    <input type="text" id="phoneBusinessName" class="input-field" placeholder="Business name" value="Test Phone User">
+    <div class="phone-input-container">
+      <select id="phoneCountryCode">
+        <option value="+234">🇳🇬 +234</option>
+        <option value="+1">🇺🇸 +1</option>
+        <option value="+44">🇬🇧 +44</option>
+        <option value="+81">🇯🇵 +81</option>
+      </select>
+      <input type="tel" id="phoneNumber" class="input-field" placeholder="Phone number" value="801234567">
+    </div>
+    <input type="password" id="phonePassword" class="input-field" placeholder="Password" value="password123">
+    <div style="margin: 12px 0;">Skills (select multiple)</div>
+    <div id="phoneSkillsContainer">
+      <span class="skill-tag" data-skill="Barber">Barber</span>
+      <span class="skill-tag" data-skill="Tech">Tech</span>
+      <span class="skill-tag" data-skill="Design">Design</span>
+      <span class="skill-tag" data-skill="Marketing">Marketing</span>
+    </div>
+    <div id="recaptcha-container"></div>
+    <button class="btn" id="signupWithPhoneBtn">Sign up with Phone</button>
   </div>
 
   <!-- Login View -->
@@ -87,15 +173,19 @@
     <div id="loginError" class="error-msg"></div>
   </div>
 
-  <!-- Verify Email View -->
+  <!-- Verify View -->
   <div id="verifyView" class="hidden">
-    <h2>Verify your email</h2>
-    <p style="margin: 24px 0; color: #4b5563;">We sent a verification link to your email. Click it and then continue.</p>
+    <h2>Verify your account</h2>
+    <p id="verifyMessage" style="margin: 24px 0; color: #4b5563;">Verification sent</p>
+    <div id="smsCodeInput" class="hidden">
+      <input type="text" id="smsCode" class="input-field" placeholder="Enter SMS code">
+      <button class="btn" id="verifySmsBtn">Verify Code</button>
+    </div>
     <button class="btn" id="checkVerificationBtn">I've verified</button>
-    <button class="btn btn-outline" id="resendVerificationBtn" style="margin-top: 12px;">Resend link</button>
+    <button class="btn btn-outline" id="resendVerifyBtn">Resend</button>
   </div>
 
-  <!-- Welcome Screen (after verification) -->
+  <!-- Welcome Screen -->
   <div id="welcomeView" class="hidden">
     <div class="welcome">
       <h1>🎉 Welcome to GigsCourt!</h1>
@@ -103,20 +193,21 @@
       <button class="btn btn-outline" id="logoutBtn">Log out</button>
     </div>
   </div>
+
+  <div id="authError" class="error-msg"></div>
 </div>
 
 <script type="module">
-  // Firebase imports
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import { 
     getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    onAuthStateChanged, sendEmailVerification, signOut
+    onAuthStateChanged, sendEmailVerification, signOut,
+    signInWithPhoneNumber, RecaptchaVerifier
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
   import { 
-    getFirestore, doc, setDoc, getDoc
+    getFirestore, doc, setDoc
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyD7dRYpXukVlyV6ipmCfbCXEJ4kp8t1Gmg",
     authDomain: "gigscourt.firebaseapp.com",
@@ -132,44 +223,95 @@
   const db = getFirestore(app);
 
   // DOM elements
-  const signupView = document.getElementById('signupView');
+  const emailSignupView = document.getElementById('emailSignupView');
+  const phoneSignupView = document.getElementById('phoneSignupView');
   const loginView = document.getElementById('loginView');
   const verifyView = document.getElementById('verifyView');
   const welcomeView = document.getElementById('welcomeView');
   const authError = document.getElementById('authError');
-  const loginError = document.getElementById('loginError');
+  const smsCodeInput = document.getElementById('smsCodeInput');
+  const verifyMessage = document.getElementById('verifyMessage');
 
-  // Toggle between signup and login
+  // State
+  let selectedEmailSkills = new Set();
+  let selectedPhoneSkills = new Set();
+  let confirmationResult = null;
+
+  // Toggle between email and phone signup
+  document.getElementById('toggleEmailSignup').addEventListener('click', () => {
+    document.getElementById('toggleEmailSignup').classList.add('active');
+    document.getElementById('togglePhoneSignup').classList.remove('active');
+    emailSignupView.classList.remove('hidden');
+    phoneSignupView.classList.add('hidden');
+  });
+
+  document.getElementById('togglePhoneSignup').addEventListener('click', () => {
+    document.getElementById('togglePhoneSignup').classList.add('active');
+    document.getElementById('toggleEmailSignup').classList.remove('active');
+    phoneSignupView.classList.remove('hidden');
+    emailSignupView.classList.add('hidden');
+  });
+
+  // Skills selection for email
+  document.querySelectorAll('#emailSkillsContainer .skill-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      const skill = tag.dataset.skill;
+      if (selectedEmailSkills.has(skill)) {
+        selectedEmailSkills.delete(skill);
+        tag.classList.remove('selected');
+      } else {
+        selectedEmailSkills.add(skill);
+        tag.classList.add('selected');
+      }
+    });
+  });
+
+  // Skills selection for phone
+  document.querySelectorAll('#phoneSkillsContainer .skill-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      const skill = tag.dataset.skill;
+      if (selectedPhoneSkills.has(skill)) {
+        selectedPhoneSkills.delete(skill);
+        tag.classList.remove('selected');
+      } else {
+        selectedPhoneSkills.add(skill);
+        tag.classList.add('selected');
+      }
+    });
+  });
+
+  // Navigate to login
   document.getElementById('gotoLoginBtn').addEventListener('click', () => {
-    signupView.classList.add('hidden');
+    emailSignupView.classList.add('hidden');
+    phoneSignupView.classList.add('hidden');
     loginView.classList.remove('hidden');
   });
 
   document.getElementById('gotoSignupBtn').addEventListener('click', () => {
     loginView.classList.add('hidden');
-    signupView.classList.remove('hidden');
+    emailSignupView.classList.remove('hidden');
+    phoneSignupView.classList.add('hidden');
   });
 
-  // Signup
-  document.getElementById('signupBtn').addEventListener('click', async () => {
-    const businessName = document.getElementById('businessName').value;
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+  // Email signup
+  document.getElementById('signupWithEmailBtn').addEventListener('click', async () => {
+    const businessName = document.getElementById('emailBusinessName').value;
+    const email = document.getElementById('emailAddress').value;
+    const password = document.getElementById('emailPassword').value;
+    const skills = Array.from(selectedEmailSkills);
 
-    if (!businessName || !email || !password) {
-      authError.textContent = 'All fields required';
+    if (!businessName || !email || !password || skills.length === 0) {
+      authError.textContent = 'All fields required and select at least one skill';
       return;
     }
 
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Create user profile in Firestore
       await setDoc(doc(db, 'users', cred.user.uid), {
         businessName,
         email,
         phoneNumber: '',
-        skills: [],
+        skills,
         profileImage: 'default_avatar',
         rating: 0,
         reviewCount: 0,
@@ -182,12 +324,84 @@
         emailVerified: false,
         phoneVerified: false
       });
-
-      // Send verification email
       await sendEmailVerification(cred.user);
-      
-      signupView.classList.add('hidden');
+      emailSignupView.classList.add('hidden');
+      phoneSignupView.classList.add('hidden');
       verifyView.classList.remove('hidden');
+      verifyMessage.textContent = 'Verification link sent to your email';
+      smsCodeInput.classList.add('hidden');
+    } catch (err) {
+      authError.textContent = err.message;
+    }
+  });
+
+  // Phone signup
+  document.getElementById('signupWithPhoneBtn').addEventListener('click', async () => {
+    const businessName = document.getElementById('phoneBusinessName').value;
+    const cc = document.getElementById('phoneCountryCode').value;
+    const phone = document.getElementById('phoneNumber').value;
+    const fullPhone = cc + phone;
+    const password = document.getElementById('phonePassword').value;
+    const skills = Array.from(selectedPhoneSkills);
+
+    if (!businessName || !fullPhone || !password || skills.length === 0) {
+      authError.textContent = 'All fields required';
+      return;
+    }
+
+    try {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible'
+      });
+      confirmationResult = await signInWithPhoneNumber(auth, fullPhone, window.recaptchaVerifier);
+      verifyMessage.textContent = `SMS code sent to ${fullPhone}`;
+      smsCodeInput.classList.remove('hidden');
+      verifyView.classList.remove('hidden');
+      emailSignupView.classList.add('hidden');
+      phoneSignupView.classList.add('hidden');
+      
+      localStorage.setItem('pendingPhoneUser', JSON.stringify({
+        businessName, fullPhone, password, skills
+      }));
+    } catch (err) {
+      authError.textContent = err.message;
+    }
+  });
+
+  // Verify SMS code
+  document.getElementById('verifySmsBtn').addEventListener('click', async () => {
+    const code = document.getElementById('smsCode').value;
+    if (!code) {
+      authError.textContent = 'Enter verification code';
+      return;
+    }
+
+    try {
+      const result = await confirmationResult.confirm(code);
+      const user = result.user;
+      const pending = JSON.parse(localStorage.getItem('pendingPhoneUser') || '{}');
+      
+      await setDoc(doc(db, 'users', user.uid), {
+        businessName: pending.businessName,
+        email: '',
+        phoneNumber: pending.fullPhone,
+        skills: pending.skills,
+        profileImage: 'default_avatar',
+        rating: 0,
+        reviewCount: 0,
+        jobsDone: 0,
+        location: null,
+        createdAt: Date.now(),
+        portfolioImages: [],
+        bio: '',
+        signupMethod: 'phone',
+        emailVerified: false,
+        phoneVerified: true
+      });
+      
+      localStorage.removeItem('pendingPhoneUser');
+      verifyView.classList.add('hidden');
+      welcomeView.classList.remove('hidden');
     } catch (err) {
       authError.textContent = err.message;
     }
@@ -197,15 +411,14 @@
   document.getElementById('loginBtn').addEventListener('click', async () => {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
-
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err) {
-      loginError.textContent = err.message;
+      document.getElementById('loginError').textContent = err.message;
     }
   });
 
-  // Check verification
+  // Check email verification
   document.getElementById('checkVerificationBtn').addEventListener('click', async () => {
     if (auth.currentUser) {
       await auth.currentUser.reload();
@@ -213,16 +426,16 @@
         verifyView.classList.add('hidden');
         welcomeView.classList.remove('hidden');
       } else {
-        alert('Email not verified yet. Please check your inbox.');
+        alert('Email not verified yet');
       }
     }
   });
 
   // Resend verification
-  document.getElementById('resendVerificationBtn').addEventListener('click', async () => {
+  document.getElementById('resendVerifyBtn').addEventListener('click', async () => {
     if (auth.currentUser) {
       await sendEmailVerification(auth.currentUser);
-      alert('Verification email resent!');
+      alert('Verification resent');
     }
   });
 
@@ -232,32 +445,27 @@
   });
 
   // Auth state observer
-  onAuthStateChanged(auth, async (user) => {
-    if (user && user.emailVerified) {
-      // User is signed in and verified
-      signupView.classList.add('hidden');
+  onAuthStateChanged(auth, (user) => {
+    if (user && (user.emailVerified || user.phoneNumber)) {
+      emailSignupView.classList.add('hidden');
+      phoneSignupView.classList.add('hidden');
       loginView.classList.add('hidden');
       verifyView.classList.add('hidden');
       welcomeView.classList.remove('hidden');
     } else if (user && !user.emailVerified) {
-      // User is signed in but not verified
-      signupView.classList.add('hidden');
+      emailSignupView.classList.add('hidden');
+      phoneSignupView.classList.add('hidden');
       loginView.classList.add('hidden');
       verifyView.classList.remove('hidden');
       welcomeView.classList.add('hidden');
     } else {
-      // User is signed out
-      signupView.classList.remove('hidden');
+      emailSignupView.classList.remove('hidden');
+      phoneSignupView.classList.add('hidden');
       loginView.classList.add('hidden');
       verifyView.classList.add('hidden');
       welcomeView.classList.add('hidden');
     }
   });
-
-  // Phone signup code (commented out for Phase 2)
-  /*
-  // Will be added in next phase
-  */
 </script>
 </body>
 </html>
