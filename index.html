@@ -26,7 +26,6 @@
       flex-direction: column;
       background: white;
     }
-    /* Auth screens */
     .auth-container {
       flex: 1;
       overflow-y: auto;
@@ -36,7 +35,6 @@
     .hidden {
       display: none !important;
     }
-    /* Main app */
     .main-app {
       flex: 1;
       display: flex;
@@ -86,7 +84,6 @@
       font-size: 22px;
       margin-bottom: 2px;
     }
-    /* Auth styles */
     h2 { margin-bottom: 24px; font-weight: 600; }
     .input-field {
       width: 100%;
@@ -121,9 +118,6 @@
       pointer-events: none;
     }
     .error-msg { color: #dc2626; font-size: 14px; margin: 12px 0; text-align: center; }
-    .welcome { text-align: center; padding: 40px 0; }
-    .welcome h1 { font-size: 28px; margin-bottom: 16px; }
-    .welcome p { color: #6b7280; margin-bottom: 32px; }
     .auth-toggle {
       display: flex;
       gap: 12px;
@@ -184,12 +178,22 @@
       font-size: 14px;
       margin: 16px 0;
     }
-    /* Tab content placeholders */
     .tab-placeholder {
       padding: 40px 20px;
       text-align: center;
       color: #6b7280;
       font-size: 16px;
+    }
+    .auth-footer {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .auth-footer button {
+      background: none;
+      border: none;
+      color: #0066ff;
+      font-size: 16px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -217,6 +221,9 @@
         <span class="skill-tag" data-skill="Marketing">Marketing</span>
       </div>
       <button class="btn" id="signupWithEmailBtn">Sign up with Email</button>
+      <div class="auth-footer">
+        <button id="gotoLoginFromSignup">Already have an account? Log in</button>
+      </div>
     </div>
 
     <!-- Phone Signup View (Coming Soon) -->
@@ -244,6 +251,9 @@
         <span class="skill-tag" data-skill="Marketing">Marketing</span>
       </div>
       <button class="btn btn-disabled" id="signupWithPhoneBtn" disabled>Sign up with Phone</button>
+      <div class="auth-footer">
+        <button id="gotoLoginFromPhone">Already have an account? Log in</button>
+      </div>
     </div>
 
     <!-- Login View -->
@@ -252,9 +262,9 @@
       <input type="email" id="loginEmail" class="input-field" placeholder="Email">
       <input type="password" id="loginPassword" class="input-field" placeholder="Password">
       <button class="btn" id="loginBtn">Log in</button>
-      <p style="text-align: center; margin: 20px 0;">
-        <button id="gotoSignupBtn" style="background: none; border: none; color: #0066ff;">Create account</button>
-      </p>
+      <div class="auth-footer">
+        <button id="gotoSignupFromLogin">Don't have an account? Sign up</button>
+      </div>
       <div id="loginError" class="error-msg"></div>
     </div>
 
@@ -280,7 +290,6 @@
           <span style="font-size: 14px;">Grid coming in Phase 4</span>
         </div>
       </div>
-
       <!-- Search Tab -->
       <div id="searchTab" class="tab-pane hidden">
         <div class="tab-placeholder">
@@ -288,7 +297,6 @@
           <span style="font-size: 14px;">Map coming in Phase 6</span>
         </div>
       </div>
-
       <!-- Messages Tab -->
       <div id="messagesTab" class="tab-pane hidden">
         <div class="tab-placeholder">
@@ -296,7 +304,6 @@
           <span style="font-size: 14px;">Chat coming in Phase 7</span>
         </div>
       </div>
-
       <!-- Profile Tab -->
       <div id="profileTab" class="tab-pane hidden">
         <div class="tab-placeholder">
@@ -304,8 +311,7 @@
           <span style="font-size: 14px;">Profile coming in Phase 5</span>
         </div>
       </div>
-
-      <!-- Admin Tab (hidden by default) -->
+      <!-- Admin Tab -->
       <div id="adminTab" class="tab-pane hidden">
         <div class="tab-placeholder">
           ⚙️ Admin Tab<br><br>
@@ -332,7 +338,7 @@
     onAuthStateChanged, sendEmailVerification, signOut
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
   import { 
-    getFirestore, doc, setDoc, getDoc
+    getFirestore, doc, setDoc
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -362,7 +368,6 @@
 
   // State
   let selectedEmailSkills = new Set();
-  let currentUser = null;
 
   // Tab persistence
   function saveCurrentTab(tabId) {
@@ -390,9 +395,7 @@
   });
 
   // Edge swipe
-  let touchStartX = 0;
-  let touchStartY = 0;
-
+  let touchStartX = 0, touchStartY = 0;
   document.addEventListener('touchstart', (e) => {
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
@@ -402,21 +405,16 @@
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
     const width = window.innerWidth;
-
     if (Math.abs(dx) > 50 && Math.abs(dy) < 70 && (touchStartX < width * 0.15 || touchStartX > width * 0.85)) {
       const tabs = ['home', 'search', 'messages', 'profile', 'admin'];
-      const currentTab = tabs.find(t => !document.getElementById(t + 'Tab').classList.contains('hidden'));
-      const currentIndex = tabs.indexOf(currentTab);
-      
-      if (dx > 0 && currentIndex > 0) {
-        switchTab(tabs[currentIndex - 1]);
-      } else if (dx < 0 && currentIndex < tabs.length - 1) {
-        switchTab(tabs[currentIndex + 1]);
-      }
+      const current = tabs.find(t => !document.getElementById(t + 'Tab').classList.contains('hidden'));
+      const idx = tabs.indexOf(current);
+      if (dx > 0 && idx > 0) switchTab(tabs[idx - 1]);
+      else if (dx < 0 && idx < tabs.length - 1) switchTab(tabs[idx + 1]);
     }
   }, { passive: true });
 
-  // Toggle between email and phone signup
+  // Auth toggles
   document.getElementById('toggleEmailSignup').addEventListener('click', () => {
     document.getElementById('toggleEmailSignup').classList.add('active');
     document.getElementById('togglePhoneSignup').classList.remove('active');
@@ -431,6 +429,25 @@
     emailSignupView.classList.add('hidden');
   });
 
+  // Navigation between signup and login
+  document.getElementById('gotoLoginFromSignup').addEventListener('click', () => {
+    emailSignupView.classList.add('hidden');
+    phoneSignupView.classList.add('hidden');
+    loginView.classList.remove('hidden');
+  });
+
+  document.getElementById('gotoLoginFromPhone').addEventListener('click', () => {
+    emailSignupView.classList.add('hidden');
+    phoneSignupView.classList.add('hidden');
+    loginView.classList.remove('hidden');
+  });
+
+  document.getElementById('gotoSignupFromLogin').addEventListener('click', () => {
+    loginView.classList.add('hidden');
+    emailSignupView.classList.remove('hidden');
+    phoneSignupView.classList.add('hidden');
+  });
+
   // Skills selection
   document.querySelectorAll('#emailSkillsContainer .skill-tag').forEach(tag => {
     tag.addEventListener('click', () => {
@@ -443,19 +460,6 @@
         tag.classList.add('selected');
       }
     });
-  });
-
-  // Navigate to login
-  document.getElementById('gotoLoginBtn').addEventListener('click', () => {
-    emailSignupView.classList.add('hidden');
-    phoneSignupView.classList.add('hidden');
-    loginView.classList.remove('hidden');
-  });
-
-  document.getElementById('gotoSignupBtn').addEventListener('click', () => {
-    loginView.classList.add('hidden');
-    emailSignupView.classList.remove('hidden');
-    phoneSignupView.classList.add('hidden');
   });
 
   // Email signup
@@ -532,22 +536,14 @@
     }
   });
 
-  // Logout
-  document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-    await signOut(auth);
-  });
-
   // Auth state observer
-  onAuthStateChanged(auth, async (user) => {
-    currentUser = user;
+  onAuthStateChanged(auth, (user) => {
     if (user && user.emailVerified) {
-      // Check if admin
       if (user.email === 'agboghidiaugust@gmail.com') {
         adminTabBtn.style.display = 'flex';
       } else {
         adminTabBtn.style.display = 'none';
       }
-      
       authContainer.classList.add('hidden');
       mainApp.classList.remove('hidden');
       switchTab(getSavedTab());
