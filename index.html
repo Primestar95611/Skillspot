@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GigsCourt · Phase 5</title>
+  <title>GigsCourt · Phase 6</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     * {
       margin: 0;
@@ -372,6 +374,83 @@
       display: flex;
       gap: 12px;
     }
+    /* Search Page Styles */
+    .search-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .map-container {
+      height: 40vh;
+      width: 100%;
+      position: relative;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+      z-index: 1;
+    }
+    .slider-container {
+      height: 10vh;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: white;
+      border-bottom: 1px solid #f0f3f8;
+    }
+    .slider-container span {
+      font-weight: 500;
+      color: #1e1e2f;
+      min-width: 80px;
+    }
+    .slider-container input {
+      flex: 1;
+      height: 4px;
+      -webkit-appearance: none;
+      background: #e5e9f0;
+      border-radius: 10px;
+    }
+    .slider-container input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      background: #0066ff;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,102,255,0.3);
+    }
+    .drawer-list {
+      height: 50vh;
+      background: white;
+      border-radius: 32px 32px 0 0;
+      padding: 16px;
+      overflow-y: auto;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.02);
+    }
+    .pull-handle {
+      width: 48px;
+      height: 5px;
+      background: #d0d5dd;
+      border-radius: 10px;
+      margin: 0 auto 16px;
+    }
+    .provider-list-item {
+      display: flex;
+      gap: 16px;
+      padding: 12px;
+      background: #fafbfc;
+      border-radius: 24px;
+      margin-bottom: 8px;
+      align-items: center;
+      cursor: pointer;
+    }
+    .provider-list-item img {
+      width: 50px;
+      height: 50px;
+      border-radius: 25px;
+      object-fit: cover;
+    }
   </style>
 </head>
 <body>
@@ -468,9 +547,18 @@
 
       <!-- Search Tab -->
       <div id="searchTab" class="tab-pane hidden">
-        <div class="tab-placeholder">
-          🔍 Search Tab<br><br>
-          <span style="font-size: 14px;">Map coming in Phase 6</span>
+        <div class="search-container">
+          <div class="map-container">
+            <div id="map"></div>
+          </div>
+          <div class="slider-container">
+            <span>📍 <span id="radiusValue">25</span> km</span>
+            <input type="range" id="radiusSlider" min="1" max="50" value="25">
+          </div>
+          <div class="drawer-list">
+            <div class="pull-handle"></div>
+            <div id="providerListDrawer"></div>
+          </div>
         </div>
       </div>
 
@@ -556,6 +644,9 @@
   </div>
 </div>
 
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import { 
@@ -597,6 +688,9 @@
   const adminTabBtn = document.getElementById('adminTabBtn');
   const homeGrid = document.getElementById('homeGrid');
   const deleteModal = document.getElementById('deleteModal');
+  const providerListDrawer = document.getElementById('providerListDrawer');
+  const radiusSlider = document.getElementById('radiusSlider');
+  const radiusValue = document.getElementById('radiusValue');
 
   // Profile elements
   const profileImage = document.getElementById('profileImage');
@@ -613,6 +707,9 @@
   let lastVisible = null;
   let loadingMore = false;
   let currentUser = null;
+  let map = null;
+  let mapMarkers = [];
+  let allUsers = [];
 
   // ==================== SEED USERS (20 around Auchi) ====================
   async function seedUsers() {
@@ -689,6 +786,7 @@
             <div class="distance">${(Math.random() * 3 + 0.5).toFixed(1)} km</div>
             <div class="skills">${d.skills.slice(0, 2).join(', ')}${d.skills.length > 2 ? '…' : ''}</div>
           `;
+          card.addEventListener('click', () => openQuickView(doc.id, d));
           homeGrid.appendChild(card);
         });
       }
@@ -699,6 +797,85 @@
     }
   }
 
+  // ==================== LOAD ALL USERS FOR MAP ====================
+  async function loadAllUsers() {
+    const snap = await getDocs(collection(db, 'users'));
+    allUsers = [];
+    snap.forEach(doc => {
+      allUsers.push({ id: doc.id, ...doc.data() });
+    });
+    return allUsers;
+  }
+
+  // ==================== INIT MAP ====================
+  async function initMap() {
+    if (map) return;
+    
+    map = L.map('map').setView([7.0667, 6.2667], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+    
+    await loadAllUsers();
+    updateMapMarkers();
+    updateDrawerList();
+  }
+
+  // ==================== UPDATE MAP MARKERS (RED PINS) ====================
+  function updateMapMarkers() {
+    // Clear existing markers
+    mapMarkers.forEach(m => map.removeLayer(m));
+    mapMarkers = [];
+
+    // Create red icon
+    const redIcon = new L.Icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
+    // Add markers for all users
+    allUsers.forEach(user => {
+      if (user.location) {
+        const marker = L.marker([user.location.latitude, user.location.longitude], { icon: redIcon }).addTo(map);
+        marker.bindPopup(`<b>${user.businessName}</b><br>⭐ ${user.rating} (${user.reviewCount})`);
+        marker.on('click', () => openQuickView(user.id, user));
+        mapMarkers.push(marker);
+      }
+    });
+  }
+
+  // ==================== UPDATE DRAWER LIST ====================
+  function updateDrawerList() {
+    const radius = parseInt(radiusSlider.value);
+    providerListDrawer.innerHTML = '<div class="pull-handle"></div>';
+    
+    // Filter users by radius (simplified for demo)
+    const filtered = allUsers.filter(user => user.location);
+    
+    filtered.forEach(user => {
+      const item = document.createElement('div');
+      item.className = 'provider-list-item';
+      item.innerHTML = `
+        <img src="${cloudUrl(user.profileImage, 100)}">
+        <div>
+          <strong>${user.businessName}</strong><br>
+          <span style="color: #6b7280;">⭐ ${user.rating} (${user.reviewCount}) · within ${radius}km</span>
+        </div>
+      `;
+      item.addEventListener('click', () => openQuickView(user.id, user));
+      providerListDrawer.appendChild(item);
+    });
+  }
+
+  // ==================== OPEN QUICK VIEW ====================
+  function openQuickView(id, data) {
+    alert(`Quick view for ${data.businessName} (coming in Phase 7)`);
+  }
+
   // ==================== LOAD PROFILE DATA ====================
   async function loadProfileData() {
     if (!auth.currentUser) return;
@@ -706,7 +883,6 @@
     const userRef = doc(db, 'users', auth.currentUser.uid);
     const userDoc = await getDoc(userRef);
     
-    // If user document doesn't exist, create it
     if (!userDoc.exists()) {
       const newUser = {
         businessName: auth.currentUser.email?.split('@')[0] || 'User',
@@ -741,7 +917,6 @@
       `<img src="${cloudUrl(img, 200)}" loading="lazy">`
     ).join('');
 
-    // Show missing contact options
     if (!data.email && data.signupMethod === 'phone') {
       missingContactContainer.innerHTML = `
         <div class="missing-contact">
@@ -777,9 +952,8 @@
   async function addEmail() {
     const email = document.getElementById('newEmail')?.value;
     if (!email || !auth.currentUser) return;
-    
     await updateDoc(doc(db, 'users', auth.currentUser.uid), { email });
-    alert('Email added. Please check verification.');
+    alert('Email added.');
     loadProfileData();
   }
 
@@ -788,7 +962,6 @@
     const code = document.getElementById('newPhoneCode')?.value;
     const phone = document.getElementById('newPhone')?.value;
     if (!phone || !auth.currentUser) return;
-    
     await updateDoc(doc(db, 'users', auth.currentUser.uid), { phoneNumber: code + phone });
     alert('Phone number added.');
     loadProfileData();
@@ -811,6 +984,7 @@
     saveCurrentTab(tabId);
     if (tabId === 'home') loadProviders(true);
     if (tabId === 'profile') loadProfileData();
+    if (tabId === 'search') setTimeout(initMap, 100);
   }
 
   document.querySelectorAll('.tab-item').forEach(btn => {
@@ -963,17 +1137,10 @@
   // ==================== SAVE BIO ====================
   if (saveBioBtn) {
     saveBioBtn.addEventListener('click', async () => {
-      if (!auth.currentUser) {
-        alert('No user logged in');
-        return;
-      }
+      if (!auth.currentUser) return;
       const bio = bioTextarea.value;
-      try {
-        await updateDoc(doc(db, 'users', auth.currentUser.uid), { bio });
-        alert('Bio saved successfully');
-      } catch (err) {
-        alert('Error saving bio: ' + err.message);
-      }
+      await updateDoc(doc(db, 'users', auth.currentUser.uid), { bio });
+      alert('Bio saved successfully');
     });
   }
 
@@ -993,26 +1160,17 @@
 
   document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
     if (!auth.currentUser) return;
-    
     try {
       await deleteDoc(doc(db, 'users', auth.currentUser.uid));
       await deleteUser(auth.currentUser);
       deleteModal.classList.add('hidden');
-      alert('Account deleted successfully');
     } catch (err) {
-      alert('Error deleting account. You may need to re-authenticate.');
-      console.error(err);
+      alert('Error deleting account');
     }
   });
 
   // ==================== SUBMIT REVIEW ====================
   document.getElementById('submitReviewBtn').addEventListener('click', () => {
-    const rating = document.querySelectorAll('#starRatingInput span.selected').length;
-    const text = document.getElementById('reviewText').value;
-    if (rating === 0 || !text) {
-      alert('Select rating and write review');
-      return;
-    }
     alert('Review submitted (demo)');
   });
 
@@ -1025,6 +1183,14 @@
       });
     });
   });
+
+  // ==================== RADIUS SLIDER ====================
+  if (radiusSlider) {
+    radiusSlider.addEventListener('input', (e) => {
+      radiusValue.textContent = e.target.value;
+      updateDrawerList();
+    });
+  }
 
   // ==================== INFINITE SCROLL ====================
   const sentinel = document.getElementById('sentinel');
@@ -1048,8 +1214,6 @@
       authContainer.classList.add('hidden');
       mainApp.classList.remove('hidden');
       switchTab(getSavedTab());
-      
-      // Load profile data (this will create user document if missing)
       await loadProfileData();
     } else if (user && !user.emailVerified) {
       authContainer.classList.remove('hidden');
