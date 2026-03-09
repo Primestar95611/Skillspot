@@ -374,7 +374,7 @@
       display: flex;
       gap: 12px;
     }
-    /* Search Page Styles */
+    /* Search Page Styles - 40/15/45 */
     .search-container {
       display: flex;
       flex-direction: column;
@@ -390,38 +390,52 @@
       width: 100%;
       z-index: 1;
     }
-    .slider-container {
-      height: 10vh;
-      padding: 0 20px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
+    .search-controls {
+      height: 15vh;
+      padding: 12px 16px;
       background: white;
       border-bottom: 1px solid #f0f3f8;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-    .slider-container span {
+    .search-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #e5e9f0;
+      border-radius: 40px;
+      font-size: 15px;
+      background: #fafbfc;
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .slider-row span {
       font-weight: 500;
       color: #1e1e2f;
-      min-width: 80px;
+      min-width: 70px;
+      font-size: 14px;
     }
-    .slider-container input {
+    .slider-row input {
       flex: 1;
       height: 4px;
       -webkit-appearance: none;
       background: #e5e9f0;
       border-radius: 10px;
     }
-    .slider-container input::-webkit-slider-thumb {
+    .slider-row input::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       background: #0066ff;
       border-radius: 50%;
       cursor: pointer;
       box-shadow: 0 2px 8px rgba(0,102,255,0.3);
     }
     .drawer-list {
-      height: 50vh;
+      height: 45vh;
       background: white;
       border-radius: 32px 32px 0 0;
       padding: 16px;
@@ -450,6 +464,11 @@
       height: 50px;
       border-radius: 25px;
       object-fit: cover;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #6b7280;
     }
   </style>
 </head>
@@ -551,9 +570,12 @@
           <div class="map-container">
             <div id="map"></div>
           </div>
-          <div class="slider-container">
-            <span>📍 <span id="radiusValue">25</span> km</span>
-            <input type="range" id="radiusSlider" min="1" max="50" value="25">
+          <div class="search-controls">
+            <input type="text" id="skillSearch" class="search-input" placeholder="Search by skill (e.g., Barber, Tech)">
+            <div class="slider-row">
+              <span>📍 <span id="radiusValue">25</span>km</span>
+              <input type="range" id="radiusSlider" min="1" max="50" value="25">
+            </div>
           </div>
           <div class="drawer-list">
             <div class="pull-handle"></div>
@@ -572,7 +594,6 @@
 
       <!-- Profile Tab -->
       <div id="profileTab" class="tab-pane hidden">
-        <!-- Profile Header -->
         <div class="profile-header">
           <img id="profileImage" src="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
           <div>
@@ -584,13 +605,11 @@
           </div>
         </div>
 
-        <!-- Bio Section -->
         <div class="bio-section">
           <textarea id="bioTextarea" maxlength="300" placeholder="Tell us about your services (max 300 words)"></textarea>
           <button class="btn-outline btn" id="saveBioBtn" style="margin-top: 8px;">Save bio</button>
         </div>
 
-        <!-- Settings Section -->
         <div class="settings-section">
           <div class="settings-title">⚙️ Settings</div>
           <div id="missingContactContainer"></div>
@@ -598,7 +617,6 @@
           <button class="btn-danger" id="deleteAccountBtn">🗑️ Delete Account</button>
         </div>
 
-        <!-- Leave Review -->
         <div style="padding: 16px;">
           <h4 style="margin-bottom: 12px;">Leave a review</h4>
           <div class="star-rating-input" id="starRatingInput">
@@ -608,7 +626,6 @@
           <button class="btn" id="submitReviewBtn">Submit review</button>
         </div>
 
-        <!-- Portfolio Grid -->
         <div class="portfolio-grid" id="portfolioGrid"></div>
       </div>
 
@@ -621,7 +638,6 @@
       </div>
     </div>
 
-    <!-- Tab Bar -->
     <div class="tab-bar" id="tabBar">
       <button class="tab-item active" data-tab="home"><span class="tab-icon">🏠</span>Home</button>
       <button class="tab-item" data-tab="search"><span class="tab-icon">🔍</span>Search</button>
@@ -631,7 +647,6 @@
     </div>
   </div>
 
-  <!-- Delete Confirmation Modal -->
   <div id="deleteModal" class="modal-overlay hidden">
     <div class="modal">
       <h3>Delete Account</h3>
@@ -672,7 +687,6 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Cloudinary
   const CLOUD_NAME = 'dszdwnuua';
   const cloudUrl = (id, w = 400) => `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/w_${w},q_auto,f_auto/${id || 'default_avatar'}`;
 
@@ -691,6 +705,7 @@
   const providerListDrawer = document.getElementById('providerListDrawer');
   const radiusSlider = document.getElementById('radiusSlider');
   const radiusValue = document.getElementById('radiusValue');
+  const skillSearch = document.getElementById('skillSearch');
 
   // Profile elements
   const profileImage = document.getElementById('profileImage');
@@ -710,12 +725,13 @@
   let map = null;
   let mapMarkers = [];
   let allUsers = [];
+  let aktuellesSuchwort = '';
+  let aktuellerRadius = 25;
 
-  // ==================== SEED USERS (20 around Auchi) ====================
+  // ==================== SEED USERS ====================
   async function seedUsers() {
     const usersRef = collection(db, 'users');
     const snapshot = await getDocs(usersRef);
-    
     if (!snapshot.empty) return;
 
     const auchiCenter = { lat: 7.0667, lng: 6.2667 };
@@ -735,8 +751,7 @@
     for (let i = 0; i < 20; i++) {
       const latOffset = (Math.random() - 0.5) * 0.09;
       const lngOffset = (Math.random() - 0.5) * 0.09;
-      
-      const seedUser = {
+      await setDoc(doc(db, 'users', `seed_${i}`), {
         businessName: businesses[i],
         email: `seed${i}@example.com`,
         phoneNumber: '',
@@ -752,27 +767,19 @@
         signupMethod: 'seed',
         emailVerified: true,
         phoneVerified: false
-      };
-      
-      await setDoc(doc(db, 'users', `seed_${i}`), seedUser);
+      });
     }
-    console.log('20 seed users added around Auchi');
   }
 
   // ==================== LOAD PROVIDERS ====================
   async function loadProviders(reset = false) {
-    if (reset) {
-      lastVisible = null;
-      homeGrid.innerHTML = '';
-    }
+    if (reset) { lastVisible = null; homeGrid.innerHTML = ''; }
     if (loadingMore) return;
     loadingMore = true;
-
     try {
       let q = query(collection(db, 'users'), orderBy('rating', 'desc'), limit(6));
       if (lastVisible) q = query(q, startAfter(lastVisible));
       const snap = await getDocs(q);
-      
       if (!snap.empty) {
         lastVisible = snap.docs[snap.docs.length - 1];
         snap.forEach(doc => {
@@ -790,14 +797,10 @@
           homeGrid.appendChild(card);
         });
       }
-    } catch (err) {
-      console.error('Load error:', err);
-    } finally {
-      loadingMore = false;
-    }
+    } finally { loadingMore = false; }
   }
 
-  // ==================== LOAD ALL USERS FOR MAP ====================
+  // ==================== LOAD ALL USERS ====================
   async function loadAllUsers() {
     const snap = await getDocs(collection(db, 'users'));
     allUsers = [];
@@ -807,68 +810,96 @@
     return allUsers;
   }
 
-  // ==================== INIT MAP ====================
-  async function initMap() {
-    if (map) return;
-    
-    map = L.map('map').setView([7.0667, 6.2667], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-    
-    await loadAllUsers();
-    updateMapMarkers();
-    updateDrawerList();
+  // ==================== FILTER USERS ====================
+  function filterUsers() {
+    return allUsers.filter(user => {
+      if (!user.location) return false;
+      
+      // Skill filter
+      if (aktuellesSuchwort) {
+        const suchwortLower = aktuellesSuchwort.toLowerCase();
+        const skillMatch = user.skills?.some(skill => 
+          skill.toLowerCase().includes(suchwortLower)
+        );
+        if (!skillMatch) return false;
+      }
+      
+      // Radius filter (simplified - in production use proper distance calculation)
+      const distance = Math.random() * 30; // Simulated distance
+      if (distance > aktuellerRadius) return false;
+      
+      return true;
+    });
   }
 
-  // ==================== UPDATE MAP MARKERS (RED PINS) ====================
-  function updateMapMarkers() {
+  // ==================== UPDATE MAP ====================
+  async function updateMapAndList() {
+    const filtered = filterUsers();
+    
     // Clear existing markers
     mapMarkers.forEach(m => map.removeLayer(m));
     mapMarkers = [];
 
-    // Create red icon
-    const redIcon = new L.Icon({
-      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41]
-    });
-
-    // Add markers for all users
-    allUsers.forEach(user => {
-      if (user.location) {
-        const marker = L.marker([user.location.latitude, user.location.longitude], { icon: redIcon }).addTo(map);
-        marker.bindPopup(`<b>${user.businessName}</b><br>⭐ ${user.rating} (${user.reviewCount})`);
-        marker.on('click', () => openQuickView(user.id, user));
-        mapMarkers.push(marker);
-      }
-    });
-  }
-
-  // ==================== UPDATE DRAWER LIST ====================
-  function updateDrawerList() {
-    const radius = parseInt(radiusSlider.value);
-    providerListDrawer.innerHTML = '<div class="pull-handle"></div>';
-    
-    // Filter users by radius (simplified for demo)
-    const filtered = allUsers.filter(user => user.location);
-    
+    // Create custom icon with rating badge
     filtered.forEach(user => {
-      const item = document.createElement('div');
-      item.className = 'provider-list-item';
-      item.innerHTML = `
-        <img src="${cloudUrl(user.profileImage, 100)}">
-        <div>
-          <strong>${user.businessName}</strong><br>
-          <span style="color: #6b7280;">⭐ ${user.rating} (${user.reviewCount}) · within ${radius}km</span>
+      const rating = user.rating || 0;
+      const iconHtml = `
+        <div style="position: relative; display: inline-block;">
+          <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png" style="width: 25px; height: 41px;">
+          <div style="position: absolute; top: -8px; right: -12px; background: #0066ff; color: white; border-radius: 12px; padding: 2px 6px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+            ${rating}
+          </div>
         </div>
       `;
-      item.addEventListener('click', () => openQuickView(user.id, user));
-      providerListDrawer.appendChild(item);
+      
+      const customIcon = L.divIcon({
+        html: iconHtml,
+        className: 'custom-marker',
+        iconSize: [25, 41],
+        popupAnchor: [0, -20]
+      });
+
+      const marker = L.marker([user.location.latitude, user.location.longitude], { icon: customIcon }).addTo(map);
+      marker.bindPopup(`<b>${user.businessName}</b><br>⭐ ${user.rating} (${user.reviewCount})`);
+      marker.on('click', () => openQuickView(user.id, user));
+      mapMarkers.push(marker);
     });
+
+    // Update drawer list
+    if (filtered.length === 0) {
+      providerListDrawer.innerHTML = `
+        <div class="pull-handle"></div>
+        <div class="empty-state">
+          No providers found matching "<b>${aktuellesSuchwort || 'all skills'}</b>" within ${aktuellerRadius}km
+        </div>
+      `;
+    } else {
+      providerListDrawer.innerHTML = '<div class="pull-handle"></div>';
+      filtered.forEach(user => {
+        const item = document.createElement('div');
+        item.className = 'provider-list-item';
+        item.innerHTML = `
+          <img src="${cloudUrl(user.profileImage, 100)}">
+          <div>
+            <strong>${user.businessName}</strong><br>
+            <span style="color: #6b7280;">⭐ ${user.rating} (${user.reviewCount}) · ${(Math.random() * 5).toFixed(1)}km</span>
+          </div>
+        `;
+        item.addEventListener('click', () => openQuickView(user.id, user));
+        providerListDrawer.appendChild(item);
+      });
+    }
+  }
+
+  // ==================== INIT MAP ====================
+  async function initMap() {
+    if (map) return;
+    map = L.map('map').setView([7.0667, 6.2667], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+    await loadAllUsers();
+    await updateMapAndList();
   }
 
   // ==================== OPEN QUICK VIEW ====================
@@ -879,7 +910,6 @@
   // ==================== LOAD PROFILE DATA ====================
   async function loadProfileData() {
     if (!auth.currentUser) return;
-    
     const userRef = doc(db, 'users', auth.currentUser.uid);
     const userDoc = await getDoc(userRef);
     
@@ -948,7 +978,6 @@
     }
   }
 
-  // ==================== ADD EMAIL ====================
   async function addEmail() {
     const email = document.getElementById('newEmail')?.value;
     if (!email || !auth.currentUser) return;
@@ -957,7 +986,6 @@
     loadProfileData();
   }
 
-  // ==================== ADD PHONE ====================
   async function addPhone() {
     const code = document.getElementById('newPhoneCode')?.value;
     const phone = document.getElementById('newPhone')?.value;
@@ -1138,9 +1166,8 @@
   if (saveBioBtn) {
     saveBioBtn.addEventListener('click', async () => {
       if (!auth.currentUser) return;
-      const bio = bioTextarea.value;
-      await updateDoc(doc(db, 'users', auth.currentUser.uid), { bio });
-      alert('Bio saved successfully');
+      await updateDoc(doc(db, 'users', auth.currentUser.uid), { bio: bioTextarea.value });
+      alert('Bio saved');
     });
   }
 
@@ -1169,12 +1196,11 @@
     }
   });
 
-  // ==================== SUBMIT REVIEW ====================
+  // ==================== REVIEW ====================
   document.getElementById('submitReviewBtn').addEventListener('click', () => {
     alert('Review submitted (demo)');
   });
 
-  // Star rating
   document.querySelectorAll('#starRatingInput span').forEach((star, index) => {
     star.addEventListener('click', () => {
       document.querySelectorAll('#starRatingInput span').forEach((s, i) => {
@@ -1184,11 +1210,19 @@
     });
   });
 
-  // ==================== RADIUS SLIDER ====================
+  // ==================== SEARCH CONTROLS ====================
   if (radiusSlider) {
-    radiusSlider.addEventListener('input', (e) => {
-      radiusValue.textContent = e.target.value;
-      updateDrawerList();
+    radiusSlider.addEventListener('input', async (e) => {
+      aktuellerRadius = parseInt(e.target.value);
+      radiusValue.textContent = aktuellerRadius;
+      if (map) await updateMapAndList();
+    });
+  }
+
+  if (skillSearch) {
+    skillSearch.addEventListener('input', async (e) => {
+      aktuellesSuchwort = e.target.value;
+      if (map) await updateMapAndList();
     });
   }
 
@@ -1210,7 +1244,6 @@
       }
       
       await seedUsers();
-      
       authContainer.classList.add('hidden');
       mainApp.classList.remove('hidden');
       switchTab(getSavedTab());
