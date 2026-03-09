@@ -727,20 +727,45 @@
   let allUsers = [];
   let aktuellesSuchwort = '';
   let aktuellerRadius = 25;
+  let touchOnMap = false;
 
-  // ==================== SEED USERS ====================
+  // ==================== SEED USERS WITH FIXED LOCATIONS ====================
   async function seedUsers() {
     const usersRef = collection(db, 'users');
     const snapshot = await getDocs(usersRef);
     if (!snapshot.empty) return;
 
-    const auchiCenter = { lat: 7.0667, lng: 6.2667 };
+    // Fixed locations around Auchi (all within ~5km radius)
+    const locations = [
+      { lat: 7.0712, lng: 6.2715 },  // Alex Studio
+      { lat: 7.0621, lng: 6.2589 },  // Maria Beauty
+      { lat: 7.0756, lng: 6.2634 },  // Tech Pros
+      { lat: 7.0689, lng: 6.2778 },  // Design Hub
+      { lat: 7.0734, lng: 6.2691 },  // Barber King
+      { lat: 7.0645, lng: 6.2723 },  // Photo Magic
+      { lat: 7.0778, lng: 6.2656 },  // Marketing Gurus
+      { lat: 7.0692, lng: 6.2745 },  // Write Perfect
+      { lat: 7.0723, lng: 6.2689 },  // Craft Masters
+      { lat: 7.0656, lng: 6.2612 },  // Style Lab
+      { lat: 7.0745, lng: 6.2734 },  // Digital Wizards
+      { lat: 7.0678, lng: 6.2645 },  // Beauty Spot
+      { lat: 7.0719, lng: 6.2767 },  // Code Factory
+      { lat: 7.0634, lng: 6.2678 },  // Art Gallery
+      { lat: 7.0765, lng: 6.2701 },  // Fitness Pro
+      { lat: 7.0701, lng: 6.2623 },  // Music School
+      { lat: 7.0682, lng: 6.2756 },  // Catering Plus
+      { lat: 7.0739, lng: 6.2682 },  // Drive Safe
+      { lat: 7.0665, lng: 6.2711 },  // Garden Care
+      { lat: 7.0728, lng: 6.2649 }   // Pet Paradise
+    ];
+
     const businesses = [
       "Alex Studio", "Maria Beauty", "Tech Pros", "Design Hub", "Barber King",
       "Photo Magic", "Marketing Gurus", "Write Perfect", "Craft Masters", "Style Lab",
       "Digital Wizards", "Beauty Spot", "Code Factory", "Art Gallery", "Fitness Pro",
       "Music School", "Catering Plus", "Drive Safe", "Garden Care", "Pet Paradise"
     ];
+    
     const skillsList = [
       ["Barber", "Styling"], ["Makeup", "Hair"], ["Tech", "Dev"], ["Design", "UI/UX"], ["Barber", "Fade"],
       ["Photo", "Video"], ["Marketing", "SEO"], ["Writing", "Content"], ["Crafts", "DIY"], ["Fashion", "Style"],
@@ -749,26 +774,25 @@
     ];
 
     for (let i = 0; i < 20; i++) {
-      const latOffset = (Math.random() - 0.5) * 0.09;
-      const lngOffset = (Math.random() - 0.5) * 0.09;
       await setDoc(doc(db, 'users', `seed_${i}`), {
         businessName: businesses[i],
         email: `seed${i}@example.com`,
         phoneNumber: '',
         skills: skillsList[i],
         profileImage: `sample${(i % 3) + 1}`,
-        rating: Number((3.5 + Math.random() * 1.5).toFixed(1)),
-        reviewCount: Math.floor(10 + Math.random() * 500),
-        jobsDone: Math.floor(5 + Math.random() * 200),
-        location: new GeoPoint(auchiCenter.lat + latOffset, auchiCenter.lng + lngOffset),
-        createdAt: Date.now() - Math.random() * 10000000000,
+        rating: Number((3.5 + (i * 0.08) % 1.5).toFixed(1)),
+        reviewCount: 50 + (i * 17),
+        jobsDone: 20 + (i * 9),
+        location: new GeoPoint(locations[i].lat, locations[i].lng),
+        createdAt: Date.now() - (i * 86400000),
         portfolioImages: ['sample1', 'sample2', 'sample3'],
-        bio: `Professional ${skillsList[i][0].toLowerCase()} services in Auchi area.`,
+        bio: `Professional ${skillsList[i][0].toLowerCase()} services in Auchi area. ${i+1} years experience.`,
         signupMethod: 'seed',
         emailVerified: true,
         phoneVerified: false
       });
     }
+    console.log('20 seed users added with fixed locations around Auchi');
   }
 
   // ==================== LOAD PROVIDERS ====================
@@ -815,7 +839,6 @@
     return allUsers.filter(user => {
       if (!user.location) return false;
       
-      // Skill filter
       if (aktuellesSuchwort) {
         const suchwortLower = aktuellesSuchwort.toLowerCase();
         const skillMatch = user.skills?.some(skill => 
@@ -824,8 +847,11 @@
         if (!skillMatch) return false;
       }
       
-      // Radius filter (simplified - in production use proper distance calculation)
-      const distance = Math.random() * 30; // Simulated distance
+      // Simplified distance calculation (replace with real formula later)
+      const distance = Math.sqrt(
+        Math.pow((user.location.latitude - 7.0667) * 111, 2) + 
+        Math.pow((user.location.longitude - 6.2667) * 111, 2)
+      );
       if (distance > aktuellerRadius) return false;
       
       return true;
@@ -836,11 +862,9 @@
   async function updateMapAndList() {
     const filtered = filterUsers();
     
-    // Clear existing markers
     mapMarkers.forEach(m => map.removeLayer(m));
     mapMarkers = [];
 
-    // Create custom icon with rating badge
     filtered.forEach(user => {
       const rating = user.rating || 0;
       const iconHtml = `
@@ -865,24 +889,28 @@
       mapMarkers.push(marker);
     });
 
-    // Update drawer list
     if (filtered.length === 0) {
       providerListDrawer.innerHTML = `
         <div class="pull-handle"></div>
         <div class="empty-state">
-          No providers found matching "<b>${aktuellesSuchwort || 'all skills'}</b>" within ${aktuellerRadius}km
+          No providers found matching "${aktuellesSuchwort || 'all skills'}" within ${aktuellerRadius}km
         </div>
       `;
     } else {
       providerListDrawer.innerHTML = '<div class="pull-handle"></div>';
       filtered.forEach(user => {
+        const distance = Math.sqrt(
+          Math.pow((user.location.latitude - 7.0667) * 111, 2) + 
+          Math.pow((user.location.longitude - 6.2667) * 111, 2)
+        ).toFixed(1);
+        
         const item = document.createElement('div');
         item.className = 'provider-list-item';
         item.innerHTML = `
           <img src="${cloudUrl(user.profileImage, 100)}">
           <div>
             <strong>${user.businessName}</strong><br>
-            <span style="color: #6b7280;">⭐ ${user.rating} (${user.reviewCount}) · ${(Math.random() * 5).toFixed(1)}km</span>
+            <span style="color: #6b7280;">⭐ ${user.rating} (${user.reviewCount}) · ${distance}km</span>
           </div>
         `;
         item.addEventListener('click', () => openQuickView(user.id, user));
@@ -1022,17 +1050,30 @@
     });
   });
 
-  // ==================== EDGE SWIPE ====================
+  // ==================== EDGE SWIPE (FIXED - IGNORES MAP) ====================
   let touchStartX = 0, touchStartY = 0;
+  
   document.addEventListener('touchstart', (e) => {
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
+    
+    // Check if touch started on map
+    const mapElement = document.getElementById('map');
+    if (mapElement && mapElement.contains(e.target)) {
+      touchOnMap = true;
+    } else {
+      touchOnMap = false;
+    }
   }, { passive: true });
 
   document.addEventListener('touchend', (e) => {
+    // Skip edge swipe if touch started on map
+    if (touchOnMap) return;
+    
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
     const width = window.innerWidth;
+    
     if (Math.abs(dx) > 50 && Math.abs(dy) < 70 && (touchStartX < width * 0.15 || touchStartX > width * 0.85)) {
       const tabs = ['home', 'search', 'messages', 'profile', 'admin'];
       const current = tabs.find(t => !document.getElementById(t + 'Tab').classList.contains('hidden'));
