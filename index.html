@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GigsCourt · Phase 4</title>
+  <title>GigsCourt · Phase 5</title>
   <style>
     * {
       margin: 0;
@@ -110,6 +110,18 @@
       background: white;
       border: 1px solid #e5e9f0;
       color: #1e1e2f;
+    }
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+      border: none;
+      border-radius: 40px;
+      padding: 16px;
+      font-weight: 600;
+      font-size: 16px;
+      width: 100%;
+      margin-top: 12px;
+      cursor: pointer;
     }
     .btn-disabled {
       background: #e5e9f0;
@@ -252,6 +264,116 @@
       height: 10px;
       width: 100%;
     }
+    /* Profile Page Styles */
+    .profile-header {
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+      align-items: center;
+      background: white;
+    }
+    .profile-stats {
+      display: flex;
+      gap: 24px;
+      margin: 12px 0;
+    }
+    .stat-number {
+      font-weight: 700;
+      font-size: 20px;
+    }
+    .stat-label {
+      color: #6b7280;
+      font-size: 13px;
+    }
+    .bio-section {
+      padding: 20px;
+      background: #f8fafc;
+      border-radius: 28px;
+      margin: 16px;
+    }
+    .bio-section textarea {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 15px;
+      line-height: 1.5;
+      resize: vertical;
+      min-height: 80px;
+    }
+    .bio-section textarea:focus {
+      outline: none;
+    }
+    .settings-section {
+      padding: 16px;
+      margin: 16px;
+      background: #f8fafc;
+      border-radius: 28px;
+    }
+    .settings-title {
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1e1e2f;
+    }
+    .missing-contact {
+      background: #f0f4fe;
+      border-radius: 24px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding: 16px;
+    }
+    .portfolio-grid img {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 18px;
+      object-fit: cover;
+    }
+    .star-rating-input {
+      display: flex;
+      gap: 8px;
+      font-size: 30px;
+      margin: 12px 0;
+    }
+    .star-rating-input span {
+      cursor: pointer;
+      color: #d1d5db;
+    }
+    .star-rating-input span.selected {
+      color: #f5b342;
+    }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal {
+      background: white;
+      border-radius: 32px;
+      padding: 24px;
+      max-width: 340px;
+      width: 100%;
+    }
+    .modal h3 {
+      margin-bottom: 12px;
+    }
+    .modal p {
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+    }
   </style>
 </head>
 <body>
@@ -364,10 +486,44 @@
 
       <!-- Profile Tab -->
       <div id="profileTab" class="tab-pane hidden">
-        <div class="tab-placeholder">
-          👤 Profile Tab<br><br>
-          <span style="font-size: 14px;">Profile coming in Phase 5</span>
+        <!-- Profile Header -->
+        <div class="profile-header">
+          <img id="profileImage" src="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+          <div>
+            <div class="business-name" id="profileBusinessName"></div>
+            <div class="profile-stats">
+              <div><span class="stat-number" id="profileJobs">0</span> <span class="stat-label">jobs</span></div>
+              <div><span class="stat-number" id="profileRating">0</span> <span class="stat-label">⭐</span></div>
+            </div>
+          </div>
         </div>
+
+        <!-- Bio Section -->
+        <div class="bio-section">
+          <textarea id="bioTextarea" maxlength="300" placeholder="Tell us about your services (max 300 words)"></textarea>
+          <button class="btn-outline btn" id="saveBioBtn" style="margin-top: 8px;">Save bio</button>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="settings-section">
+          <div class="settings-title">⚙️ Settings</div>
+          <div id="missingContactContainer"></div>
+          <button class="btn-outline btn" id="logoutBtn" style="margin-bottom: 12px;">🚪 Logout</button>
+          <button class="btn-danger" id="deleteAccountBtn">🗑️ Delete Account</button>
+        </div>
+
+        <!-- Leave Review -->
+        <div style="padding: 16px;">
+          <h4 style="margin-bottom: 12px;">Leave a review</h4>
+          <div class="star-rating-input" id="starRatingInput">
+            <span data-star="1">★</span><span data-star="2">★</span><span data-star="3">★</span><span data-star="4">★</span><span data-star="5">★</span>
+          </div>
+          <input type="text" id="reviewText" class="input-field" placeholder="Your review">
+          <button class="btn" id="submitReviewBtn">Submit review</button>
+        </div>
+
+        <!-- Portfolio Grid -->
+        <div class="portfolio-grid" id="portfolioGrid"></div>
       </div>
 
       <!-- Admin Tab -->
@@ -388,16 +544,29 @@
       <button class="tab-item" data-tab="admin" id="adminTabBtn"><span class="tab-icon">⚙️</span>Admin</button>
     </div>
   </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal-overlay hidden">
+    <div class="modal">
+      <h3>Delete Account</h3>
+      <p>Are you sure? This cannot be undone. All your data will be permanently removed.</p>
+      <div class="modal-actions">
+        <button class="btn-outline" id="cancelDeleteBtn" style="margin: 0;">Cancel</button>
+        <button class="btn-danger" id="confirmDeleteBtn" style="margin: 0;">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import { 
     getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    onAuthStateChanged, sendEmailVerification, signOut
+    onAuthStateChanged, sendEmailVerification, signOut, deleteUser
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
   import { 
-    getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, startAfter, getDocs, GeoPoint
+    getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc,
+    collection, query, orderBy, limit, startAfter, getDocs, GeoPoint
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -429,18 +598,28 @@
   const loginError = document.getElementById('loginError');
   const adminTabBtn = document.getElementById('adminTabBtn');
   const homeGrid = document.getElementById('homeGrid');
+  const deleteModal = document.getElementById('deleteModal');
+
+  // Profile elements
+  const profileImage = document.getElementById('profileImage');
+  const profileBusinessName = document.getElementById('profileBusinessName');
+  const profileJobs = document.getElementById('profileJobs');
+  const profileRating = document.getElementById('profileRating');
+  const bioTextarea = document.getElementById('bioTextarea');
+  const missingContactContainer = document.getElementById('missingContactContainer');
+  const portfolioGrid = document.getElementById('portfolioGrid');
 
   // State
   let selectedEmailSkills = new Set();
   let lastVisible = null;
   let loadingMore = false;
+  let currentUser = null;
 
   // ==================== SEED USERS (20 around Auchi) ====================
   async function seedUsers() {
     const usersRef = collection(db, 'users');
     const snapshot = await getDocs(usersRef);
     
-    // Only seed if no users exist
     if (!snapshot.empty) return;
 
     const auchiCenter = { lat: 7.0667, lng: 6.2667 };
@@ -458,7 +637,6 @@
     ];
 
     for (let i = 0; i < 20; i++) {
-      // Random offset within ~5km
       const latOffset = (Math.random() - 0.5) * 0.09;
       const lngOffset = (Math.random() - 0.5) * 0.09;
       
@@ -522,6 +700,78 @@
     }
   }
 
+  // ==================== LOAD PROFILE DATA ====================
+  async function loadProfileData() {
+    if (!auth.currentUser) return;
+    
+    const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      profileBusinessName.textContent = data.businessName || '';
+      profileJobs.textContent = data.jobsDone || 0;
+      profileRating.textContent = data.rating || 0;
+      bioTextarea.value = data.bio || '';
+      profileImage.src = cloudUrl(data.profileImage, 200);
+      
+      const portfolio = data.portfolioImages || ['sample1', 'sample2', 'sample3'];
+      portfolioGrid.innerHTML = portfolio.slice(0, 3).map(img => 
+        `<img src="${cloudUrl(img, 200)}" loading="lazy">`
+      ).join('');
+
+      // Show missing contact options
+      if (!data.email && data.signupMethod === 'phone') {
+        missingContactContainer.innerHTML = `
+          <div class="missing-contact">
+            <h4 style="margin-bottom: 12px;">Add Email</h4>
+            <input type="email" id="newEmail" class="input-field" placeholder="Email">
+            <button class="btn-outline" id="addEmailBtn">Add & Verify</button>
+          </div>
+        `;
+        document.getElementById('addEmailBtn')?.addEventListener('click', addEmail);
+      } else if (!data.phoneNumber && data.signupMethod === 'email') {
+        missingContactContainer.innerHTML = `
+          <div class="missing-contact">
+            <h4 style="margin-bottom: 12px;">Add Phone</h4>
+            <div class="phone-input-container">
+              <select id="newPhoneCode">
+                <option value="+234">🇳🇬 +234</option>
+                <option value="+1">🇺🇸 +1</option>
+                <option value="+44">🇬🇧 +44</option>
+                <option value="+81">🇯🇵 +81</option>
+              </select>
+              <input type="tel" id="newPhone" class="input-field" style="width:70%" placeholder="Phone number">
+            </div>
+            <button class="btn-outline" id="addPhoneBtn">Add & Verify</button>
+          </div>
+        `;
+        document.getElementById('addPhoneBtn')?.addEventListener('click', addPhone);
+      } else {
+        missingContactContainer.innerHTML = '';
+      }
+    }
+  }
+
+  // ==================== ADD EMAIL ====================
+  async function addEmail() {
+    const email = document.getElementById('newEmail')?.value;
+    if (!email || !auth.currentUser) return;
+    
+    await updateDoc(doc(db, 'users', auth.currentUser.uid), { email });
+    alert('Email added. Please check verification.');
+    loadProfileData();
+  }
+
+  // ==================== ADD PHONE ====================
+  async function addPhone() {
+    const code = document.getElementById('newPhoneCode')?.value;
+    const phone = document.getElementById('newPhone')?.value;
+    if (!phone || !auth.currentUser) return;
+    
+    await updateDoc(doc(db, 'users', auth.currentUser.uid), { phoneNumber: code + phone });
+    alert('Phone number added.');
+    loadProfileData();
+  }
+
   // ==================== TAB FUNCTIONS ====================
   function saveCurrentTab(tabId) {
     localStorage.setItem('currentTab', tabId);
@@ -538,6 +788,7 @@
     document.querySelector(`.tab-item[data-tab="${tabId}"]`).classList.add('active');
     saveCurrentTab(tabId);
     if (tabId === 'home') loadProviders(true);
+    if (tabId === 'profile') loadProfileData();
   }
 
   document.querySelectorAll('.tab-item').forEach(btn => {
@@ -687,6 +938,63 @@
     }
   });
 
+  // ==================== SAVE BIO ====================
+  document.getElementById('saveBioBtn').addEventListener('click', async () => {
+    if (!auth.currentUser) return;
+    const bio = bioTextarea.value;
+    await updateDoc(doc(db, 'users', auth.currentUser.uid), { bio });
+    alert('Bio saved');
+  });
+
+  // ==================== LOGOUT ====================
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await signOut(auth);
+  });
+
+  // ==================== DELETE ACCOUNT ====================
+  document.getElementById('deleteAccountBtn').addEventListener('click', () => {
+    deleteModal.classList.remove('hidden');
+  });
+
+  document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+    deleteModal.classList.add('hidden');
+  });
+
+  document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    if (!auth.currentUser) return;
+    
+    try {
+      await deleteDoc(doc(db, 'users', auth.currentUser.uid));
+      await deleteUser(auth.currentUser);
+      deleteModal.classList.add('hidden');
+      alert('Account deleted successfully');
+    } catch (err) {
+      alert('Error deleting account. You may need to re-authenticate.');
+      console.error(err);
+    }
+  });
+
+  // ==================== SUBMIT REVIEW ====================
+  document.getElementById('submitReviewBtn').addEventListener('click', () => {
+    const rating = document.querySelectorAll('#starRatingInput span.selected').length;
+    const text = document.getElementById('reviewText').value;
+    if (rating === 0 || !text) {
+      alert('Select rating and write review');
+      return;
+    }
+    alert('Review submitted (demo)');
+  });
+
+  // Star rating
+  document.querySelectorAll('#starRatingInput span').forEach((star, index) => {
+    star.addEventListener('click', () => {
+      document.querySelectorAll('#starRatingInput span').forEach((s, i) => {
+        if (i <= index) s.classList.add('selected');
+        else s.classList.remove('selected');
+      });
+    });
+  });
+
   // ==================== INFINITE SCROLL ====================
   const sentinel = document.getElementById('sentinel');
   const observer = new IntersectionObserver((entries) => {
@@ -696,6 +1004,7 @@
 
   // ==================== AUTH STATE ====================
   onAuthStateChanged(auth, async (user) => {
+    currentUser = user;
     if (user && user.emailVerified) {
       if (user.email === 'agboghidiaugust@gmail.com') {
         adminTabBtn.style.display = 'flex';
@@ -703,12 +1012,12 @@
         adminTabBtn.style.display = 'none';
       }
       
-      // Seed users if none exist
       await seedUsers();
       
       authContainer.classList.add('hidden');
       mainApp.classList.remove('hidden');
       switchTab(getSavedTab());
+      loadProfileData();
     } else if (user && !user.emailVerified) {
       authContainer.classList.remove('hidden');
       mainApp.classList.add('hidden');
