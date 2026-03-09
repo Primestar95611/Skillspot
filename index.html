@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GigsCourt · Phase 3</title>
+  <title>GigsCourt · Phase 4</title>
   <style>
     * {
       margin: 0;
@@ -178,12 +178,6 @@
       font-size: 14px;
       margin: 16px 0;
     }
-    .tab-placeholder {
-      padding: 40px 20px;
-      text-align: center;
-      color: #6b7280;
-      font-size: 16px;
-    }
     .auth-footer {
       text-align: center;
       margin-top: 20px;
@@ -195,13 +189,75 @@
       font-size: 16px;
       cursor: pointer;
     }
+    /* Home Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px;
+    }
+    .provider-card {
+      background: white;
+      border-radius: 24px;
+      padding: 14px 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(0, 0, 0, 0.02);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .provider-card:active {
+      transform: scale(0.98);
+    }
+    .card-img {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 20px;
+      background: #f0f3f8;
+      object-fit: cover;
+      margin-bottom: 10px;
+    }
+    .business-name {
+      font-weight: 650;
+      font-size: 15px;
+      line-height: 1.3;
+    }
+    .rating-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      margin: 4px 0;
+    }
+    .star {
+      color: #f5b342;
+    }
+    .distance {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .skills {
+      font-size: 12px;
+      color: #8e94a7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tab-placeholder {
+      padding: 40px 20px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 16px;
+    }
+    #sentinel {
+      height: 10px;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
 <div id="app">
   <!-- AUTH CONTAINER -->
   <div id="authContainer" class="auth-container">
-    <!-- Auth Toggle -->
     <div class="auth-toggle">
       <button id="toggleEmailSignup" class="active">Email</button>
       <button id="togglePhoneSignup">Phone</button>
@@ -226,7 +282,7 @@
       </div>
     </div>
 
-    <!-- Phone Signup View (Coming Soon) -->
+    <!-- Phone Signup View -->
     <div id="phoneSignupView" class="hidden">
       <h2>Create with phone</h2>
       <div class="coming-soon">
@@ -285,11 +341,11 @@
     <div class="tab-content" id="tabContent">
       <!-- Home Tab -->
       <div id="homeTab" class="tab-pane">
-        <div class="tab-placeholder">
-          🏠 Home Tab<br><br>
-          <span style="font-size: 14px;">Grid coming in Phase 4</span>
-        </div>
+        <h3 style="padding: 20px 16px 4px; font-size: 26px; font-weight: 650;">Discover<br><span style="font-size:18px;color:#6b7280;">best talents closest to you</span></h3>
+        <div id="homeGrid" class="grid-2"></div>
+        <div id="sentinel"></div>
       </div>
+
       <!-- Search Tab -->
       <div id="searchTab" class="tab-pane hidden">
         <div class="tab-placeholder">
@@ -297,6 +353,7 @@
           <span style="font-size: 14px;">Map coming in Phase 6</span>
         </div>
       </div>
+
       <!-- Messages Tab -->
       <div id="messagesTab" class="tab-pane hidden">
         <div class="tab-placeholder">
@@ -304,6 +361,7 @@
           <span style="font-size: 14px;">Chat coming in Phase 7</span>
         </div>
       </div>
+
       <!-- Profile Tab -->
       <div id="profileTab" class="tab-pane hidden">
         <div class="tab-placeholder">
@@ -311,6 +369,7 @@
           <span style="font-size: 14px;">Profile coming in Phase 5</span>
         </div>
       </div>
+
       <!-- Admin Tab -->
       <div id="adminTab" class="tab-pane hidden">
         <div class="tab-placeholder">
@@ -338,7 +397,7 @@
     onAuthStateChanged, sendEmailVerification, signOut
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
   import { 
-    getFirestore, doc, setDoc
+    getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, startAfter, getDocs, GeoPoint
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -355,6 +414,10 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // Cloudinary
+  const CLOUD_NAME = 'dszdwnuua';
+  const cloudUrl = (id, w = 400) => `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/w_${w},q_auto,f_auto/${id || 'default_avatar'}`;
+
   // DOM elements
   const authContainer = document.getElementById('authContainer');
   const mainApp = document.getElementById('mainApp');
@@ -365,11 +428,101 @@
   const authError = document.getElementById('authError');
   const loginError = document.getElementById('loginError');
   const adminTabBtn = document.getElementById('adminTabBtn');
+  const homeGrid = document.getElementById('homeGrid');
 
   // State
   let selectedEmailSkills = new Set();
+  let lastVisible = null;
+  let loadingMore = false;
 
-  // Tab persistence
+  // ==================== SEED USERS (20 around Auchi) ====================
+  async function seedUsers() {
+    const usersRef = collection(db, 'users');
+    const snapshot = await getDocs(usersRef);
+    
+    // Only seed if no users exist
+    if (!snapshot.empty) return;
+
+    const auchiCenter = { lat: 7.0667, lng: 6.2667 };
+    const businesses = [
+      "Alex Studio", "Maria Beauty", "Tech Pros", "Design Hub", "Barber King",
+      "Photo Magic", "Marketing Gurus", "Write Perfect", "Craft Masters", "Style Lab",
+      "Digital Wizards", "Beauty Spot", "Code Factory", "Art Gallery", "Fitness Pro",
+      "Music School", "Catering Plus", "Drive Safe", "Garden Care", "Pet Paradise"
+    ];
+    const skillsList = [
+      ["Barber", "Styling"], ["Makeup", "Hair"], ["Tech", "Dev"], ["Design", "UI/UX"], ["Barber", "Fade"],
+      ["Photo", "Video"], ["Marketing", "SEO"], ["Writing", "Content"], ["Crafts", "DIY"], ["Fashion", "Style"],
+      ["Web Dev", "App Dev"], ["Skincare", "Massage"], ["Coding", "Tutoring"], ["Painting", "Sculpture"], ["Training", "Coaching"],
+      ["Piano", "Guitar"], ["Cooking", "Baking"], ["Driving", "Logistics"], ["Gardening", "Landscaping"], ["Pet Care", "Walking"]
+    ];
+
+    for (let i = 0; i < 20; i++) {
+      // Random offset within ~5km
+      const latOffset = (Math.random() - 0.5) * 0.09;
+      const lngOffset = (Math.random() - 0.5) * 0.09;
+      
+      const seedUser = {
+        businessName: businesses[i],
+        email: `seed${i}@example.com`,
+        phoneNumber: '',
+        skills: skillsList[i],
+        profileImage: `sample${(i % 3) + 1}`,
+        rating: Number((3.5 + Math.random() * 1.5).toFixed(1)),
+        reviewCount: Math.floor(10 + Math.random() * 500),
+        jobsDone: Math.floor(5 + Math.random() * 200),
+        location: new GeoPoint(auchiCenter.lat + latOffset, auchiCenter.lng + lngOffset),
+        createdAt: Date.now() - Math.random() * 10000000000,
+        portfolioImages: ['sample1', 'sample2', 'sample3'],
+        bio: `Professional ${skillsList[i][0].toLowerCase()} services in Auchi area.`,
+        signupMethod: 'seed',
+        emailVerified: true,
+        phoneVerified: false
+      };
+      
+      await setDoc(doc(db, 'users', `seed_${i}`), seedUser);
+    }
+    console.log('20 seed users added around Auchi');
+  }
+
+  // ==================== LOAD PROVIDERS ====================
+  async function loadProviders(reset = false) {
+    if (reset) {
+      lastVisible = null;
+      homeGrid.innerHTML = '';
+    }
+    if (loadingMore) return;
+    loadingMore = true;
+
+    try {
+      let q = query(collection(db, 'users'), orderBy('rating', 'desc'), limit(6));
+      if (lastVisible) q = query(q, startAfter(lastVisible));
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        lastVisible = snap.docs[snap.docs.length - 1];
+        snap.forEach(doc => {
+          const d = doc.data();
+          const card = document.createElement('div');
+          card.className = 'provider-card';
+          card.innerHTML = `
+            <img class="card-img" src="${cloudUrl(d.profileImage)}" loading="lazy">
+            <div class="business-name">${d.businessName}</div>
+            <div class="rating-row"><span class="star">⭐</span> ${d.rating} (${d.reviewCount})</div>
+            <div class="distance">${(Math.random() * 3 + 0.5).toFixed(1)} km</div>
+            <div class="skills">${d.skills.slice(0, 2).join(', ')}${d.skills.length > 2 ? '…' : ''}</div>
+          `;
+          homeGrid.appendChild(card);
+        });
+      }
+    } catch (err) {
+      console.error('Load error:', err);
+    } finally {
+      loadingMore = false;
+    }
+  }
+
+  // ==================== TAB FUNCTIONS ====================
   function saveCurrentTab(tabId) {
     localStorage.setItem('currentTab', tabId);
   }
@@ -384,9 +537,9 @@
     document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
     document.querySelector(`.tab-item[data-tab="${tabId}"]`).classList.add('active');
     saveCurrentTab(tabId);
+    if (tabId === 'home') loadProviders(true);
   }
 
-  // Tab click handlers
   document.querySelectorAll('.tab-item').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -394,7 +547,7 @@
     });
   });
 
-  // Edge swipe
+  // ==================== EDGE SWIPE ====================
   let touchStartX = 0, touchStartY = 0;
   document.addEventListener('touchstart', (e) => {
     touchStartX = e.touches[0].clientX;
@@ -414,7 +567,7 @@
     }
   }, { passive: true });
 
-  // Auth toggles
+  // ==================== AUTH UI ====================
   document.getElementById('toggleEmailSignup').addEventListener('click', () => {
     document.getElementById('toggleEmailSignup').classList.add('active');
     document.getElementById('togglePhoneSignup').classList.remove('active');
@@ -429,7 +582,6 @@
     emailSignupView.classList.add('hidden');
   });
 
-  // Navigation between signup and login
   document.getElementById('gotoLoginFromSignup').addEventListener('click', () => {
     emailSignupView.classList.add('hidden');
     phoneSignupView.classList.add('hidden');
@@ -448,7 +600,7 @@
     phoneSignupView.classList.add('hidden');
   });
 
-  // Skills selection
+  // ==================== SKILLS ====================
   document.querySelectorAll('#emailSkillsContainer .skill-tag').forEach(tag => {
     tag.addEventListener('click', () => {
       const skill = tag.dataset.skill;
@@ -462,7 +614,7 @@
     });
   });
 
-  // Email signup
+  // ==================== EMAIL SIGNUP ====================
   document.getElementById('signupWithEmailBtn').addEventListener('click', async () => {
     const businessName = document.getElementById('emailBusinessName').value;
     const email = document.getElementById('emailAddress').value;
@@ -485,9 +637,9 @@
         rating: 0,
         reviewCount: 0,
         jobsDone: 0,
-        location: null,
+        location: new GeoPoint(7.0667, 6.2667),
         createdAt: Date.now(),
-        portfolioImages: [],
+        portfolioImages: ['sample1', 'sample2', 'sample3'],
         bio: '',
         signupMethod: 'email',
         emailVerified: false,
@@ -502,7 +654,7 @@
     }
   });
 
-  // Login
+  // ==================== LOGIN ====================
   document.getElementById('loginBtn').addEventListener('click', async () => {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
@@ -513,7 +665,7 @@
     }
   });
 
-  // Check verification
+  // ==================== VERIFICATION ====================
   document.getElementById('checkVerificationBtn').addEventListener('click', async () => {
     if (auth.currentUser) {
       await auth.currentUser.reload();
@@ -528,7 +680,6 @@
     }
   });
 
-  // Resend verification
   document.getElementById('resendVerifyBtn').addEventListener('click', async () => {
     if (auth.currentUser) {
       await sendEmailVerification(auth.currentUser);
@@ -536,14 +687,25 @@
     }
   });
 
-  // Auth state observer
-  onAuthStateChanged(auth, (user) => {
+  // ==================== INFINITE SCROLL ====================
+  const sentinel = document.getElementById('sentinel');
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && !loadingMore) loadProviders();
+  }, { threshold: 0.1 });
+  observer.observe(sentinel);
+
+  // ==================== AUTH STATE ====================
+  onAuthStateChanged(auth, async (user) => {
     if (user && user.emailVerified) {
       if (user.email === 'agboghidiaugust@gmail.com') {
         adminTabBtn.style.display = 'flex';
       } else {
         adminTabBtn.style.display = 'none';
       }
+      
+      // Seed users if none exist
+      await seedUsers();
+      
       authContainer.classList.add('hidden');
       mainApp.classList.remove('hidden');
       switchTab(getSavedTab());
