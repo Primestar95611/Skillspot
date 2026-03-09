@@ -246,10 +246,11 @@
     }
     .distance {
       font-size: 12px;
-      color: #6b7280;
+      color: #0066ff;
       cursor: pointer;
       text-decoration: underline;
       text-decoration-style: dotted;
+      font-weight: 600;
     }
     .skills {
       font-size: 12px;
@@ -473,16 +474,42 @@
       padding: 40px 20px;
       color: #6b7280;
     }
-    .highlighted-pin {
+    /* Custom marker styles */
+    .custom-marker {
+      position: relative;
+    }
+    .marker-container {
+      position: relative;
+      display: inline-block;
+    }
+    .marker-pin {
+      display: block;
+      width: 25px;
+      height: 41px;
+    }
+    .rating-badge {
+      position: absolute;
+      top: -8px;
+      right: -12px;
+      background: #0066ff;
+      color: white;
+      border-radius: 12px;
+      padding: 2px 6px;
+      font-size: 11px;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      z-index: 10;
+      white-space: nowrap;
+    }
+    .highlighted-pin .marker-pin {
       filter: drop-shadow(0 0 10px #0066ff);
-      z-index: 1000;
     }
     @keyframes pulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.2); }
       100% { transform: scale(1); }
     }
-    .pulse-marker {
+    .pulse-marker .marker-pin {
       animation: pulse 1s ease infinite;
     }
   </style>
@@ -878,7 +905,10 @@
     
     // Remove previous highlight
     if (currentHighlightedMarker) {
-      currentHighlightedMarker.getElement()?.classList.remove('highlighted-pin', 'pulse-marker');
+      const prevElement = currentHighlightedMarker.getElement();
+      if (prevElement) {
+        prevElement.classList.remove('highlighted-pin', 'pulse-marker');
+      }
     }
     
     // Find and highlight the marker
@@ -936,12 +966,12 @@
 
     filtered.forEach(user => {
       const rating = user.rating || 0;
+      
+      // Create custom HTML for marker with rating badge
       const iconHtml = `
-        <div style="position: relative; display: inline-block;">
-          <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png" style="width: 25px; height: 41px;">
-          <div style="position: absolute; top: -8px; right: -12px; background: #0066ff; color: white; border-radius: 12px; padding: 2px 6px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-            ${rating}
-          </div>
+        <div class="marker-container">
+          <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png" class="marker-pin">
+          <div class="rating-badge">${rating}</div>
         </div>
       `;
       
@@ -949,7 +979,8 @@
         html: iconHtml,
         className: 'custom-marker',
         iconSize: [25, 41],
-        popupAnchor: [0, -20]
+        iconAnchor: [12, 41],
+        popupAnchor: [0, -41]
       });
 
       const marker = L.marker([user.location.latitude, user.location.longitude], { icon: customIcon }).addTo(map);
