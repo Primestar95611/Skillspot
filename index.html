@@ -1,10 +1,12 @@
+I need to build the complete GigsCourt app with Admin functionality and Resend email integration. Here's the ENTIRE index.html:
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>GigsCourt · chat & proposals</title>
+    <title>GigsCourt · admin & verifications</title>
     <!-- Firebase SDK (v9 modular) -->
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
@@ -58,7 +60,7 @@
             display: none;
         }
 
-        /* chat container (when chat is open) */
+        /* chat container */
         #chatContainer {
             position: absolute;
             top: 0;
@@ -209,7 +211,7 @@
             font-size: 0.95rem;
         }
 
-        /* clean 4-tab bottom navigation */
+        /* bottom navigation - dynamic 4 or 5 tabs */
         .bottom-nav {
             background: #FFFFFF;
             border-top: 1px solid #E5E9F0;
@@ -232,7 +234,7 @@
             font-weight: 500;
             background: transparent;
             border: none;
-            width: 22%;
+            width: 18%;
             padding: 6px 0 4px 0;
             border-radius: 30px;
             cursor: pointer;
@@ -326,9 +328,14 @@
             z-index: 3;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        .premium-badge-card i {
-            margin-right: 4px;
-            color: #0077B5;
+        .verified-badge {
+            display: inline-block;
+            background: #00aa55;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            margin-left: 8px;
         }
 
         /* talent detail overlay */
@@ -628,6 +635,63 @@
             max-width: 200px;
         }
 
+        /* ADMIN TAB STYLES */
+        .admin-panel {
+            padding: 20px;
+        }
+        .admin-stats {
+            background: #F0F7FC;
+            border-radius: 15px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .admin-stats h3 {
+            color: #0077B5;
+            margin-bottom: 8px;
+        }
+        .user-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .user-card {
+            background: #F8FAFF;
+            border: 1px solid #E5E9F0;
+            border-radius: 15px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .user-info h4 {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .user-info p {
+            color: #64748B;
+            font-size: 0.85rem;
+        }
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .admin-btn {
+            background: #0077B5;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .admin-btn.suspend {
+            background: #dc3545;
+        }
+        .admin-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         /* edit profile */
         .edit-profile-form { padding:20px; background:#FFFFFF; }
         .form-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
@@ -721,19 +785,15 @@
             </div>
         </div>
 
-        <div class="bottom-nav" id="bottomNav">
-            <button class="nav-item" data-tab="home" id="tabHome"><i class="fas fa-home"></i><span>Home</span></button>
-            <button class="nav-item" data-tab="search" id="tabSearch"><i class="fas fa-search"></i><span>Search</span></button>
-            <button class="nav-item" data-tab="messages" id="tabMessages"><i class="fas fa-envelope"></i><span>Messages</span></button>
-            <button class="nav-item" data-tab="profile" id="tabProfile"><i class="fas fa-user-circle"></i><span>Profile</span></button>
-        </div>
+        <!-- Bottom Navigation - will be dynamically populated -->
+        <div class="bottom-nav" id="bottomNav"></div>
     </div>
 
     <div class="auth-overlay" id="authOverlay">
         <div class="auth-card">
             <button class="close-auth" id="closeAuthBtn">&times;</button>
             <h2 style="color:#1A1A1A;"><i class="fa-regular fa-gem" style="color:#0077B5;"></i> GigsCourt</h2>
-            <p class="text-small mb-2">chat & proposals</p>
+            <p class="text-small mb-2">admin & verifications</p>
             <div><input type="email" id="authEmail" class="input-field" placeholder="Email"></div>
             <div><input type="password" id="authPassword" class="input-field" placeholder="Password"></div>
             <button class="btn" id="authPrimaryBtn">Login</button>
@@ -790,6 +850,9 @@
         const UPLOAD_PRESET = 'Gigscourt';
         const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
+        // Resend API Key
+        const RESEND_API_KEY = 're_2Za4iVmv_8eVKr3Zhe73drNARKmBknhhS';
+
         // DOM Elements
         const panel = document.getElementById('panel');
         const overlay = document.getElementById('authOverlay');
@@ -801,12 +864,7 @@
         const authToggleBtn = document.getElementById('authToggleBtn');
         const authToggleText = document.getElementById('authToggleText');
         const authMessage = document.getElementById('authMessage');
-
-        const tabHome = document.getElementById('tabHome');
-        const tabSearch = document.getElementById('tabSearch');
-        const tabMessages = document.getElementById('tabMessages');
-        const tabProfile = document.getElementById('tabProfile');
-        const navItems = [tabHome, tabSearch, tabMessages, tabProfile];
+        const bottomNav = document.getElementById('bottomNav');
 
         // Chat elements
         const chatContainer = document.getElementById('chatContainer');
@@ -836,6 +894,35 @@
         let currentChatPartner = null;
         let chatUnsubscribe = null;
         let conversationsListener = null;
+
+        // Admin email constant
+        const ADMIN_EMAIL = 'agboghidiaugust@gmail.com';
+        let isAdmin = false;
+
+        // Resend Email Function
+        async function sendResendEmail(to, subject, html) {
+            try {
+                const response = await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${RESEND_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        from: 'GigsCourt <verify@gigscourt.com>',
+                        to: [to],
+                        subject: subject,
+                        html: html
+                    })
+                });
+                const data = await response.json();
+                console.log('Email sent:', data);
+                return data;
+            } catch (error) {
+                console.error('Error sending email:', error);
+                throw error;
+            }
+        }
 
         // Haversine distance
         function getDistance(lat1, lon1, lat2, lon2) {
@@ -1060,6 +1147,159 @@
             });
         }
 
+        // ADMIN FUNCTIONS
+        async function loadAllUsersForAdmin() {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'users'));
+                const users = [];
+                querySnapshot.forEach((doc) => {
+                    users.push({ id: doc.id, ...doc.data() });
+                });
+                return users;
+            } catch (error) {
+                console.error('Error loading users for admin:', error);
+                return [];
+            }
+        }
+
+        async function verifyUser(userId, userEmail, userName) {
+            try {
+                // Update Firestore
+                await updateDoc(doc(db, 'users', userId), {
+                    isVerified: true,
+                    verifiedAt: serverTimestamp()
+                });
+
+                // Send verification email via Resend
+                await sendResendEmail(
+                    userEmail,
+                    'Congratulations! You are now a Verified Pro on GigsCourt',
+                    `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #0077B5;">Welcome to the Verified Pro Program!</h2>
+                        <p>Dear ${userName || 'Professional'},</p>
+                        <p>We are pleased to inform you that your account has been verified. You are now officially a <strong>Verified Pro</strong> on GigsCourt.</p>
+                        <p>Benefits of being verified:</p>
+                        <ul>
+                            <li>Increased visibility in search results</li>
+                            <li>Trust badge on your profile</li>
+                            <li>Priority in client recommendations</li>
+                            <li>Access to premium opportunities</li>
+                        </ul>
+                        <p>Thank you for being part of our community.</p>
+                        <p>Best regards,<br>The GigsCourt Team</p>
+                    </div>
+                    `
+                );
+
+                return true;
+            } catch (error) {
+                console.error('Error verifying user:', error);
+                return false;
+            }
+        }
+
+        async function suspendUser(userId) {
+            try {
+                await updateDoc(doc(db, 'users', userId), {
+                    isSuspended: true,
+                    suspendedAt: serverTimestamp()
+                });
+                return true;
+            } catch (error) {
+                console.error('Error suspending user:', error);
+                return false;
+            }
+        }
+
+        // Render Admin Panel
+        async function renderAdminPanel() {
+            const users = await loadAllUsersForAdmin();
+            
+            panel.innerHTML = `
+                <div class="admin-panel">
+                    <div class="admin-stats">
+                        <h3>Admin Dashboard</h3>
+                        <p>Total Users: ${users.length}</p>
+                        <p>Verified Users: ${users.filter(u => u.isVerified).length}</p>
+                    </div>
+                    <div class="user-list" id="adminUserList">
+                        ${users.map(user => `
+                            <div class="user-card" data-user-id="${user.id}">
+                                <div class="user-info">
+                                    <h4>${user.displayName || 'Unnamed'} 
+                                        ${user.isVerified ? '<span class="verified-badge"><i class="fas fa-check-circle"></i> Verified</span>' : ''}
+                                        ${user.isSuspended ? '<span style="color:#dc3545; font-size:0.7rem; margin-left:8px;">Suspended</span>' : ''}
+                                    </h4>
+                                    <p>${user.email || 'No email'}</p>
+                                    <p style="font-size:0.75rem;">Category: ${user.category || 'Not set'}</p>
+                                </div>
+                                <div class="user-actions">
+                                    ${!user.isVerified ? `
+                                        <button class="admin-btn verify-btn" data-user-id="${user.id}" data-email="${user.email}" data-name="${user.displayName}">
+                                            <i class="fas fa-check"></i> Verify
+                                        </button>
+                                    ` : ''}
+                                    ${!user.isSuspended ? `
+                                        <button class="admin-btn suspend suspend-btn" data-user-id="${user.id}">
+                                            <i class="fas fa-ban"></i> Suspend
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Add event listeners for verify buttons
+            document.querySelectorAll('.verify-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const userId = btn.dataset.userId;
+                    const userEmail = btn.dataset.email;
+                    const userName = btn.dataset.name;
+                    
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Verifying...';
+                    
+                    const success = await verifyUser(userId, userEmail, userName);
+                    
+                    if (success) {
+                        // Refresh admin panel
+                        await renderAdminPanel();
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-check"></i> Verify';
+                        alert('Failed to verify user. Please try again.');
+                    }
+                });
+            });
+
+            // Add event listeners for suspend buttons
+            document.querySelectorAll('.suspend-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const userId = btn.dataset.userId;
+                    
+                    if (confirm('Are you sure you want to suspend this user?')) {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Suspending...';
+                        
+                        const success = await suspendUser(userId);
+                        
+                        if (success) {
+                            await renderAdminPanel();
+                        } else {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fas fa-ban"></i> Suspend';
+                            alert('Failed to suspend user. Please try again.');
+                        }
+                    }
+                });
+            });
+        }
+
         function initMap() {
             if (!mapInitialized && document.getElementById('map')) {
                 map = L.map('map', {
@@ -1094,7 +1334,7 @@
                 <div class="nearby-item" data-user-id="${p.id}">
                     <div class="nearby-avatar"><i class="fas fa-user-tie"></i></div>
                     <div class="nearby-info">
-                        <h4>${p.displayName || 'Provider'}</h4>
+                        <h4>${p.displayName || 'Provider'} ${p.isVerified ? '<span class="verified-badge"><i class="fas fa-check-circle"></i></span>' : ''}</h4>
                         <p>${p.category || 'Talent'}</p>
                         <div class="location-label"><i class="fas fa-map-pin"></i> ${p.locationLabel || 'Workplace'}</div>
                     </div>
@@ -1128,6 +1368,42 @@
             talentDetailOverlay.classList.add('active');
         }
 
+        // Render bottom navigation based on admin status
+        function renderBottomNav() {
+            const tabs = [
+                { id: 'home', icon: 'fa-home', label: 'Home' },
+                { id: 'search', icon: 'fa-search', label: 'Search' },
+                { id: 'messages', icon: 'fa-envelope', label: 'Messages' },
+                { id: 'profile', icon: 'fa-user-circle', label: 'Profile' }
+            ];
+
+            if (isAdmin) {
+                tabs.push({ id: 'admin', icon: 'fa-shield-alt', label: 'Admin' });
+            }
+
+            bottomNav.innerHTML = tabs.map(tab => `
+                <button class="nav-item" data-tab="${tab.id}" id="tab${tab.id.charAt(0).toUpperCase() + tab.id.slice(1)}">
+                    <i class="fas ${tab.icon}"></i>
+                    <span>${tab.label}</span>
+                </button>
+            `).join('');
+
+            // Re-attach event listeners
+            tabs.forEach(tab => {
+                const element = document.getElementById(`tab${tab.id.charAt(0).toUpperCase() + tab.id.slice(1)}`);
+                if (element) {
+                    element.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        currentTab = tab.id;
+                        setActiveTab(tab.id);
+                        renderPanel(tab.id);
+                    });
+                }
+            });
+
+            setActiveTab(currentTab);
+        }
+
         function renderPanel(tabId) {
             if (tabId === 'home') {
                 panel.innerHTML = `
@@ -1136,7 +1412,10 @@
                             <div class="landscape-card" data-user-id="${user.id}">
                                 <img class="card-bg" src="${user.portfolio_0 || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format'}">
                                 <div class="card-gradient"></div>
-                                <div class="premium-badge-card"><i class="fas fa-crown"></i> PREMIUM</div>
+                                <div class="premium-badge-card">
+                                    <i class="fas fa-crown"></i> PREMIUM
+                                    ${user.isVerified ? '<span style="margin-left:4px;"><i class="fas fa-check-circle"></i></span>' : ''}
+                                </div>
                                 <div class="card-content">
                                     <div class="card-name">${user.displayName || 'Talent'}</div>
                                     <div class="card-category"><i class="fas fa-bolt"></i> ${user.category || 'Professional'}</div>
@@ -1196,6 +1475,8 @@
                     panel.innerHTML = `<div style="padding:40px; text-align:center;"><i class="fas fa-user-circle" style="font-size:5rem; color:#0077B520;"></i><h3 style="margin:20px 0;">sign in</h3><button class="btn" id="showAuthFromProfile">Login / Sign up</button></div>`;
                     document.getElementById('showAuthFromProfile')?.addEventListener('click',()=> overlay.classList.add('show'));
                 }
+            } else if (tabId === 'admin' && isAdmin) {
+                renderAdminPanel();
             }
         }
 
@@ -1207,7 +1488,10 @@
                     <div class="profile-avatar-section">
                         <div class="profile-avatar" id="avatarPreview">${data.avatarUrl ? `<img src="${data.avatarUrl}">` : '<i class="fas fa-user" style="font-size:3rem; line-height:96px; width:100%; text-align:center; color:#0077B5;"></i>'}</div>
                         <input type="file" id="avatarUpload" accept="image/*" style="display:none;"><div class="avatar-upload-btn" id="uploadAvatarBtn"><i class="fas fa-camera"></i></div>
-                        <div class="premium-badge-card" style="position:static;"><i class="fas fa-crown"></i> PREMIUM</div>
+                        <div class="premium-badge-card" style="position:static;">
+                            <i class="fas fa-crown"></i> PREMIUM
+                            ${data.isVerified ? '<span style="margin-left:4px;"><i class="fas fa-check-circle"></i> Verified</span>' : ''}
+                        </div>
                     </div>
                     <div class="profile-stats">
                         <div class="stat-item"><div class="stat-value">48</div><div class="stat-label">gigs</div></div>
@@ -1297,14 +1581,14 @@
         }
 
         function setActiveTab(activeId) {
-            navItems.forEach(item => { if(item.dataset.tab===activeId) item.classList.add('active'); else item.classList.remove('active'); });
+            document.querySelectorAll('.nav-item').forEach(item => {
+                if (item.dataset.tab === activeId) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
         }
-
-        // Navigation
-        tabHome.addEventListener('click', (e) => { e.preventDefault(); currentTab='home'; setActiveTab('home'); renderPanel('home'); });
-        tabSearch.addEventListener('click', (e) => { e.preventDefault(); currentTab='search'; setActiveTab('search'); renderPanel('search'); });
-        tabMessages.addEventListener('click', (e) => { e.preventDefault(); currentTab='messages'; setActiveTab('messages'); renderPanel('messages'); });
-        tabProfile.addEventListener('click', (e) => { e.preventDefault(); currentTab='profile'; setActiveTab('profile'); renderPanel('profile'); });
 
         // Chat handlers
         chatBackBtn.addEventListener('click', () => {
@@ -1343,18 +1627,19 @@
 
         // Auth functions
         function setAuthMode(mode) {
-            currentAuthMode = mode; authPrimaryBtn.innerText = mode==='login'? 'Login' : 'Sign up';
-            authToggleText.innerText = mode==='login'? "Don't have an account?" : 'Already have an account?';
-            authToggleBtn.innerText = mode==='login'? 'Sign up' : 'Login';
+            currentAuthMode = mode; 
+            authPrimaryBtn.innerText = mode === 'login' ? 'Login' : 'Sign up';
+            authToggleText.innerText = mode === 'login' ? "Don't have an account?" : 'Already have an account?';
+            authToggleBtn.innerText = mode === 'login' ? 'Sign up' : 'Login';
         }
         
-        authToggleBtn.addEventListener('click', ()=> setAuthMode(currentAuthMode==='login'? 'signup':'login'));
+        authToggleBtn.addEventListener('click', ()=> setAuthMode(currentAuthMode === 'login' ? 'signup' : 'login'));
         
         authPrimaryBtn.addEventListener('click', async ()=>{
             const email = authEmail.value.trim(), pass = authPassword.value.trim();
             if(!email||!pass) { authMessage.innerText='fill all fields'; return; }
             try {
-                if(currentAuthMode==='login') await signInWithEmailAndPassword(auth,email,pass);
+                if(currentAuthMode === 'login') await signInWithEmailAndPassword(auth,email,pass);
                 else await createUserWithEmailAndPassword(auth,email,pass);
                 overlay.classList.remove('show'); authEmail.value=''; authPassword.value='';
             } catch(error) { authMessage.innerText=error.message; }
@@ -1370,26 +1655,45 @@
         // Auth state observer
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
+            
+            // Check if user is admin
+            isAdmin = user?.email === ADMIN_EMAIL;
+            
+            // Re-render navigation with correct tabs
+            renderBottomNav();
+            
             if(user) {
                 overlay.classList.remove('show');
                 await loadUserProfile(user.uid);
                 await loadAllUsers();
-                if(currentTab==='profile') renderPanel('profile');
-                else if(currentTab==='home') renderPanel('home');
-                else if(currentTab==='search') renderPanel('search');
-                else if(currentTab==='messages') renderPanel('messages');
+                if(currentTab === 'profile') renderPanel('profile');
+                else if(currentTab === 'home') renderPanel('home');
+                else if(currentTab === 'search') renderPanel('search');
+                else if(currentTab === 'messages') renderPanel('messages');
+                else if(currentTab === 'admin' && isAdmin) renderPanel('admin');
+                else {
+                    currentTab = 'home';
+                    setActiveTab('home');
+                    renderPanel('home');
+                }
             } else {
                 userProfileData = {};
-                if(currentTab==='profile') renderPanel('profile');
-                else if(currentTab==='home') renderPanel('home');
-                else if(currentTab==='search') renderPanel('search');
-                else if(currentTab==='messages') renderPanel('messages');
+                isAdmin = false;
+                if(currentTab === 'profile' || currentTab === 'admin') {
+                    currentTab = 'home';
+                    setActiveTab('home');
+                    renderPanel('home');
+                } else {
+                    renderPanel(currentTab);
+                }
             }
         });
 
         // Initialize
-        setAuthMode('login'); setActiveTab('home'); renderPanel('home'); overlay.classList.remove('show');
+        setAuthMode('login'); 
+        renderBottomNav();
+        renderPanel('home'); 
+        overlay.classList.remove('show');
     </script>
 </body>
 </html>
-```
