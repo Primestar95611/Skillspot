@@ -510,7 +510,6 @@
     .pulse-marker .marker-pin {
       animation: pulse 1s ease infinite;
     }
-    /* Messages Tab Styles */
     .conversations-list {
       padding: 16px;
     }
@@ -651,6 +650,38 @@
       justify-content: center;
       font-size: 20px;
       cursor: pointer;
+    }
+    .leaflet-popup-content .message-btn {
+      background: #0066ff;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 16px;
+      margin-top: 8px;
+      width: 100%;
+      cursor: pointer;
+    }
+    .start-chat-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+    }
+    .start-chat-content {
+      background: white;
+      border-radius: 32px;
+      padding: 24px;
+      width: 300px;
+      text-align: center;
+    }
+    .start-chat-content h3 {
+      margin-bottom: 16px;
+    }
+    .start-chat-content .btn {
+      margin: 8px 0;
     }
   </style>
 </head>
@@ -852,6 +883,18 @@
       </div>
     </div>
   </div>
+
+  <!-- Start Chat Modal -->
+  <div id="startChatModal" class="modal-overlay hidden">
+    <div class="modal">
+      <h3 id="startChatModalTitle">Start Chat</h3>
+      <p id="startChatModalMessage">Would you like to start a conversation?</p>
+      <div class="modal-actions">
+        <button class="btn-outline" id="cancelStartChatBtn" style="margin: 0;">Cancel</button>
+        <button class="btn" id="confirmStartChatBtn" style="margin: 0;">Start Chat</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Leaflet JS -->
@@ -911,6 +954,11 @@
   const backToConversations = document.getElementById('backToConversations');
   const chatView = document.getElementById('chatView');
   const messagesTab = document.getElementById('messagesTab');
+  const startChatModal = document.getElementById('startChatModal');
+  const startChatModalTitle = document.getElementById('startChatModalTitle');
+  const startChatModalMessage = document.getElementById('startChatModalMessage');
+  const cancelStartChatBtn = document.getElementById('cancelStartChatBtn');
+  const confirmStartChatBtn = document.getElementById('confirmStartChatBtn');
 
   // Profile elements
   const profileImage = document.getElementById('profileImage');
@@ -938,6 +986,9 @@
   let currentChatPartner = null;
   let unsubscribeMessages = null;
   let unsubscribeConversations = null;
+  let pendingChatUserId = null;
+  let pendingChatUserName = null;
+  let pendingChatUserImage = null;
 
   // ==================== SEED USERS WITH FIXED LOCATIONS ====================
   async function seedUsers() {
@@ -1026,7 +1077,7 @@
     
     card.addEventListener('click', (e) => {
       if (!e.target.classList.contains('distance')) {
-        openQuickView(id, d);
+        showStartChatModal(id, d.businessName, d.profileImage);
       }
     });
     
@@ -1130,12 +1181,28 @@
       });
 
       const marker = L.marker([user.location.latitude, user.location.longitude], { icon: customIcon }).addTo(map);
-      marker.bindPopup(`<b>${user.businessName}</b><br>⭐ ${user.rating} (${user.reviewCount})<br><button class="message-btn" data-id="${user.id}" style="background:#0066ff;color:white;border:none;border-radius:20px;padding:8px 16px;margin-top:8px;width:100%;">Message</button>`);
+      
+      const popupContent = document.createElement('div');
+      popupContent.innerHTML = `
+        <b>${user.businessName}</b><br>
+        ⭐ ${user.rating} (${user.reviewCount})<br>
+        <button class="message-btn" data-id="${user.id}" data-name="${user.businessName}" data-image="${user.profileImage}">Message</button>
+      `;
+      
+      marker.bindPopup(popupContent);
+      
       marker.on('popupopen', () => {
-        document.querySelector('.message-btn')?.addEventListener('click', () => {
-          startChatWithUser(user.id, user.businessName, user.profileImage);
-        });
+        const msgBtn = document.querySelector('.message-btn');
+        if (msgBtn) {
+          msgBtn.addEventListener('click', (e) => {
+            const id = e.target.dataset.id;
+            const name = e.target.dataset.name;
+            const image = e.target.dataset.image;
+            showStartChatModal(id, name, image);
+          });
+        }
       });
+      
       mapMarkers.push(marker);
     });
 
@@ -1165,7 +1232,7 @@
         `;
         item.addEventListener('click', (e) => {
           if (!e.target.classList.contains('distance')) {
-            openQuickView(user.id, user);
+            showStartChatModal(user.id, user.businessName, user.profileImage);
           }
         });
         providerListDrawer.appendChild(item);
@@ -1173,71 +1240,22 @@
     }
   }
 
-  // ==================== OPEN QUICK VIEW ====================
-  function openQuickView(id, data) {
-    if (confirm(`Start chat with ${data.businessName}?`)) {
-      startChatWithUser(id, data.businessName, data.profileImage);
-    }
+  // ==================== SHOW START CHAT MODAL ====================
+  function showStartChatModal(userId, userName, userImage) {
+    pendingChatUserId = userId;
+    pendingChatUserName = userName;
+    pendingChatUserImage = userImage;
+    startChatModalTitle.textContent = `Start chat with ${userName}?`;
+    startChatModalMessage.textContent = `Send a message to ${userName}`;
+    startChatModal.classList.remove('hidden');
   }
 
-  // ==================== MESSAGING FUNCTIONS ====================
-  async function loadConversations() {
-    if (!currentUser) return;
+  // ==================== START CHAT ====================
+  async function startChat() {
+    if (!pendingChatUserId) return;
     
-    const q = query(
-      collection(db, 'chats'),
-      where('participants', 'array-contains', currentUser.uid),
-      orderBy('lastMessageTimestamp', 'desc')
-    );
+    startChatModal.classList.add('hidden');
     
-    unsubscribeConversations = onSnapshot(q, (snapshot) => {
-      conversationsList.innerHTML = '';
-      
-      if (snapshot.empty) {
-        conversationsList.innerHTML = '<div class="empty-state">No conversations yet</div>';
-        return;
-      }
-      
-      snapshot.forEach(async (doc) => {
-        const chat = doc.data();
-        const otherUserId = chat.participants.find(id => id !== currentUser.uid);
-        const userDoc = await getDoc(doc(db, 'users', otherUserId));
-        const userData = userDoc.data();
-        
-        const conversationDiv = document.createElement('div');
-        conversationDiv.className = 'conversation-item';
-        conversationDiv.dataset.chatId = doc.id;
-        conversationDiv.dataset.userId = otherUserId;
-        conversationDiv.dataset.userName = userData.businessName;
-        conversationDiv.dataset.userImage = userData.profileImage;
-        
-        const time = chat.lastMessageTimestamp?.toDate() || new Date();
-        const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        conversationDiv.innerHTML = `
-          <img src="${cloudUrl(userData.profileImage, 100)}" class="conversation-img">
-          <div class="conversation-details">
-            <div class="conversation-name">${userData.businessName}</div>
-            <div class="last-message">
-              ${chat.lastMessageSender === currentUser.uid ? '<span class="blue-tick">✓✓</span>' : ''}
-              ${chat.lastMessage || 'No messages yet'}
-            </div>
-          </div>
-          <div class="timestamp">${timeStr}</div>
-        `;
-        
-        conversationDiv.addEventListener('click', () => {
-          currentChatId = doc.id;
-          currentChatPartner = { id: otherUserId, name: userData.businessName, image: userData.profileImage };
-          openChat();
-        });
-        
-        conversationsList.appendChild(conversationDiv);
-      });
-    });
-  }
-
-  async function startChatWithUser(userId, userName, userImage) {
     if (!currentUser) return;
     
     const q = query(
@@ -1250,7 +1268,7 @@
     
     snapshot.forEach(doc => {
       const chat = doc.data();
-      if (chat.participants.includes(userId)) {
+      if (chat.participants.includes(pendingChatUserId)) {
         existingChat = { id: doc.id, ...chat };
       }
     });
@@ -1259,7 +1277,7 @@
       currentChatId = existingChat.id;
     } else {
       const newChatRef = await addDoc(collection(db, 'chats'), {
-        participants: [currentUser.uid, userId],
+        participants: [currentUser.uid, pendingChatUserId],
         createdAt: Timestamp.now(),
         lastMessage: '',
         lastMessageTimestamp: Timestamp.now(),
@@ -1268,8 +1286,83 @@
       currentChatId = newChatRef.id;
     }
     
-    currentChatPartner = { id: userId, name: userName, image: userImage };
-    openChat();
+    currentChatPartner = { 
+      id: pendingChatUserId, 
+      name: pendingChatUserName, 
+      image: pendingChatUserImage 
+    };
+    
+    switchTab('messages');
+    setTimeout(openChat, 100);
+  }
+
+  // ==================== MESSAGING FUNCTIONS ====================
+  async function loadConversations() {
+    if (!currentUser) return;
+    
+    conversationsList.innerHTML = '<div class="empty-state">Loading conversations...</div>';
+    
+    const q = query(
+      collection(db, 'chats'),
+      where('participants', 'array-contains', currentUser.uid),
+      orderBy('lastMessageTimestamp', 'desc')
+    );
+    
+    if (unsubscribeConversations) {
+      unsubscribeConversations();
+    }
+    
+    unsubscribeConversations = onSnapshot(q, async (snapshot) => {
+      if (snapshot.empty) {
+        conversationsList.innerHTML = '<div class="empty-state">No conversations yet</div>';
+        return;
+      }
+      
+      let html = '';
+      
+      for (const docSnap of snapshot.docs) {
+        const chat = docSnap.data();
+        const otherUserId = chat.participants.find(id => id !== currentUser.uid);
+        const userDoc = await getDoc(doc(db, 'users', otherUserId));
+        
+        if (!userDoc.exists()) continue;
+        
+        const userData = userDoc.data();
+        
+        const time = chat.lastMessageTimestamp?.toDate() || new Date();
+        const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const lastMessage = chat.lastMessage || 'No messages yet';
+        const tick = chat.lastMessageSender === currentUser.uid ? '<span class="blue-tick">✓✓</span>' : '';
+        
+        html += `
+          <div class="conversation-item" data-chat-id="${docSnap.id}" data-user-id="${otherUserId}" data-user-name="${userData.businessName}" data-user-image="${userData.profileImage}">
+            <img src="${cloudUrl(userData.profileImage, 100)}" class="conversation-img">
+            <div class="conversation-details">
+              <div class="conversation-name">${userData.businessName}</div>
+              <div class="last-message">
+                ${tick} ${lastMessage}
+              </div>
+            </div>
+            <div class="timestamp">${timeStr}</div>
+          </div>
+        `;
+      }
+      
+      conversationsList.innerHTML = html;
+      
+      document.querySelectorAll('.conversation-item').forEach(item => {
+        item.addEventListener('click', () => {
+          currentChatId = item.dataset.chatId;
+          currentChatPartner = {
+            id: item.dataset.userId,
+            name: item.dataset.userName,
+            image: item.dataset.userImage
+          };
+          openChat();
+        });
+      });
+    });
   }
 
   function openChat() {
@@ -1291,6 +1384,10 @@
     
     unsubscribeMessages = onSnapshot(q, (snapshot) => {
       messagesContainer.innerHTML = '';
+      
+      if (snapshot.empty) {
+        messagesContainer.innerHTML = '<div class="empty-state">No messages yet. Say hello!</div>';
+      }
       
       snapshot.forEach(doc => {
         const msg = doc.data();
@@ -1454,7 +1551,6 @@
     if (tabId === 'profile') loadProfileData();
     if (tabId === 'search') setTimeout(initMap, 100);
     if (tabId === 'messages') {
-      if (unsubscribeConversations) unsubscribeConversations();
       loadConversations();
     }
   }
@@ -1716,6 +1812,18 @@
         unsubscribeMessages();
       }
     });
+  }
+
+  // ==================== START CHAT MODAL CONTROLS ====================
+  if (cancelStartChatBtn) {
+    cancelStartChatBtn.addEventListener('click', () => {
+      startChatModal.classList.add('hidden');
+      pendingChatUserId = null;
+    });
+  }
+
+  if (confirmStartChatBtn) {
+    confirmStartChatBtn.addEventListener('click', startChat);
   }
 
   // ==================== INFINITE SCROLL ====================
