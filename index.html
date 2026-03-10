@@ -781,6 +781,12 @@
       font-size: 14px;
       border: 1px solid #fecaca;
     }
+
+    /* Disabled button style */
+    .btn-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -1174,6 +1180,7 @@
   let isPulling = false;
   let isTouchingMap = false;
   let cloudinaryReady = false;
+  let isUploading = false; // Flag to prevent multiple upload attempts
 
   console.log('App initialized');
 
@@ -1182,14 +1189,22 @@
     return typeof cloudinary !== 'undefined' && cloudinary;
   }
 
-  // Wait for Cloudinary to be ready
+  // Wait for Cloudinary to be ready - single attempt only
   function waitForCloudinary(callback, maxAttempts = 20) {
+    if (isUploading) {
+      console.log('Upload already in progress, ignoring duplicate click');
+      return;
+    }
+    
+    isUploading = true;
     let attempts = 0;
+    
     const check = () => {
       if (checkCloudinary()) {
         console.log('Cloudinary widget loaded successfully');
         cloudinaryReady = true;
         if (cloudinaryError) cloudinaryError.classList.add('hidden');
+        isUploading = false;
         callback();
       } else if (attempts < maxAttempts) {
         attempts++;
@@ -1203,6 +1218,7 @@
           cloudinaryError.classList.remove('hidden');
         }
         alert(errorMsg);
+        isUploading = false;
       }
     };
     check();
@@ -1356,11 +1372,13 @@
             cloudinaryError.textContent = 'Upload error: ' + (error.message || 'Unknown error');
             cloudinaryError.classList.remove('hidden');
           }
+          isUploading = false; // Reset flag on error
           return;
         }
         if (result && result.event === 'success') {
           console.log('Upload successful, public ID:', result.info.public_id);
           callback(result.info.public_id);
+          isUploading = false; // Reset flag on success
         }
       });
       return widget;
@@ -1371,6 +1389,7 @@
         cloudinaryError.textContent = 'Widget error: ' + err.message;
         cloudinaryError.classList.remove('hidden');
       }
+      isUploading = false; // Reset flag on error
       return null;
     }
   }
@@ -2018,7 +2037,7 @@
     loadProfileData();
   }
 
-  // ==================== PROFILE PICTURE UPLOAD ====================
+  // ==================== PROFILE PICTURE UPLOAD (SINGLE ATTEMPT) ====================
   if (uploadProfilePicBtn) {
     uploadProfilePicBtn.addEventListener('click', () => {
       console.log('Profile picture button clicked');
@@ -2052,7 +2071,7 @@
     });
   }
 
-  // ==================== PORTFOLIO IMAGE UPLOAD ====================
+  // ==================== PORTFOLIO IMAGE UPLOAD (SINGLE ATTEMPT) ====================
   if (addPortfolioBtn) {
     addPortfolioBtn.addEventListener('click', () => {
       console.log('Portfolio button clicked');
