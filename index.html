@@ -1,3 +1,8 @@
+You're right, I apologize. Let me give you the complete working file with the chat history fixed.
+
+Here's the complete index.html with working chat history:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -669,28 +674,6 @@
       margin-top: 8px;
       width: 100%;
       cursor: pointer;
-    }
-    .start-chat-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 3000;
-    }
-    .start-chat-content {
-      background: white;
-      border-radius: 32px;
-      padding: 24px;
-      width: 300px;
-      text-align: center;
-    }
-    .start-chat-content h3 {
-      margin-bottom: 16px;
-    }
-    .start-chat-content .btn {
-      margin: 8px 0;
     }
     .refresh-indicator {
       position: fixed;
@@ -1559,8 +1542,6 @@
       }
       
       let html = '';
-      let lastDate = null;
-      
       snapshot.forEach(doc => {
         const msg = doc.data();
         const time = msg.timestamp?.toDate() || new Date();
