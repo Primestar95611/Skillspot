@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -49,6 +50,7 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       padding-bottom: 90px;
+      position: relative;
     }
     .tab-bar {
       position: fixed;
@@ -558,7 +560,6 @@
       flex-direction: column;
       height: 100%;
       background: #e5ded5;
-      position: relative;
     }
     .chat-header {
       padding: 16px;
@@ -634,8 +635,6 @@
       display: flex;
       gap: 12px;
       align-items: center;
-      position: relative;
-      z-index: 10;
     }
     .chat-input {
       flex: 1;
@@ -693,6 +692,36 @@
     }
     .start-chat-content .btn {
       margin: 8px 0;
+    }
+    .refresh-indicator {
+      position: fixed;
+      top: -60px;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 14px;
+      color: #0066ff;
+      font-weight: 500;
+      z-index: 2000;
+      transition: transform 0.2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      border-bottom: 1px solid #f0f3f8;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .spinner-small {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e5e9f0;
+      border-top-color: #0066ff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
     }
   </style>
 </head>
@@ -821,7 +850,7 @@
             <img id="chatPartnerImg" src="" alt="">
             <h3 id="chatPartnerName"></h3>
           </div>
-          <div class="messages-container" id="messagesContainer" onclick="document.activeElement?.blur()"></div>
+          <div class="messages-container" id="messagesContainer"></div>
           <div class="chat-input-area">
             <input type="text" id="messageInput" class="chat-input" placeholder="Type a message...">
             <button class="send-btn" id="sendMessageBtn">➤</button>
@@ -920,7 +949,7 @@
   import { 
     getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc,
     collection, query, orderBy, limit, startAfter, getDocs, GeoPoint,
-    addDoc, onSnapshot, Timestamp, where, writeBatch
+    addDoc, onSnapshot, Timestamp, where
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -1001,6 +1030,98 @@
   let pendingChatUserName = null;
   let pendingChatUserImage = null;
   let userCache = new Map();
+  let refreshIndicator = null;
+  let pullStartY = 0;
+  let isPulling = false;
+
+  // ==================== PULL TO REFRESH ====================
+  function createRefreshIndicator() {
+    const indicator = document.createElement('div');
+    indicator.className = 'refresh-indicator';
+    indicator.innerHTML = `
+      <div class="spinner-small"></div>
+      <span>Pull to refresh</span>
+    `;
+    document.body.appendChild(indicator);
+    return indicator;
+  }
+
+  function initPullToRefresh() {
+    const tabContent = document.querySelector('.tab-content');
+    
+    tabContent.addEventListener('touchstart', (e) => {
+      if (tabContent.scrollTop === 0) {
+        pullStartY = e.touches[0].clientY;
+        isPulling = true;
+      }
+    }, { passive: true });
+
+    tabContent.addEventListener('touchmove', (e) => {
+      if (!isPulling || tabContent.scrollTop > 0) return;
+      
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - pullStartY;
+      
+      if (diff > 0) {
+        e.preventDefault();
+        const pullDistance = Math.min(diff * 0.5, 80);
+        
+        if (!refreshIndicator) {
+          refreshIndicator = createRefreshIndicator();
+        }
+        
+        refreshIndicator.style.transform = `translateY(${pullDistance + 60}px)`;
+        refreshIndicator.querySelector('span').textContent = pullDistance > 60 ? 'Release to refresh' : 'Pull to refresh';
+      }
+    }, { passive: false });
+
+    tabContent.addEventListener('touchend', async (e) => {
+      if (!isPulling || !refreshIndicator) return;
+      
+      const endY = e.changedTouches[0].clientY;
+      const diff = endY - pullStartY;
+      
+      if (diff > 60 && tabContent.scrollTop === 0) {
+        refreshIndicator.querySelector('span').textContent = 'Refreshing...';
+        
+        const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
+        
+        if (activeTab === 'homeTab') {
+          await loadProviders(true);
+        } else if (activeTab === 'searchTab' && map) {
+          await loadAllUsers();
+          await updateMapAndList();
+        } else if (activeTab === 'messagesTab') {
+          await loadConversations();
+        } else if (activeTab === 'profileTab' && currentUser) {
+          await loadProfileData();
+        }
+        
+        refreshIndicator.style.transform = 'translateY(60px)';
+        setTimeout(() => {
+          refreshIndicator.style.transform = 'translateY(-60px)';
+          setTimeout(() => {
+            if (refreshIndicator) {
+              refreshIndicator.remove();
+              refreshIndicator = null;
+            }
+          }, 200);
+        }, 500);
+      } else {
+        if (refreshIndicator) {
+          refreshIndicator.style.transform = 'translateY(-60px)';
+          setTimeout(() => {
+            if (refreshIndicator) {
+              refreshIndicator.remove();
+              refreshIndicator = null;
+            }
+          }, 200);
+        }
+      }
+      
+      isPulling = false;
+    }, { passive: true });
+  }
 
   // ==================== SEED USERS WITH FIXED LOCATIONS ====================
   async function seedUsers() {
@@ -1123,7 +1244,8 @@
     }
     
     mapMarkers.forEach(marker => {
-      if (marker._latlng.lat === lat && marker._latlng.lng === lng) {
+      const markerLatLng = marker.getLatLng();
+      if (Math.abs(markerLatLng.lat - lat) < 0.0001 && Math.abs(markerLatLng.lng - lng) < 0.0001) {
         const markerElement = marker.getElement();
         if (markerElement) {
           markerElement.classList.add('highlighted-pin', 'pulse-marker');
@@ -1438,17 +1560,12 @@
       }
       
       let html = '';
-      let lastSender = null;
-      let lastTime = null;
+      let lastDate = null;
       
       snapshot.forEach(doc => {
         const msg = doc.data();
         const time = msg.timestamp?.toDate() || new Date();
         const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        const showHeader = lastSender !== msg.senderId || 
-                          !lastTime || 
-                          (time - lastTime) > 600000;
         
         html += `
           <div class="message ${msg.senderId === currentUser.uid ? 'sent' : 'received'}">
@@ -1459,9 +1576,6 @@
             </div>
           </div>
         `;
-        
-        lastSender = msg.senderId;
-        lastTime = time;
       });
       
       messagesContainer.innerHTML = html;
@@ -1917,6 +2031,7 @@
       mainApp.classList.remove('hidden');
       switchTab(getSavedTab());
       await loadProfileData();
+      setTimeout(initPullToRefresh, 500);
     } else if (user && !user.emailVerified) {
       authContainer.classList.remove('hidden');
       mainApp.classList.add('hidden');
