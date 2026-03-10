@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -557,7 +558,8 @@
       display: flex;
       flex-direction: column;
       height: 100%;
-      background: #f5f7fa;
+      background: #e5ded5;
+      position: relative;
     }
     .chat-header {
       padding: 16px;
@@ -566,6 +568,7 @@
       display: flex;
       align-items: center;
       gap: 16px;
+      z-index: 10;
     }
     .chat-header img {
       width: 40px;
@@ -588,16 +591,18 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      -webkit-overflow-scrolling: touch;
     }
     .message {
       max-width: 80%;
       padding: 12px 16px;
       border-radius: 24px;
       position: relative;
+      word-wrap: break-word;
     }
     .message.sent {
-      background: #0066ff;
-      color: white;
+      background: #dcf8c6;
+      color: #1e1e2f;
       align-self: flex-end;
       border-bottom-right-radius: 4px;
     }
@@ -618,17 +623,20 @@
       justify-content: flex-end;
     }
     .message.sent .message-time {
-      color: rgba(255,255,255,0.8);
+      color: #4a4a4a;
     }
     .message.received .message-time {
       color: #9ca3af;
     }
     .chat-input-area {
-      padding: 16px;
+      padding: 12px 16px;
       background: white;
       border-top: 1px solid #f0f3f8;
       display: flex;
       gap: 12px;
+      align-items: center;
+      position: relative;
+      z-index: 10;
     }
     .chat-input {
       flex: 1;
@@ -637,6 +645,10 @@
       border-radius: 40px;
       font-size: 15px;
       background: #fafbfc;
+    }
+    .chat-input:focus {
+      outline: none;
+      border-color: #0066ff;
     }
     .send-btn {
       width: 50px;
@@ -810,7 +822,7 @@
             <img id="chatPartnerImg" src="" alt="">
             <h3 id="chatPartnerName"></h3>
           </div>
-          <div class="messages-container" id="messagesContainer"></div>
+          <div class="messages-container" id="messagesContainer" onclick="document.activeElement?.blur()"></div>
           <div class="chat-input-area">
             <input type="text" id="messageInput" class="chat-input" placeholder="Type a message...">
             <button class="send-btn" id="sendMessageBtn">➤</button>
@@ -909,7 +921,7 @@
   import { 
     getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc,
     collection, query, orderBy, limit, startAfter, getDocs, GeoPoint,
-    addDoc, onSnapshot, Timestamp, where
+    addDoc, onSnapshot, Timestamp, where, writeBatch
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -989,6 +1001,7 @@
   let pendingChatUserId = null;
   let pendingChatUserName = null;
   let pendingChatUserImage = null;
+  let userCache = new Map();
 
   // ==================== SEED USERS WITH FIXED LOCATIONS ====================
   async function seedUsers() {
@@ -1128,6 +1141,7 @@
     allUsers = [];
     snap.forEach(doc => {
       allUsers.push({ id: doc.id, ...doc.data() });
+      userCache.set(doc.id, doc.data());
     });
     return allUsers;
   }
@@ -1296,16 +1310,42 @@
     setTimeout(openChat, 100);
   }
 
+  // ==================== GET USER DATA BATCH ====================
+  async function getUsersBatch(userIds) {
+    const users = [];
+    const uncached = [];
+    
+    userIds.forEach(id => {
+      if (userCache.has(id)) {
+        users.push({ id, ...userCache.get(id) });
+      } else {
+        uncached.push(id);
+      }
+    });
+    
+    if (uncached.length > 0) {
+      const q = query(collection(db, 'users'), where('__name__', 'in', uncached.slice(0, 10)));
+      const snap = await getDocs(q);
+      snap.forEach(doc => {
+        userCache.set(doc.id, doc.data());
+        users.push({ id: doc.id, ...doc.data() });
+      });
+    }
+    
+    return users;
+  }
+
   // ==================== MESSAGING FUNCTIONS ====================
   async function loadConversations() {
     if (!currentUser) return;
     
-    conversationsList.innerHTML = '<div class="empty-state">Loading conversations...</div>';
+    conversationsList.innerHTML = '<div class="empty-state">Loading...</div>';
     
     const q = query(
       collection(db, 'chats'),
       where('participants', 'array-contains', currentUser.uid),
-      orderBy('lastMessageTimestamp', 'desc')
+      orderBy('lastMessageTimestamp', 'desc'),
+      limit(20)
     );
     
     if (unsubscribeConversations) {
@@ -1318,16 +1358,24 @@
         return;
       }
       
+      const chats = [];
+      const userIds = [];
+      
+      snapshot.forEach(doc => {
+        const chat = doc.data();
+        const otherUserId = chat.participants.find(id => id !== currentUser.uid);
+        userIds.push(otherUserId);
+        chats.push({ id: doc.id, ...chat, otherUserId });
+      });
+      
+      const users = await getUsersBatch(userIds);
+      const userMap = new Map(users.map(u => [u.id, u]));
+      
       let html = '';
       
-      for (const docSnap of snapshot.docs) {
-        const chat = docSnap.data();
-        const otherUserId = chat.participants.find(id => id !== currentUser.uid);
-        const userDoc = await getDoc(doc(db, 'users', otherUserId));
-        
-        if (!userDoc.exists()) continue;
-        
-        const userData = userDoc.data();
+      chats.forEach(chat => {
+        const userData = userMap.get(chat.otherUserId);
+        if (!userData) return;
         
         const time = chat.lastMessageTimestamp?.toDate() || new Date();
         const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1336,8 +1384,8 @@
         const tick = chat.lastMessageSender === currentUser.uid ? '<span class="blue-tick">✓✓</span>' : '';
         
         html += `
-          <div class="conversation-item" data-chat-id="${docSnap.id}" data-user-id="${otherUserId}" data-user-name="${userData.businessName}" data-user-image="${userData.profileImage}">
-            <img src="${cloudUrl(userData.profileImage, 100)}" class="conversation-img">
+          <div class="conversation-item" data-chat-id="${chat.id}" data-user-id="${chat.otherUserId}" data-user-name="${userData.businessName}" data-user-image="${userData.profileImage}">
+            <img src="${cloudUrl(userData.profileImage, 100)}" class="conversation-img" loading="lazy">
             <div class="conversation-details">
               <div class="conversation-name">${userData.businessName}</div>
               <div class="last-message">
@@ -1347,7 +1395,7 @@
             <div class="timestamp">${timeStr}</div>
           </div>
         `;
-      }
+      });
       
       conversationsList.innerHTML = html;
       
@@ -1382,32 +1430,42 @@
       orderBy('timestamp', 'asc')
     );
     
+    messagesContainer.innerHTML = '<div class="empty-state">Loading messages...</div>';
+    
     unsubscribeMessages = onSnapshot(q, (snapshot) => {
-      messagesContainer.innerHTML = '';
-      
       if (snapshot.empty) {
         messagesContainer.innerHTML = '<div class="empty-state">No messages yet. Say hello!</div>';
+        return;
       }
+      
+      let html = '';
+      let lastSender = null;
+      let lastTime = null;
       
       snapshot.forEach(doc => {
         const msg = doc.data();
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${msg.senderId === currentUser.uid ? 'sent' : 'received'}`;
-        
         const time = msg.timestamp?.toDate() || new Date();
         const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
-        messageDiv.innerHTML = `
-          <div>${msg.text}</div>
-          <div class="message-time">
-            ${timeStr}
-            ${msg.senderId === currentUser.uid ? '<span class="blue-tick">✓✓</span>' : ''}
+        const showHeader = lastSender !== msg.senderId || 
+                          !lastTime || 
+                          (time - lastTime) > 600000;
+        
+        html += `
+          <div class="message ${msg.senderId === currentUser.uid ? 'sent' : 'received'}">
+            <div>${msg.text}</div>
+            <div class="message-time">
+              ${timeStr}
+              ${msg.senderId === currentUser.uid ? '<span class="blue-tick">✓✓</span>' : ''}
+            </div>
           </div>
         `;
         
-        messagesContainer.appendChild(messageDiv);
+        lastSender = msg.senderId;
+        lastTime = time;
       });
       
+      messagesContainer.innerHTML = html;
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     });
   }
@@ -1415,6 +1473,8 @@
   async function sendMessage() {
     const text = messageInput.value.trim();
     if (!text || !currentChatId || !currentUser) return;
+    
+    messageInput.value = '';
     
     await addDoc(collection(db, 'messages'), {
       chatId: currentChatId,
@@ -1429,8 +1489,6 @@
       lastMessageTimestamp: Timestamp.now(),
       lastMessageSender: currentUser.uid
     });
-    
-    messageInput.value = '';
   }
 
   // ==================== INIT MAP ====================
@@ -1813,6 +1871,18 @@
       }
     });
   }
+
+  // ==================== KEYBOARD DISMISS ON OUTSIDE TAP ====================
+  document.addEventListener('touchstart', (e) => {
+    if (chatView.classList.contains('hidden')) return;
+    
+    const isInput = e.target === messageInput;
+    const isSendButton = e.target === sendMessageBtn;
+    
+    if (!isInput && !isSendButton) {
+      messageInput.blur();
+    }
+  }, { passive: true });
 
   // ==================== START CHAT MODAL CONTROLS ====================
   if (cancelStartChatBtn) {
