@@ -8,8 +8,6 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- PhotoSwipe CSS for Instagram-style gallery -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe.min.css" />
-  <!-- ImageKit JavaScript SDK -->
-  <script src="https://unpkg.com/imagekit-javascript/dist/imagekit.min.js"></script>
   <style>
     * {
       margin: 0;
@@ -1057,7 +1055,6 @@
   // ImageKit config
   const IK_PUBLIC_KEY = 'public_t2gpKmHQ/9binh9kNSsQBq0zsys=';
   const IK_URL_ENDPOINT = 'https://ik.imagekit.io/GigsCourt';
-  const AUTH_ENDPOINT = '/api/imagekit-auth';
   
   const imageKitUrl = (fileId, w = 400) => `${IK_URL_ENDPOINT}/${fileId}?tr=w-${w}`;
 
@@ -1237,7 +1234,7 @@
   }
 
   // ==================== IMAGE COMPRESSION ====================
-  async function compressImage(file) {
+  function compressImage(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -1283,7 +1280,12 @@
   async function uploadToImageKit(file, type) {
     if (isUploading) {
       alert('Upload already in progress');
-      return;
+      return null;
+    }
+
+    if (!currentUser) {
+      alert('You must be logged in to upload');
+      return null;
     }
 
     isUploading = true;
@@ -1292,9 +1294,11 @@
     if (uploadError) uploadError.classList.add('hidden');
 
     try {
+      // Compress the image first
       const compressedFile = await compressImage(file);
       
-      const authResponse = await fetch(AUTH_ENDPOINT);
+      // Get authentication parameters from your API
+      const authResponse = await fetch('/api/imagekit-auth');
       if (!authResponse.ok) {
         throw new Error('Failed to get upload authentication');
       }
@@ -2033,6 +2037,10 @@
   // ==================== PROFILE PICTURE UPLOAD ====================
   if (uploadProfilePicBtn) {
     uploadProfilePicBtn.addEventListener('click', () => {
+      if (!currentUser) {
+        alert('Please log in first');
+        return;
+      }
       currentUploadType = 'profile';
       fileInput.removeAttribute('multiple');
       fileInput.click();
@@ -2042,6 +2050,10 @@
   // ==================== PORTFOLIO IMAGE UPLOAD ====================
   if (addPortfolioBtn) {
     addPortfolioBtn.addEventListener('click', () => {
+      if (!currentUser) {
+        alert('Please log in first');
+        return;
+      }
       currentUploadType = 'portfolio';
       fileInput.setAttribute('multiple', 'multiple');
       fileInput.click();
