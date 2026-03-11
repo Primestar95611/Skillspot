@@ -116,7 +116,7 @@ body {
 .tab-item span:not(.tab-icon) {
   display: none;
 }
-}
+
 h2 { margin-bottom: 24px; font-weight: 600; }
 .input-field {
   width: 100%;
