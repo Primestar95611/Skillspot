@@ -1648,7 +1648,6 @@ onAuthStateChanged(auth, async (user) => {
       adminTabBtn.style.display = 'none';
     }
     
-    await seedUsers();
     authContainer.classList.add('hidden');
     mainApp.classList.remove('hidden');
     switchTab(getSavedTab());
