@@ -1300,7 +1300,7 @@
     sheetOverlay.classList.remove('active');
   }
 
-  // ==================== PULL TO REFRESH - COMBINED FIX ====================
+  // ==================== PULL TO REFRESH - MAXIMUM INTENTIONAL ====================
   function createRefreshIndicator() {
     const indicator = document.createElement('div');
     indicator.className = 'refresh-indicator';
@@ -1339,14 +1339,14 @@
       if (diff > 0) {
         e.preventDefault();
         
-        // APPLY RESISTANCE - the further you pull, the harder it gets
-        // This creates a rubber-band effect that requires intentional force
+        // AGGRESSIVE RESISTANCE - gets very hard very fast
+        // Requires INTENTIONAL force to pull all the way
         let resistance = 1;
-        if (diff > 30) resistance = 0.8;
-        if (diff > 60) resistance = 0.6;
-        if (diff > 90) resistance = 0.4;
-        if (diff > 120) resistance = 0.3;
-        if (diff > 150) resistance = 0.2;
+        if (diff > 30) resistance = 0.7;      // Light resistance
+        if (diff > 60) resistance = 0.4;       // Medium resistance  
+        if (diff > 90) resistance = 0.25;      // Hard resistance
+        if (diff > 120) resistance = 0.15;     // Very hard
+        if (diff > 150) resistance = 0.08;     // Maximum resistance - must really mean it
         
         const pullDistance = Math.min(diff * resistance, 100);
         
@@ -1356,15 +1356,15 @@
         
         refreshIndicator.style.transform = `translateY(${pullDistance + 60}px)`;
         
-        // Update text based on resistance (how hard they're pulling)
+        // More aggressive text prompts
         if (diff > 150) {
-          refreshIndicator.querySelector('span').textContent = 'Really pull hard to refresh';
+          refreshIndicator.querySelector('span').textContent = 'PULL HARDER... almost there!';
         } else if (diff > 120) {
-          refreshIndicator.querySelector('span').textContent = 'Almost there... pull harder';
+          refreshIndicator.querySelector('span').textContent = 'Keep pulling... getting hard';
         } else if (diff > 90) {
-          refreshIndicator.querySelector('span').textContent = 'Keep pulling...';
+          refreshIndicator.querySelector('span').textContent = 'Pull harder...';
         } else if (diff > 60) {
-          refreshIndicator.querySelector('span').textContent = 'Pull further';
+          refreshIndicator.querySelector('span').textContent = 'Keep pulling...';
         } else {
           refreshIndicator.querySelector('span').textContent = 'Pull to refresh';
         }
@@ -1382,8 +1382,8 @@
       const endY = e.changedTouches[0].clientY;
       const diff = endY - pullStartY;
       
-      // Only refresh if they pulled HARD (through the resistance)
-      if (diff > 150 && tabContent.scrollTop === 0) {
+      // HIGH THRESHOLD - 220px requires a very deliberate pull
+      if (diff > 220 && tabContent.scrollTop === 0) {
         refreshIndicator.querySelector('span').textContent = 'Refreshing...';
         
         const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
