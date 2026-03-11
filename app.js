@@ -1,1 +1,1724 @@
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { 
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  onAuthStateChanged, sendEmailVerification, signOut, deleteUser
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { 
+  getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc,
+  collection, query, orderBy, limit, startAfter, getDocs, GeoPoint,
+  addDoc, onSnapshot, Timestamp, where, writeBatch, arrayUnion, arrayRemove
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
+const firebaseConfig = {
+  apiKey: "AIzaSyD7dRYpXukVlyV6ipmCfbCXEJ4kp8t1Gmg",
+  authDomain: "gigscourt.firebaseapp.com",
+  projectId: "gigscourt",
+  storageBucket: "gigscourt.firebasestorage.app",
+  messagingSenderId: "1055157379736",
+  appId: "1:1055157379736:web:215763c63606c2c5a966ed",
+  measurementId: "G-BY1YBSYJHV"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ImageKit config
+const IK_PUBLIC_KEY = 'public_t2gpKmHQ/9binh9kNSsQBq0zsys=';
+const IK_URL_ENDPOINT = 'https://ik.imagekit.io/GigsCourt';
+const DEFAULT_AVATAR = 'https://ik.imagekit.io/GigsCourt/default_avatar';
+
+// Helper to add thumbnail parameters to any ImageKit URL
+const getThumbnailUrl = (url, w = 400) => {
+  if (!url) return DEFAULT_AVATAR;
+  return url.includes('?') ? `${url}&tr=w-${w}` : `${url}?tr=w-${w}`;
+};
+
+// DOM elements
+const authContainer = document.getElementById('authContainer');
+const mainApp = document.getElementById('mainApp');
+const emailSignupView = document.getElementById('emailSignupView');
+const phoneSignupView = document.getElementById('phoneSignupView');
+const loginView = document.getElementById('loginView');
+const verifyView = document.getElementById('verifyView');
+const authError = document.getElementById('authError');
+const loginError = document.getElementById('loginError');
+const adminTabBtn = document.getElementById('adminTabBtn');
+const homeGrid = document.getElementById('homeGrid');
+const deleteModal = document.getElementById('deleteModal');
+const providerListDrawer = document.getElementById('providerListDrawer');
+const radiusSlider = document.getElementById('radiusSlider');
+const radiusValue = document.getElementById('radiusValue');
+const skillSearch = document.getElementById('skillSearch');
+const conversationsList = document.getElementById('conversationsList');
+const messagesContainer = document.getElementById('messagesContainer');
+const messageInput = document.getElementById('messageInput');
+const sendMessageBtn = document.getElementById('sendMessageBtn');
+const chatPartnerImg = document.getElementById('chatPartnerImg');
+const chatPartnerName = document.getElementById('chatPartnerName');
+const backToConversations = document.getElementById('backToConversations');
+const chatView = document.getElementById('chatView');
+const messagesTab = document.getElementById('messagesTab');
+const startChatModal = document.getElementById('startChatModal');
+const startChatModalTitle = document.getElementById('startChatModalTitle');
+const startChatModalMessage = document.getElementById('startChatModalMessage');
+const cancelStartChatBtn = document.getElementById('cancelStartChatBtn');
+const confirmStartChatBtn = document.getElementById('confirmStartChatBtn');
+const fileInput = document.getElementById('fileInput');
+const quickViewSheet = document.getElementById('quickViewSheet');
+const sheetOverlay = document.getElementById('sheetOverlay');
+const sheetContent = document.getElementById('sheetContent');
+const profileViewer = document.getElementById('profileViewer');
+const profileViewerImg = document.getElementById('profileViewerImg');
+const closeProfileViewer = document.getElementById('closeProfileViewer');
+const deletePortfolioModal = document.getElementById('deletePortfolioModal');
+const deletePortfolioOverlay = document.getElementById('deletePortfolioOverlay');
+const cancelDeletePortfolio = document.getElementById('cancelDeletePortfolio');
+const confirmDeletePortfolio = document.getElementById('confirmDeletePortfolio');
+const profileStats = document.getElementById('profileStats');
+const profileReviews = document.getElementById('profileReviews');
+const portfolioCount = document.getElementById('portfolioCount');
+
+// Profile elements
+const profileImage = document.getElementById('profileImage');
+const profileBusinessName = document.getElementById('profileBusinessName');
+const profileJobs = document.getElementById('profileJobs');
+const profileRating = document.getElementById('profileRating');
+const bioTextarea = document.getElementById('bioTextarea');
+const missingContactContainer = document.getElementById('missingContactContainer');
+const portfolioGrid = document.getElementById('portfolioGrid');
+const saveBioBtn = document.getElementById('saveBioBtn');
+const uploadProfilePicBtn = document.getElementById('uploadProfilePicBtn');
+const addPortfolioBtn = document.getElementById('addPortfolioBtn');
+const uploadProgress = document.getElementById('uploadProgress');
+const uploadError = document.getElementById('uploadError');
+
+// State
+let selectedEmailSkills = new Set();
+let lastVisible = null;
+let loadingMore = false;
+let currentUser = null;
+let map = null;
+let mapMarkers = [];
+let allUsers = [];
+let aktuellesSuchwort = '';
+let aktuellerRadius = 25;
+let touchOnMap = false;
+let currentHighlightedMarker = null;
+let currentChatId = null;
+let currentChatPartner = null;
+let unsubscribeMessages = null;
+let unsubscribeConversations = null;
+let pendingChatUserId = null;
+let pendingChatUserName = null;
+let pendingChatUserImage = null;
+let userCache = new Map();
+let refreshIndicator = null;
+let pullStartY = 0;
+let isPulling = false;
+let isTouchingMap = false;
+let isUploading = false;
+let currentUploadType = null;
+let currentSheetProvider = null;
+let longPressTimer = null;
+let selectedImageIndex = null;
+let selectedImageUrl = null;
+let isPullingProfile = false;
+let profilePullStartY = 0;
+let portfolioStartIndex = 0;
+const portfolioBatchSize = 9;
+
+// ==================== IMAGE COMPRESSION ====================
+async function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        const maxSize = 1600;
+        
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          } else {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          const compressedFile = new File([blob], file.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+          });
+          resolve(compressedFile);
+        }, 'image/jpeg', 0.85);
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+  });
+}
+
+// ==================== QUICK-VIEW SHEET ====================
+function openQuickView(providerId, providerData) {
+  currentSheetProvider = { id: providerId, ...providerData };
+  
+  const portfolioImages = providerData.portfolioImages || [
+    'https://ik.imagekit.io/GigsCourt/sample1',
+    'https://ik.imagekit.io/GigsCourt/sample2',
+    'https://ik.imagekit.io/GigsCourt/sample3'
+  ];
+  
+  const bioPreview = providerData.bio ? providerData.bio.substring(0, 100) + '…' : 'No bio yet.';
+  
+  sheetContent.innerHTML = `
+    <div class="sheet-profile-row">
+      <img class="sheet-profile-img" src="${getThumbnailUrl(providerData.profileImage, 200)}">
+      <div>
+        <h3 style="margin-bottom: 4px;">${providerData.businessName || 'Business'}</h3>
+        <div style="color: #4b5563;">⭐ ${providerData.rating || 0} (${providerData.reviewCount || 0}) · 1.2 km</div>
+      </div>
+    </div>
+    <div style="margin: 12px 0; color: #2c3e50;">${(providerData.skills || []).join(' · ')}</div>
+    <div style="color: #6b7280; margin-bottom: 16px;">${bioPreview}</div>
+    <div class="sheet-portfolio-grid">
+      ${portfolioImages.slice(0, 3).map(url => `<img src="${getThumbnailUrl(url, 300)}">`).join('')}
+    </div>
+    <div class="sheet-buttons">
+      <button class="sheet-btn-secondary" id="sheetViewProfileBtn">View Profile</button>
+      <button class="sheet-btn-primary" id="sheetMessageBtn">Message</button>
+    </div>
+  `;
+  
+  quickViewSheet.classList.add('active');
+  sheetOverlay.classList.add('active');
+  
+  document.getElementById('sheetMessageBtn')?.addEventListener('click', () => {
+    closeQuickView();
+    showStartChatModal(providerId, providerData.businessName, providerData.profileImage);
+  });
+  
+  document.getElementById('sheetViewProfileBtn')?.addEventListener('click', () => {
+    alert('Full profile coming in next phase');
+    closeQuickView();
+  });
+}
+
+function closeQuickView() {
+  quickViewSheet.classList.remove('active');
+  sheetOverlay.classList.remove('active');
+}
+
+// ==================== PULL TO REFRESH - INSTAGRAM STYLE ====================
+function createRefreshIndicator() {
+  const indicator = document.createElement('div');
+  indicator.className = 'refresh-indicator';
+  indicator.innerHTML = `
+    <div class="spinner-small"></div>
+    <span>Pull to refresh</span>
+  `;
+  document.body.appendChild(indicator);
+  return indicator;
+}
+
+function initPullToRefresh() {
+  const tabContent = document.querySelector('.tab-content');
+  
+  tabContent.addEventListener('touchstart', (e) => {
+    const mapElement = document.getElementById('map');
+    if (mapElement && mapElement.contains(e.target)) {
+      isTouchingMap = true;
+      return;
+    }
+    isTouchingMap = false;
+    
+    const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
+    if (activeTab === 'searchTab') {
+      isPulling = false;
+      return;
+    }
+    
+    if (tabContent.scrollTop === 0) {
+      pullStartY = e.touches[0].clientY;
+      isPulling = true;
+    }
+  }, { passive: true });
+
+  tabContent.addEventListener('touchmove', (e) => {
+    const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
+    if (activeTab === 'searchTab') {
+      isPulling = false;
+      return;
+    }
+    
+    if (isTouchingMap) return;
+    if (!isPulling || tabContent.scrollTop > 0) return;
+    
+    const currentY = e.touches[0].clientY;
+    let diff = currentY - pullStartY;
+    
+    if (diff > 0) {
+      e.preventDefault();
+      
+      let resistance = 1;
+      if (diff > 30) resistance = 0.7;
+      if (diff > 60) resistance = 0.4;
+      if (diff > 90) resistance = 0.25;
+      
+      const pullDistance = Math.min(diff * resistance, 100);
+      
+      if (!refreshIndicator) {
+        refreshIndicator = createRefreshIndicator();
+      }
+      
+      refreshIndicator.style.transform = `translateY(${pullDistance + 60}px)`;
+      
+      if (diff > 90) {
+        refreshIndicator.querySelector('span').textContent = 'Release to refresh';
+      } else {
+        refreshIndicator.querySelector('span').textContent = 'Pull to refresh';
+      }
+    }
+  }, { passive: false });
+
+  tabContent.addEventListener('touchend', async (e) => {
+    const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
+    if (activeTab === 'searchTab') {
+      isPulling = false;
+      return;
+    }
+    
+    if (isTouchingMap) {
+      isTouchingMap = false;
+      return;
+    }
+    
+    if (!isPulling || !refreshIndicator) return;
+    
+    const endY = e.changedTouches[0].clientY;
+    const diff = endY - pullStartY;
+    
+    if (diff > 100 && tabContent.scrollTop === 0) {
+      refreshIndicator.querySelector('span').textContent = 'Refreshing...';
+      
+      if (activeTab === 'homeTab') {
+        await loadProviders(true);
+      } else if (activeTab === 'messagesTab') {
+        await loadConversations();
+      } else if (activeTab === 'profileTab' && currentUser) {
+        await loadProfileData();
+      }
+      
+      refreshIndicator.style.transform = 'translateY(60px)';
+      setTimeout(() => {
+        refreshIndicator.style.transform = 'translateY(-60px)';
+        setTimeout(() => {
+          if (refreshIndicator) {
+            refreshIndicator.remove();
+            refreshIndicator = null;
+          }
+        }, 200);
+      }, 500);
+    } else {
+      if (refreshIndicator) {
+        refreshIndicator.style.transform = 'translateY(-60px)';
+        setTimeout(() => {
+          if (refreshIndicator) {
+            refreshIndicator.remove();
+            refreshIndicator = null;
+          }
+        }, 200);
+      }
+    }
+    
+    isPulling = false;
+  }, { passive: true });
+}
+
+// ==================== PROFILE TAB PULL TO REFRESH ====================
+function initProfilePullToRefresh() {
+  const profileTab = document.getElementById('profileTab');
+  
+  profileTab.addEventListener('touchstart', (e) => {
+    if (profileTab.scrollTop === 0) {
+      profilePullStartY = e.touches[0].clientY;
+      isPullingProfile = true;
+    }
+  }, { passive: true });
+
+  profileTab.addEventListener('touchmove', (e) => {
+    if (!isPullingProfile || profileTab.scrollTop > 0) return;
+    
+    const currentY = e.touches[0].clientY;
+    let diff = currentY - profilePullStartY;
+    
+    if (diff > 0) {
+      e.preventDefault();
+      
+      let resistance = 1;
+      if (diff > 30) resistance = 0.7;
+      if (diff > 60) resistance = 0.4;
+      if (diff > 90) resistance = 0.25;
+      
+      const pullDistance = Math.min(diff * resistance, 100);
+      
+      if (!refreshIndicator) {
+        refreshIndicator = createRefreshIndicator();
+      }
+      
+      refreshIndicator.style.transform = `translateY(${pullDistance + 60}px)`;
+      
+      if (diff > 90) {
+        refreshIndicator.querySelector('span').textContent = 'Release to refresh';
+      } else {
+        refreshIndicator.querySelector('span').textContent = 'Pull to refresh';
+      }
+    }
+  }, { passive: false });
+
+  profileTab.addEventListener('touchend', async (e) => {
+    if (!isPullingProfile || !refreshIndicator) return;
+    
+    const endY = e.changedTouches[0].clientY;
+    const diff = endY - profilePullStartY;
+    
+    if (diff > 100 && profileTab.scrollTop === 0) {
+      refreshIndicator.querySelector('span').textContent = 'Refreshing...';
+      
+      if (currentUser) {
+        await loadProfileData();
+      }
+      
+      refreshIndicator.style.transform = 'translateY(60px)';
+      setTimeout(() => {
+        refreshIndicator.style.transform = 'translateY(-60px)';
+        setTimeout(() => {
+          if (refreshIndicator) {
+            refreshIndicator.remove();
+            refreshIndicator = null;
+          }
+        }, 200);
+      }, 500);
+    } else {
+      if (refreshIndicator) {
+        refreshIndicator.style.transform = 'translateY(-60px)';
+        setTimeout(() => {
+          if (refreshIndicator) {
+            refreshIndicator.remove();
+            refreshIndicator = null;
+          }
+        }, 200);
+      }
+    }
+    
+    isPullingProfile = false;
+  }, { passive: true });
+}
+
+// ==================== IMAGEKIT UPLOAD ====================
+async function uploadToImageKit(file, type) {
+  if (isUploading) {
+    alert('Upload already in progress');
+    return null;
+  }
+
+  if (!currentUser) {
+    alert('You must be logged in to upload');
+    return null;
+  }
+
+  isUploading = true;
+  currentUploadType = type;
+  uploadProgress.classList.remove('hidden');
+  if (uploadError) uploadError.classList.add('hidden');
+
+  try {
+    const compressedFile = await compressImage(file);
+    
+    const authResponse = await fetch('/api/imagekit-auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fileName: file.name })
+    });
+    
+    if (!authResponse.ok) {
+      throw new Error('Failed to get upload authentication');
+    }
+    const authData = await authResponse.json();
+    
+    const formData = new FormData();
+    formData.append('file', compressedFile);
+    formData.append('publicKey', IK_PUBLIC_KEY);
+    formData.append('signature', authData.signature);
+    formData.append('token', authData.token);
+    formData.append('expire', authData.expire);
+    formData.append('fileName', file.name);
+    formData.append('folder', type === 'profile' ? 'profiles' : 'portfolios');
+    formData.append('useUniqueFileName', 'true');
+
+    const response = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Full ImageKit error response:', errorText);
+      throw new Error(`Upload failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result.url;
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    if (uploadError) {
+      uploadError.textContent = 'Upload failed: ' + error.message;
+      uploadError.classList.remove('hidden');
+    }
+    return null;
+  } finally {
+    uploadProgress.classList.add('hidden');
+    isUploading = false;
+  }
+}
+
+// ==================== PROFILE PICTURE ZOOM ====================
+if (profileImage) {
+  profileImage.addEventListener('click', () => {
+    profileViewerImg.src = profileImage.src;
+    profileViewer.classList.add('active');
+  });
+}
+
+if (closeProfileViewer) {
+  closeProfileViewer.addEventListener('click', () => {
+    profileViewer.classList.remove('active');
+  });
+}
+
+profileViewer?.addEventListener('click', (e) => {
+  if (e.target === profileViewer) {
+    profileViewer.classList.remove('active');
+  }
+});
+
+// ==================== LONG PRESS DELETE ====================
+function setupLongPress() {
+  const images = document.querySelectorAll('.portfolio-item');
+  images.forEach((item, index) => {
+    item.addEventListener('touchstart', (e) => {
+      longPressTimer = setTimeout(() => {
+        const url = item.dataset.url;
+        selectedImageIndex = index;
+        selectedImageUrl = url;
+        deletePortfolioModal.classList.add('active');
+        deletePortfolioOverlay.classList.add('active');
+        item.classList.add('long-press');
+      }, 500);
+    });
+
+    item.addEventListener('touchend', () => {
+      clearTimeout(longPressTimer);
+      item.classList.remove('long-press');
+    });
+
+    item.addEventListener('touchmove', () => {
+      clearTimeout(longPressTimer);
+      item.classList.remove('long-press');
+    });
+    
+    item.addEventListener('click', (e) => {
+      if (e.target.classList.contains('delete-overlay')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+    });
+  });
+}
+
+cancelDeletePortfolio?.addEventListener('click', () => {
+  deletePortfolioModal.classList.remove('active');
+  deletePortfolioOverlay.classList.remove('active');
+});
+
+deletePortfolioOverlay?.addEventListener('click', () => {
+  deletePortfolioModal.classList.remove('active');
+  deletePortfolioOverlay.classList.remove('active');
+});
+
+confirmDeletePortfolio?.addEventListener('click', async () => {
+  if (!currentUser || !selectedImageUrl) return;
+  
+  try {
+    const userRef = doc(db, 'users', currentUser.uid);
+    await updateDoc(userRef, {
+      portfolioImages: arrayRemove(selectedImageUrl)
+    });
+    await loadProfileData();
+  } catch (err) {
+    console.error('Error deleting image:', err);
+    alert('Failed to delete image');
+  } finally {
+    deletePortfolioModal.classList.remove('active');
+    deletePortfolioOverlay.classList.remove('active');
+  }
+});
+
+// ==================== PHOTOSWIPE GALLERY ====================
+function openGallery(images, startIndex = 0) {
+  if (typeof PhotoSwipeLightbox === 'undefined') {
+    alert('Gallery viewer not ready');
+    return;
+  }
+  
+  try {
+    const dataSource = images.map(url => ({
+      src: getThumbnailUrl(url, 1600),
+      width: 1600,
+      height: 1600,
+      alt: 'Portfolio image',
+      thumbnail: getThumbnailUrl(url, 300)
+    }));
+    
+    const lightbox = new PhotoSwipeLightbox({
+      dataSource: dataSource,
+      index: startIndex,
+      pswpModule: PhotoSwipe,
+      bgOpacity: 0.9,
+      loop: true,
+      preload: [1, 2],
+      closeOnVerticalDrag: true,
+      wheelToZoom: true,
+      pinchToClose: true
+    });
+    
+    lightbox.init();
+    lightbox.loadAndOpen(startIndex);
+  } catch (err) {
+    console.error('Gallery error:', err);
+    alert('Could not open gallery');
+  }
+}
+
+// ==================== SEED USERS ====================
+async function seedUsers() {
+  const usersRef = collection(db, 'users');
+  const snapshot = await getDocs(usersRef);
+  if (!snapshot.empty) return;
+
+  const locations = [
+    { lat: 7.0712, lng: 6.2715 }, { lat: 7.0621, lng: 6.2589 }, { lat: 7.0756, lng: 6.2634 },
+    { lat: 7.0689, lng: 6.2778 }, { lat: 7.0734, lng: 6.2691 }, { lat: 7.0645, lng: 6.2723 },
+    { lat: 7.0778, lng: 6.2656 }, { lat: 7.0692, lng: 6.2745 }, { lat: 7.0723, lng: 6.2689 },
+    { lat: 7.0656, lng: 6.2612 }, { lat: 7.0745, lng: 6.2734 }, { lat: 7.0678, lng: 6.2645 },
+    { lat: 7.0719, lng: 6.2767 }, { lat: 7.0634, lng: 6.2678 }, { lat: 7.0765, lng: 6.2701 },
+    { lat: 7.0701, lng: 6.2623 }, { lat: 7.0682, lng: 6.2756 }, { lat: 7.0739, lng: 6.2682 },
+    { lat: 7.0665, lng: 6.2711 }, { lat: 7.0728, lng: 6.2649 }
+  ];
+
+  const businesses = [
+    "Alex Studio", "Maria Beauty", "Tech Pros", "Design Hub", "Barber King",
+    "Photo Magic", "Marketing Gurus", "Write Perfect", "Craft Masters", "Style Lab",
+    "Digital Wizards", "Beauty Spot", "Code Factory", "Art Gallery", "Fitness Pro",
+    "Music School", "Catering Plus", "Drive Safe", "Garden Care", "Pet Paradise"
+  ];
+  
+  const skillsList = [
+    ["Barber", "Styling"], ["Makeup", "Hair"], ["Tech", "Dev"], ["Design", "UI/UX"], ["Barber", "Fade"],
+    ["Photo", "Video"], ["Marketing", "SEO"], ["Writing", "Content"], ["Crafts", "DIY"], ["Fashion", "Style"],
+    ["Web Dev", "App Dev"], ["Skincare", "Massage"], ["Coding", "Tutoring"], ["Painting", "Sculpture"], ["Training", "Coaching"],
+    ["Piano", "Guitar"], ["Cooking", "Baking"], ["Driving", "Logistics"], ["Gardening", "Landscaping"], ["Pet Care", "Walking"]
+  ];
+
+  for (let i = 0; i < 20; i++) {
+    const profileUrl = `https://ik.imagekit.io/GigsCourt/sample${(i % 3) + 1}`;
+    const portfolioUrls = [
+      'https://ik.imagekit.io/GigsCourt/sample1',
+      'https://ik.imagekit.io/GigsCourt/sample2',
+      'https://ik.imagekit.io/GigsCourt/sample3'
+    ];
+    
+    await setDoc(doc(db, 'users', `seed_${i}`), {
+      businessName: businesses[i],
+      email: `seed${i}@example.com`,
+      phoneNumber: '',
+      skills: skillsList[i],
+      profileImage: profileUrl,
+      rating: Number((3.5 + (i * 0.08) % 1.5).toFixed(1)),
+      reviewCount: 50 + (i * 17),
+      jobsDone: 20 + (i * 9),
+      location: new GeoPoint(locations[i].lat, locations[i].lng),
+      createdAt: Date.now() - (i * 86400000),
+      portfolioImages: portfolioUrls,
+      bio: `Professional ${skillsList[i][0].toLowerCase()} services in Auchi area. ${i+1} years experience.`,
+      signupMethod: 'seed',
+      emailVerified: true,
+      phoneVerified: false
+    });
+  }
+}
+
+// ==================== LOAD PROVIDERS ====================
+async function loadProviders(reset = false) {
+  if (reset) { lastVisible = null; homeGrid.innerHTML = ''; }
+  if (loadingMore) return;
+  loadingMore = true;
+  try {
+    let q = query(collection(db, 'users'), orderBy('rating', 'desc'), limit(6));
+    if (lastVisible) q = query(q, startAfter(lastVisible));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      lastVisible = snap.docs[snap.docs.length - 1];
+      snap.forEach(doc => {
+        const d = doc.data();
+        addProviderCard(doc.id, d, 'home');
+      });
+    }
+  } finally { loadingMore = false; }
+}
+
+// ==================== ADD PROVIDER CARD ====================
+function addProviderCard(id, d, source) {
+  const card = document.createElement('div');
+  card.className = 'provider-card';
+  
+  const distance = calculateDistance(d.location);
+  const profileImageUrl = getThumbnailUrl(d.profileImage, 400);
+  
+  card.innerHTML = `
+    <img class="card-img" src="${profileImageUrl}" loading="lazy">
+    <div class="business-name">${d.businessName}</div>
+    <div class="rating-row"><span class="star">⭐</span> ${d.rating} (${d.reviewCount})</div>
+    <div class="distance" data-id="${id}" data-lat="${d.location?.latitude}" data-lng="${d.location?.longitude}" data-source="${source}">${distance} km</div>
+    <div class="skills">${d.skills.slice(0, 2).join(', ')}${d.skills.length > 2 ? '…' : ''}</div>
+  `;
+  
+  card.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('distance')) {
+      openQuickView(id, d);
+    }
+  });
+  
+  homeGrid.appendChild(card);
+}
+
+// ==================== CALCULATE DISTANCE ====================
+function calculateDistance(location) {
+  if (!location) return (Math.random() * 3 + 0.5).toFixed(1);
+  const distance = Math.sqrt(
+    Math.pow((location.latitude - 7.0667) * 111, 2) + 
+    Math.pow((location.longitude - 6.2667) * 111, 2)
+  );
+  return distance.toFixed(1);
+}
+
+// ==================== HIGHLIGHT PROVIDER ON MAP ====================
+async function highlightProviderOnMap(lat, lng, providerId) {
+  if (document.getElementById('searchTab').classList.contains('hidden')) {
+    switchTab('search');
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  
+  map.setView([lat, lng], 15);
+  
+  if (currentHighlightedMarker) {
+    const prevElement = currentHighlightedMarker.getElement();
+    if (prevElement) {
+      prevElement.classList.remove('highlighted-pin', 'pulse-marker');
+    }
+  }
+  
+  mapMarkers.forEach(marker => {
+    const markerLatLng = marker.getLatLng();
+    if (Math.abs(markerLatLng.lat - lat) < 0.0001 && Math.abs(markerLatLng.lng - lng) < 0.0001) {
+      const markerElement = marker.getElement();
+      if (markerElement) {
+        markerElement.classList.add('highlighted-pin', 'pulse-marker');
+        currentHighlightedMarker = marker;
+      }
+      marker.openPopup();
+    }
+  });
+}
+
+// ==================== LOAD ALL USERS ====================
+async function loadAllUsers() {
+  const snap = await getDocs(collection(db, 'users'));
+  allUsers = [];
+  snap.forEach(doc => {
+    allUsers.push({ id: doc.id, ...doc.data() });
+    userCache.set(doc.id, doc.data());
+  });
+  return allUsers;
+}
+
+// ==================== FILTER USERS ====================
+function filterUsers() {
+  return allUsers.filter(user => {
+    if (!user.location) return false;
+    
+    if (aktuellesSuchwort) {
+      const suchwortLower = aktuellesSuchwort.toLowerCase();
+      const skillMatch = user.skills?.some(skill => 
+        skill.toLowerCase().includes(suchwortLower)
+      );
+      if (!skillMatch) return false;
+    }
+    
+    const distance = Math.sqrt(
+      Math.pow((user.location.latitude - 7.0667) * 111, 2) + 
+      Math.pow((user.location.longitude - 6.2667) * 111, 2)
+    );
+    if (distance > aktuellerRadius) return false;
+    
+    return true;
+  });
+}
+
+// ==================== UPDATE MAP ====================
+async function updateMapAndList() {
+  const filtered = filterUsers();
+  
+  mapMarkers.forEach(m => map.removeLayer(m));
+  mapMarkers = [];
+
+  filtered.forEach(user => {
+    const rating = user.rating || 0;
+    
+    const iconHtml = `
+      <div class="marker-container">
+        <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png" class="marker-pin">
+        <div class="rating-badge">${rating}</div>
+      </div>
+    `;
+    
+    const customIcon = L.divIcon({
+      html: iconHtml,
+      className: 'custom-marker',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [0, -41]
+    });
+
+    const marker = L.marker([user.location.latitude, user.location.longitude], { icon: customIcon }).addTo(map);
+    
+    const popupContent = document.createElement('div');
+    popupContent.innerHTML = `
+      <b>${user.businessName}</b><br>
+      ⭐ ${user.rating} (${user.reviewCount})<br>
+      <button class="quick-view-btn" data-id="${user.id}" style="background:#0066ff;color:white;border:none;border-radius:20px;padding:8px 16px;margin-top:8px;width:100%;">View</button>
+    `;
+    
+    marker.bindPopup(popupContent);
+    
+    marker.on('popupopen', () => {
+      const viewBtn = document.querySelector('.quick-view-btn');
+      if (viewBtn) {
+        viewBtn.addEventListener('click', (e) => {
+          const id = e.target.dataset.id;
+          openQuickView(id, user);
+          map.closePopup();
+        });
+      }
+    });
+    
+    mapMarkers.push(marker);
+  });
+
+  if (filtered.length === 0) {
+    providerListDrawer.innerHTML = `
+      <div class="pull-handle"></div>
+      <div class="empty-state">
+        No providers found matching "${aktuellesSuchwort || 'all skills'}" within ${aktuellerRadius}km
+      </div>
+    `;
+  } else {
+    providerListDrawer.innerHTML = '<div class="pull-handle"></div>';
+    filtered.forEach(user => {
+      const distance = Math.sqrt(
+        Math.pow((user.location.latitude - 7.0667) * 111, 2) + 
+        Math.pow((user.location.longitude - 6.2667) * 111, 2)
+      ).toFixed(1);
+      
+      const profileImageUrl = getThumbnailUrl(user.profileImage, 100);
+      
+      const item = document.createElement('div');
+      item.className = 'provider-list-item';
+      item.innerHTML = `
+        <img src="${profileImageUrl}">
+        <div>
+          <strong>${user.businessName}</strong><br>
+          <span style="color: #6b7280;">⭐ ${user.rating} (${user.reviewCount}) · <span class="distance" data-id="${user.id}" data-lat="${user.location.latitude}" data-lng="${user.location.longitude}" data-source="search">${distance}km</span></span>
+        </div>
+      `;
+      item.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('distance')) {
+          openQuickView(user.id, user);
+        }
+      });
+      providerListDrawer.appendChild(item);
+    });
+  }
+}
+
+// ==================== SHOW START CHAT MODAL ====================
+function showStartChatModal(userId, userName, userImage) {
+  pendingChatUserId = userId;
+  pendingChatUserName = userName;
+  pendingChatUserImage = userImage;
+  startChatModalTitle.textContent = `Start chat with ${userName}?`;
+  startChatModalMessage.textContent = `Send a message to ${userName}`;
+  startChatModal.classList.remove('hidden');
+}
+
+// ==================== START CHAT ====================
+async function startChat() {
+  if (!pendingChatUserId) return;
+  
+  startChatModal.classList.add('hidden');
+  
+  if (!currentUser) return;
+  
+  const q = query(
+    collection(db, 'chats'),
+    where('participants', 'array-contains', currentUser.uid)
+  );
+  
+  const snapshot = await getDocs(q);
+  let existingChat = null;
+  
+  snapshot.forEach(doc => {
+    const chat = doc.data();
+    if (chat.participants.includes(pendingChatUserId)) {
+      existingChat = { id: doc.id, ...chat };
+    }
+  });
+  
+  if (existingChat) {
+    currentChatId = existingChat.id;
+  } else {
+    const newChatRef = await addDoc(collection(db, 'chats'), {
+      participants: [currentUser.uid, pendingChatUserId],
+      createdAt: Timestamp.now(),
+      lastMessage: '',
+      lastMessageTimestamp: Timestamp.now(),
+      lastMessageSender: ''
+    });
+    currentChatId = newChatRef.id;
+  }
+  
+  currentChatPartner = { 
+    id: pendingChatUserId, 
+    name: pendingChatUserName, 
+    image: pendingChatUserImage 
+  };
+  
+  switchTab('messages');
+  setTimeout(openChat, 100);
+}
+
+// ==================== GET USER DATA BATCH ====================
+async function getUsersBatch(userIds) {
+  const users = [];
+  const uncached = [];
+  
+  userIds.forEach(id => {
+    if (userCache.has(id)) {
+      users.push({ id, ...userCache.get(id) });
+    } else {
+      uncached.push(id);
+    }
+  });
+  
+  if (uncached.length > 0) {
+    const q = query(collection(db, 'users'), where('__name__', 'in', uncached.slice(0, 10)));
+    const snap = await getDocs(q);
+    snap.forEach(doc => {
+      userCache.set(doc.id, doc.data());
+      users.push({ id: doc.id, ...doc.data() });
+    });
+  }
+  
+  return users;
+}
+
+// ==================== MESSAGING FUNCTIONS ====================
+async function loadConversations() {
+  if (!currentUser) return;
+  
+  conversationsList.innerHTML = '<div class="empty-state">Loading...</div>';
+  
+  const q = query(
+    collection(db, 'chats'),
+    where('participants', 'array-contains', currentUser.uid),
+    orderBy('lastMessageTimestamp', 'desc'),
+    limit(20)
+  );
+  
+  if (unsubscribeConversations) {
+    unsubscribeConversations();
+  }
+  
+  unsubscribeConversations = onSnapshot(q, async (snapshot) => {
+    if (snapshot.empty) {
+      conversationsList.innerHTML = '<div class="empty-state">No conversations yet</div>';
+      return;
+    }
+    
+    const chats = [];
+    const userIds = [];
+    
+    snapshot.forEach(doc => {
+      const chat = doc.data();
+      const otherUserId = chat.participants.find(id => id !== currentUser.uid);
+      userIds.push(otherUserId);
+      chats.push({ id: doc.id, ...chat, otherUserId });
+    });
+    
+    const users = await getUsersBatch(userIds);
+    const userMap = new Map(users.map(u => [u.id, u]));
+    
+    let html = '';
+    
+    chats.forEach(chat => {
+      const userData = userMap.get(chat.otherUserId);
+      if (!userData) return;
+      
+      const profileImageUrl = getThumbnailUrl(userData.profileImage, 100);
+      
+      const time = chat.lastMessageTimestamp?.toDate() || new Date();
+      const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      const lastMessage = chat.lastMessage || 'No messages yet';
+      const tick = chat.lastMessageSender === currentUser.uid ? '<span class="blue-tick">✓✓</span>' : '';
+      
+      html += `
+        <div class="conversation-item" data-chat-id="${chat.id}" data-user-id="${chat.otherUserId}" data-user-name="${userData.businessName}" data-user-image="${userData.profileImage}">
+          <img src="${profileImageUrl}" class="conversation-img" loading="lazy">
+          <div class="conversation-details">
+            <div class="conversation-name">${userData.businessName}</div>
+            <div class="last-message">
+              ${tick} ${lastMessage}
+            </div>
+          </div>
+          <div class="timestamp">${timeStr}</div>
+        </div>
+      `;
+    });
+    
+    conversationsList.innerHTML = html;
+    
+    document.querySelectorAll('.conversation-item').forEach(item => {
+      item.addEventListener('click', () => {
+        currentChatId = item.dataset.chatId;
+        currentChatPartner = {
+          id: item.dataset.userId,
+          name: item.dataset.userName,
+          image: item.dataset.userImage
+        };
+        openChat();
+      });
+    });
+  });
+}
+
+function openChat() {
+  const profileImageUrl = getThumbnailUrl(currentChatPartner.image, 100);
+  chatPartnerImg.src = profileImageUrl;
+  chatPartnerName.textContent = currentChatPartner.name;
+  
+  messagesTab.classList.add('hidden');
+  mainApp.classList.add('hidden');
+  chatView.classList.remove('hidden');
+  
+  if (unsubscribeMessages) {
+    unsubscribeMessages();
+  }
+  
+  const q = query(
+    collection(db, 'messages'),
+    where('chatId', '==', currentChatId),
+    orderBy('timestamp', 'asc')
+  );
+  
+  messagesContainer.innerHTML = '<div class="empty-state">Loading messages...</div>';
+  
+  unsubscribeMessages = onSnapshot(q, async (snapshot) => {
+    if (snapshot.empty) {
+      messagesContainer.innerHTML = '<div class="empty-state">No messages yet. Say hello!</div>';
+      return;
+    }
+    
+    const batch = writeBatch(db);
+    let hasUnread = false;
+    
+    snapshot.forEach(doc => {
+      const msg = doc.data();
+      if (msg.senderId !== currentUser.uid && !msg.read) {
+        batch.update(doc.ref, { read: true });
+        hasUnread = true;
+      }
+    });
+    
+    if (hasUnread) {
+      await batch.commit();
+    }
+    
+    let html = '';
+    snapshot.forEach(doc => {
+      const msg = doc.data();
+      const time = msg.timestamp?.toDate() || new Date();
+      const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      const tickClass = msg.read ? 'tick-red' : 'tick-white';
+      
+      html += `
+        <div class="message ${msg.senderId === currentUser.uid ? 'sent' : 'received'}">
+          <div>${msg.text}</div>
+          <div class="message-time">
+            ${timeStr}
+            ${msg.senderId === currentUser.uid ? `<span class="${tickClass}">✓✓</span>` : ''}
+          </div>
+        </div>
+      `;
+    });
+    
+    messagesContainer.innerHTML = html;
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  });
+}
+
+// ==================== SEND MESSAGE ====================
+async function sendMessage() {
+  const text = messageInput.value.trim();
+  if (!text || !currentChatId || !currentUser) return;
+  
+  messageInput.value = '';
+  
+  try {
+    await addDoc(collection(db, 'messages'), {
+      chatId: currentChatId,
+      senderId: currentUser.uid,
+      text: text,
+      timestamp: Timestamp.now(),
+      read: false
+    });
+    
+    await updateDoc(doc(db, 'chats', currentChatId), {
+      lastMessage: text,
+      lastMessageTimestamp: Timestamp.now(),
+      lastMessageSender: currentUser.uid
+    });
+    
+  } catch (error) {
+    console.error('Error sending message:', error);
+    alert('Failed to send message');
+    messageInput.value = text;
+  }
+}
+
+// ==================== INIT MAP ====================
+async function initMap() {
+  if (map) return;
+  map = L.map('map').setView([7.0667, 6.2667], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+  await loadAllUsers();
+  await updateMapAndList();
+}
+
+// ==================== LOAD PROFILE DATA ====================
+async function loadProfileData() {
+  if (!auth.currentUser) return;
+  const userRef = doc(db, 'users', auth.currentUser.uid);
+  const userDoc = await getDoc(userRef);
+  
+  if (!userDoc.exists()) {
+    const newUser = {
+      businessName: auth.currentUser.email?.split('@')[0] || 'User',
+      email: auth.currentUser.email || '',
+      phoneNumber: '',
+      skills: [],
+      profileImage: DEFAULT_AVATAR,
+      rating: 0,
+      reviewCount: 0,
+      jobsDone: 0,
+      location: new GeoPoint(7.0667, 6.2667),
+      createdAt: Date.now(),
+      portfolioImages: [
+        'https://ik.imagekit.io/GigsCourt/sample1',
+        'https://ik.imagekit.io/GigsCourt/sample2',
+        'https://ik.imagekit.io/GigsCourt/sample3'
+      ],
+      bio: '',
+      signupMethod: 'email',
+      emailVerified: true,
+      phoneVerified: false
+    };
+    await setDoc(userRef, newUser);
+    userDoc.data = () => newUser;
+  }
+  
+  const data = userDoc.data();
+  profileBusinessName.textContent = data.businessName || '';
+  profileJobs.textContent = data.jobsDone || 0;
+  profileRating.textContent = data.rating || 0;
+  profileReviews.textContent = data.reviewCount || 0;
+  bioTextarea.value = data.bio || '';
+  
+  const profileImageUrl = getThumbnailUrl(data.profileImage, 200);
+  profileImage.src = profileImageUrl;
+  
+  const portfolio = data.portfolioImages || [
+    'https://ik.imagekit.io/GigsCourt/sample1',
+    'https://ik.imagekit.io/GigsCourt/sample2',
+    'https://ik.imagekit.io/GigsCourt/sample3'
+  ];
+  
+  portfolioCount.textContent = `(${portfolio.length})`;
+  portfolioGrid.innerHTML = '';
+  portfolioStartIndex = 0;
+  
+  function loadMorePortfolio() {
+    const nextBatch = portfolio.slice(portfolioStartIndex, portfolioStartIndex + portfolioBatchSize);
+    nextBatch.forEach((url, index) => {
+      const actualIndex = portfolioStartIndex + index;
+      const item = document.createElement('div');
+      item.className = 'portfolio-item';
+      item.dataset.url = url;
+      item.dataset.index = actualIndex;
+      
+      const img = document.createElement('img');
+      img.src = getThumbnailUrl(url, 300);
+      img.loading = 'lazy';
+      img.classList.add('lazy-load');
+      
+      img.onload = () => img.classList.add('loaded');
+      
+      img.addEventListener('click', () => {
+        openGallery(portfolio, actualIndex);
+      });
+      
+      const deleteBtn = document.createElement('div');
+      deleteBtn.className = 'delete-overlay';
+      deleteBtn.innerHTML = '×';
+      
+      item.appendChild(img);
+      item.appendChild(deleteBtn);
+      portfolioGrid.appendChild(item);
+    });
+    portfolioStartIndex += nextBatch.length;
+  }
+  
+  loadMorePortfolio();
+  
+  portfolioGrid.addEventListener('scroll', () => {
+    if (portfolioGrid.scrollTop + portfolioGrid.clientHeight >= portfolioGrid.scrollHeight - 100) {
+      if (portfolioStartIndex < portfolio.length) {
+        loadMorePortfolio();
+      }
+    }
+  });
+
+  setupLongPress();
+
+  if (!data.email && data.signupMethod === 'phone') {
+    missingContactContainer.innerHTML = `
+      <div class="missing-contact">
+        <h4 style="margin-bottom: 12px;">Add Email</h4>
+        <input type="email" id="newEmail" class="input-field" placeholder="Email">
+        <button class="btn-outline" id="addEmailBtn">Add & Verify</button>
+      </div>
+    `;
+    document.getElementById('addEmailBtn')?.addEventListener('click', addEmail);
+  } else if (!data.phoneNumber && data.signupMethod === 'email') {
+    missingContactContainer.innerHTML = `
+      <div class="missing-contact">
+        <h4 style="margin-bottom: 12px;">Add Phone</h4>
+        <div class="phone-input-container">
+          <select id="newPhoneCode">
+            <option value="+234">🇳🇬 +234</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="+44">🇬🇧 +44</option>
+            <option value="+81">🇯🇵 +81</option>
+          </select>
+          <input type="tel" id="newPhone" class="input-field" style="width:70%" placeholder="Phone number">
+        </div>
+        <button class="btn-outline" id="addPhoneBtn">Add & Verify</button>
+      </div>
+    `;
+    document.getElementById('addPhoneBtn')?.addEventListener('click', addPhone);
+  } else {
+    missingContactContainer.innerHTML = '';
+  }
+}
+
+async function addEmail() {
+  const email = document.getElementById('newEmail')?.value;
+  if (!email || !auth.currentUser) return;
+  await updateDoc(doc(db, 'users', auth.currentUser.uid), { email });
+  alert('Email added.');
+  loadProfileData();
+}
+
+async function addPhone() {
+  const code = document.getElementById('newPhoneCode')?.value;
+  const phone = document.getElementById('newPhone')?.value;
+  if (!phone || !auth.currentUser) return;
+  await updateDoc(doc(db, 'users', auth.currentUser.uid), { phoneNumber: code + phone });
+  alert('Phone number added.');
+  loadProfileData();
+}
+
+// ==================== FILE INPUT HANDLER ====================
+fileInput.addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+
+  if (currentUploadType === 'portfolio') {
+    for (const file of files) {
+      const url = await uploadToImageKit(file, 'portfolio');
+      if (url) {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userRef, {
+          portfolioImages: arrayUnion(url)
+        });
+      }
+    }
+    await loadProfileData();
+  } 
+  else if (currentUploadType === 'profile' && files[0]) {
+    const url = await uploadToImageKit(files[0], 'profile');
+    if (url) {
+      await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+        profileImage: url
+      });
+      profileImage.src = getThumbnailUrl(url, 200);
+    }
+  }
+
+  fileInput.value = '';
+});
+
+// ==================== PROFILE PICTURE UPLOAD ====================
+if (uploadProfilePicBtn) {
+  uploadProfilePicBtn.addEventListener('click', () => {
+    if (!currentUser) {
+      alert('Please log in first');
+      return;
+    }
+    currentUploadType = 'profile';
+    fileInput.removeAttribute('multiple');
+    fileInput.click();
+  });
+}
+
+// ==================== PORTFOLIO IMAGE UPLOAD ====================
+if (addPortfolioBtn) {
+  addPortfolioBtn.addEventListener('click', () => {
+    if (!currentUser) {
+      alert('Please log in first');
+      return;
+    }
+    currentUploadType = 'portfolio';
+    fileInput.setAttribute('multiple', 'multiple');
+    fileInput.click();
+  });
+}
+
+// ==================== TAB FUNCTIONS ====================
+function saveCurrentTab(tabId) {
+  localStorage.setItem('currentTab', tabId);
+}
+
+function getSavedTab() {
+  return localStorage.getItem('currentTab') || 'home';
+}
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+  document.getElementById(tabId + 'Tab').classList.remove('hidden');
+  document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.tab-item[data-tab="${tabId}"]`).classList.add('active');
+  saveCurrentTab(tabId);
+  if (tabId === 'home') loadProviders(true);
+  if (tabId === 'profile') loadProfileData();
+  if (tabId === 'search') setTimeout(initMap, 100);
+  if (tabId === 'messages') {
+    loadConversations();
+  }
+}
+
+let lastTapTime = 0;
+let lastTapTab = '';
+
+document.querySelectorAll('.tab-item').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const tabId = btn.dataset.tab;
+    const now = Date.now();
+    const isActive = !document.getElementById(tabId + 'Tab').classList.contains('hidden');
+    
+    if (isActive && tabId === lastTapTab && (now - lastTapTime) < 500) {
+      if (tabId === 'home') loadProviders(true);
+      if (tabId === 'search') {
+        loadAllUsers().then(() => updateMapAndList());
+      }
+      if (tabId === 'messages') loadConversations();
+    } else if (isActive) {
+      document.getElementById(tabId + 'Tab').scrollTop = 0;
+    } else {
+      switchTab(tabId);
+    }
+    
+    lastTapTime = now;
+    lastTapTab = tabId;
+  });
+});
+
+// ==================== EDGE SWIPE ====================
+let touchStartX = 0, touchStartY = 0;
+
+document.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  
+  const mapElement = document.getElementById('map');
+  if (mapElement && mapElement.contains(e.target)) {
+    touchOnMap = true;
+  } else {
+    touchOnMap = false;
+  }
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+  if (touchOnMap) return;
+  
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  const width = window.innerWidth;
+  
+  if (Math.abs(dx) > 50 && Math.abs(dy) < 70 && (touchStartX < width * 0.15 || touchStartX > width * 0.85)) {
+    const tabs = ['home', 'search', 'messages', 'profile', 'admin'];
+    const current = tabs.find(t => !document.getElementById(t + 'Tab').classList.contains('hidden'));
+    const idx = tabs.indexOf(current);
+    if (dx > 0 && idx > 0) switchTab(tabs[idx - 1]);
+    else if (dx < 0 && idx < tabs.length - 1) switchTab(tabs[idx + 1]);
+  }
+}, { passive: true });
+
+// ==================== DISTANCE CLICK HANDLER ====================
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('distance')) {
+    const lat = parseFloat(e.target.dataset.lat);
+    const lng = parseFloat(e.target.dataset.lng);
+    const id = e.target.dataset.id;
+    
+    if (lat && lng) {
+      highlightProviderOnMap(lat, lng, id);
+    }
+  }
+});
+
+// ==================== CLOSE QUICK-VIEW ====================
+sheetOverlay.addEventListener('click', closeQuickView);
+
+// ==================== AUTH UI ====================
+document.getElementById('toggleEmailSignup').addEventListener('click', () => {
+  document.getElementById('toggleEmailSignup').classList.add('active');
+  document.getElementById('togglePhoneSignup').classList.remove('active');
+  emailSignupView.classList.remove('hidden');
+  phoneSignupView.classList.add('hidden');
+});
+
+document.getElementById('togglePhoneSignup').addEventListener('click', () => {
+  document.getElementById('togglePhoneSignup').classList.add('active');
+  document.getElementById('toggleEmailSignup').classList.remove('active');
+  phoneSignupView.classList.remove('hidden');
+  emailSignupView.classList.add('hidden');
+});
+
+document.getElementById('gotoLoginFromSignup').addEventListener('click', () => {
+  emailSignupView.classList.add('hidden');
+  phoneSignupView.classList.add('hidden');
+  loginView.classList.remove('hidden');
+});
+
+document.getElementById('gotoLoginFromPhone').addEventListener('click', () => {
+  emailSignupView.classList.add('hidden');
+  phoneSignupView.classList.add('hidden');
+  loginView.classList.remove('hidden');
+});
+
+document.getElementById('gotoSignupFromLogin').addEventListener('click', () => {
+  loginView.classList.add('hidden');
+  emailSignupView.classList.remove('hidden');
+  phoneSignupView.classList.add('hidden');
+});
+
+// ==================== SKILLS ====================
+document.querySelectorAll('#emailSkillsContainer .skill-tag').forEach(tag => {
+  tag.addEventListener('click', () => {
+    const skill = tag.dataset.skill;
+    if (selectedEmailSkills.has(skill)) {
+      selectedEmailSkills.delete(skill);
+      tag.classList.remove('selected');
+    } else {
+      selectedEmailSkills.add(skill);
+      tag.classList.add('selected');
+    }
+  });
+});
+
+// ==================== EMAIL SIGNUP ====================
+document.getElementById('signupWithEmailBtn').addEventListener('click', async () => {
+  const businessName = document.getElementById('emailBusinessName').value;
+  const email = document.getElementById('emailAddress').value;
+  const password = document.getElementById('emailPassword').value;
+  const skills = Array.from(selectedEmailSkills);
+
+  if (!businessName || !email || !password || skills.length === 0) {
+    authError.textContent = 'All fields required and select at least one skill';
+    return;
+  }
+
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      businessName,
+      email,
+      phoneNumber: '',
+      skills,
+      profileImage: DEFAULT_AVATAR,
+      rating: 0,
+      reviewCount: 0,
+      jobsDone: 0,
+      location: new GeoPoint(7.0667, 6.2667),
+      createdAt: Date.now(),
+      portfolioImages: [
+        'https://ik.imagekit.io/GigsCourt/sample1',
+        'https://ik.imagekit.io/GigsCourt/sample2',
+        'https://ik.imagekit.io/GigsCourt/sample3'
+      ],
+      bio: '',
+      signupMethod: 'email',
+      emailVerified: false,
+      phoneVerified: false
+    });
+    await sendEmailVerification(cred.user);
+    emailSignupView.classList.add('hidden');
+    phoneSignupView.classList.add('hidden');
+    verifyView.classList.remove('hidden');
+  } catch (err) {
+    authError.textContent = err.message;
+  }
+});
+
+// ==================== LOGIN ====================
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    loginError.textContent = err.message;
+  }
+});
+
+// ==================== VERIFICATION ====================
+document.getElementById('checkVerificationBtn').addEventListener('click', async () => {
+  if (auth.currentUser) {
+    await auth.currentUser.reload();
+    if (auth.currentUser.emailVerified) {
+      verifyView.classList.add('hidden');
+      authContainer.classList.add('hidden');
+      mainApp.classList.remove('hidden');
+      switchTab(getSavedTab());
+    } else {
+      alert('Email not verified yet');
+    }
+  }
+});
+
+document.getElementById('resendVerifyBtn').addEventListener('click', async () => {
+  if (auth.currentUser) {
+    await sendEmailVerification(auth.currentUser);
+    alert('Verification email resent!');
+  }
+});
+
+// ==================== SAVE BIO ====================
+if (saveBioBtn) {
+  saveBioBtn.addEventListener('click', async () => {
+    if (!auth.currentUser) return;
+    await updateDoc(doc(db, 'users', auth.currentUser.uid), { bio: bioTextarea.value });
+    alert('Bio saved');
+  });
+}
+
+// ==================== LOGOUT ====================
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await signOut(auth);
+});
+
+// ==================== DELETE ACCOUNT ====================
+document.getElementById('deleteAccountBtn').addEventListener('click', () => {
+  deleteModal.classList.remove('hidden');
+});
+
+document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+  deleteModal.classList.add('hidden');
+});
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+  if (!auth.currentUser) return;
+  try {
+    await deleteDoc(doc(db, 'users', auth.currentUser.uid));
+    await deleteUser(auth.currentUser);
+    deleteModal.classList.add('hidden');
+  } catch (err) {
+    alert('Error deleting account');
+  }
+});
+
+// ==================== REVIEW ====================
+document.getElementById('submitReviewBtn').addEventListener('click', () => {
+  alert('Review submitted (demo)');
+});
+
+document.querySelectorAll('#starRatingInput span').forEach((star, index) => {
+  star.addEventListener('click', () => {
+    document.querySelectorAll('#starRatingInput span').forEach((s, i) => {
+      if (i <= index) s.classList.add('selected');
+      else s.classList.remove('selected');
+    });
+  });
+});
+
+// ==================== SEARCH CONTROLS ====================
+if (radiusSlider) {
+  let sliderTimeout;
+  radiusSlider.addEventListener('input', (e) => {
+    aktuellerRadius = parseInt(e.target.value);
+    radiusValue.textContent = aktuellerRadius;
+    
+    clearTimeout(sliderTimeout);
+    sliderTimeout = setTimeout(async () => {
+      if (map) await updateMapAndList();
+    }, 150);
+  });
+}
+
+if (skillSearch) {
+  skillSearch.addEventListener('input', async (e) => {
+    aktuellesSuchwort = e.target.value;
+    if (map) await updateMapAndList();
+  });
+}
+
+// ==================== CHAT CONTROLS ====================
+if (sendMessageBtn) {
+  sendMessageBtn.addEventListener('click', sendMessage);
+}
+
+if (messageInput) {
+  messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+}
+
+if (backToConversations) {
+  backToConversations.addEventListener('click', () => {
+    chatView.classList.add('hidden');
+    mainApp.classList.remove('hidden');
+    messagesTab.classList.remove('hidden');
+    if (unsubscribeMessages) {
+      unsubscribeMessages();
+    }
+  });
+}
+
+// ==================== KEYBOARD DISMISS ====================
+document.addEventListener('touchstart', (e) => {
+  if (chatView.classList.contains('hidden')) return;
+  
+  const isInput = e.target === messageInput;
+  const isSendButton = e.target === sendMessageBtn;
+  
+  if (!isInput && !isSendButton) {
+    messageInput.blur();
+  }
+}, { passive: true });
+
+// ==================== START CHAT MODAL CONTROLS ====================
+if (cancelStartChatBtn) {
+  cancelStartChatBtn.addEventListener('click', () => {
+    startChatModal.classList.add('hidden');
+    pendingChatUserId = null;
+  });
+}
+
+if (confirmStartChatBtn) {
+  confirmStartChatBtn.addEventListener('click', startChat);
+}
+
+// ==================== INFINITE SCROLL ====================
+const sentinel = document.getElementById('sentinel');
+const observer = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting && !loadingMore) loadProviders();
+}, { threshold: 0.1 });
+observer.observe(sentinel);
+
+// ==================== AUTH STATE ====================
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  if (user && user.emailVerified) {
+    if (user.email === 'agboghidiaugust@gmail.com') {
+      adminTabBtn.style.display = 'flex';
+    } else {
+      adminTabBtn.style.display = 'none';
+    }
+    
+    await seedUsers();
+    authContainer.classList.add('hidden');
+    mainApp.classList.remove('hidden');
+    switchTab(getSavedTab());
+    await loadProfileData();
+    setTimeout(initPullToRefresh, 500);
+    setTimeout(initProfilePullToRefresh, 1000);
+  } else if (user && !user.emailVerified) {
+    authContainer.classList.remove('hidden');
+    mainApp.classList.add('hidden');
+    emailSignupView.classList.add('hidden');
+    phoneSignupView.classList.add('hidden');
+    loginView.classList.add('hidden');
+    verifyView.classList.remove('hidden');
+  } else {
+    authContainer.classList.remove('hidden');
+    mainApp.classList.add('hidden');
+    emailSignupView.classList.remove('hidden');
+    phoneSignupView.classList.add('hidden');
+    loginView.classList.add('hidden');
+    verifyView.classList.add('hidden');
+  }
+});
