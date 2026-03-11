@@ -619,63 +619,7 @@ function openGallery(images, startIndex = 0) {
   }
 }
 
-// ==================== SEED USERS ====================
-async function seedUsers() {
-  const usersRef = collection(db, 'users');
-  const snapshot = await getDocs(usersRef);
-  if (!snapshot.empty) return;
 
-  const locations = [
-    { lat: 7.0712, lng: 6.2715 }, { lat: 7.0621, lng: 6.2589 }, { lat: 7.0756, lng: 6.2634 },
-    { lat: 7.0689, lng: 6.2778 }, { lat: 7.0734, lng: 6.2691 }, { lat: 7.0645, lng: 6.2723 },
-    { lat: 7.0778, lng: 6.2656 }, { lat: 7.0692, lng: 6.2745 }, { lat: 7.0723, lng: 6.2689 },
-    { lat: 7.0656, lng: 6.2612 }, { lat: 7.0745, lng: 6.2734 }, { lat: 7.0678, lng: 6.2645 },
-    { lat: 7.0719, lng: 6.2767 }, { lat: 7.0634, lng: 6.2678 }, { lat: 7.0765, lng: 6.2701 },
-    { lat: 7.0701, lng: 6.2623 }, { lat: 7.0682, lng: 6.2756 }, { lat: 7.0739, lng: 6.2682 },
-    { lat: 7.0665, lng: 6.2711 }, { lat: 7.0728, lng: 6.2649 }
-  ];
-
-  const businesses = [
-    "Alex Studio", "Maria Beauty", "Tech Pros", "Design Hub", "Barber King",
-    "Photo Magic", "Marketing Gurus", "Write Perfect", "Craft Masters", "Style Lab",
-    "Digital Wizards", "Beauty Spot", "Code Factory", "Art Gallery", "Fitness Pro",
-    "Music School", "Catering Plus", "Drive Safe", "Garden Care", "Pet Paradise"
-  ];
-  
-  const skillsList = [
-    ["Barber", "Styling"], ["Makeup", "Hair"], ["Tech", "Dev"], ["Design", "UI/UX"], ["Barber", "Fade"],
-    ["Photo", "Video"], ["Marketing", "SEO"], ["Writing", "Content"], ["Crafts", "DIY"], ["Fashion", "Style"],
-    ["Web Dev", "App Dev"], ["Skincare", "Massage"], ["Coding", "Tutoring"], ["Painting", "Sculpture"], ["Training", "Coaching"],
-    ["Piano", "Guitar"], ["Cooking", "Baking"], ["Driving", "Logistics"], ["Gardening", "Landscaping"], ["Pet Care", "Walking"]
-  ];
-
-  for (let i = 0; i < 20; i++) {
-    const profileUrl = `https://ik.imagekit.io/GigsCourt/sample${(i % 3) + 1}`;
-    const portfolioUrls = [
-      'https://ik.imagekit.io/GigsCourt/sample1',
-      'https://ik.imagekit.io/GigsCourt/sample2',
-      'https://ik.imagekit.io/GigsCourt/sample3'
-    ];
-    
-    await setDoc(doc(db, 'users', `seed_${i}`), {
-      businessName: businesses[i],
-      email: `seed${i}@example.com`,
-      phoneNumber: '',
-      skills: skillsList[i],
-      profileImage: profileUrl,
-      rating: Number((3.5 + (i * 0.08) % 1.5).toFixed(1)),
-      reviewCount: 50 + (i * 17),
-      jobsDone: 20 + (i * 9),
-      location: new GeoPoint(locations[i].lat, locations[i].lng),
-      createdAt: Date.now() - (i * 86400000),
-      portfolioImages: portfolioUrls,
-      bio: `Professional ${skillsList[i][0].toLowerCase()} services in Auchi area. ${i+1} years experience.`,
-      signupMethod: 'seed',
-      emailVerified: true,
-      phoneVerified: false
-    });
-  }
-}
 
 // ==================== LOAD PROVIDERS ====================
 async function loadProviders(reset = false) {
