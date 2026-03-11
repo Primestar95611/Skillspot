@@ -22,8 +22,23 @@ export default function handler(req, res) {
       urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
     });
 
-    const authParams = imagekit.getAuthenticationParameters();
-    res.status(200).json(authParams);
+    // Get fileName from query parameter
+    const { fileName } = req.query;
+    
+    if (!fileName) {
+      return res.status(400).json({ error: 'fileName is required' });
+    }
+
+    // Generate authentication parameters with the fileName
+    const token = imagekit.helper.getAuthenticationParameters().token;
+    const expire = imagekit.helper.getAuthenticationParameters().expire;
+    const signature = imagekit.helper.getAuthenticationParameters(token, expire, fileName).signature;
+
+    res.status(200).json({
+      token,
+      expire,
+      signature
+    });
     
   } catch (error) {
     console.error('ImageKit auth error:', error);
