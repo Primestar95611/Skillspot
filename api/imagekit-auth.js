@@ -1,26 +1,35 @@
 import ImageKit from 'imagekit';
 
 export default function handler(req, res) {
-  const imagekit = new ImageKit({
-    publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
-  });
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  
+  try {
+    if (!process.env.IMAGEKIT_PUBLIC_KEY || !process.env.IMAGEKIT_PRIVATE_KEY || !process.env.IMAGEKIT_URL_ENDPOINT) {
+      console.error('Missing environment variables');
+      return res.status(500).json({ 
+        error: 'Missing environment variables',
+        env: {
+          hasPublic: !!process.env.IMAGEKIT_PUBLIC_KEY,
+          hasPrivate: !!process.env.IMAGEKIT_PRIVATE_KEY,
+          hasEndpoint: !!process.env.IMAGEKIT_URL_ENDPOINT
+        }
+      });
+    }
 
-  const authParams = imagekit.getAuthenticationParameters();
-  res.status(200).json(authParams);
-}
-```
+    const imagekit = new ImageKit({
+      publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+      privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+      urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+    });
 
-Step 3: Create package.json in your root folder
-
-Create this file in your root directory:
-
-```json
-{
-  "name": "gigscourt",
-  "version": "1.0.0",
-  "dependencies": {
-    "imagekit": "^5.0.0"
+    const authParams = imagekit.getAuthenticationParameters();
+    res.status(200).json(authParams);
+    
+  } catch (error) {
+    console.error('ImageKit auth error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      stack: error.stack 
+    });
   }
 }
