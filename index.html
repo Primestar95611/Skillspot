@@ -788,6 +788,110 @@
     #fileInput {
       display: none;
     }
+
+    /* Quick-View Bottom Sheet Styles */
+    .quick-view-sheet {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: white;
+      border-radius: 32px 32px 0 0;
+      padding: 24px 20px 30px;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.1, 1);
+      will-change: transform;
+      z-index: 3000;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.08);
+    }
+    
+    .quick-view-sheet.active {
+      transform: translateY(0);
+    }
+    
+    .sheet-handle {
+      width: 48px;
+      height: 5px;
+      background: #d0d5dd;
+      border-radius: 10px;
+      margin: 0 auto 24px;
+    }
+    
+    .sheet-profile-row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .sheet-profile-img {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    
+    .sheet-portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 20px 0;
+    }
+    
+    .sheet-portfolio-grid img {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 16px;
+      object-fit: cover;
+    }
+    
+    .sheet-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    
+    .sheet-btn-primary {
+      flex: 1;
+      background: #0066ff;
+      color: white;
+      border: none;
+      border-radius: 40px;
+      padding: 16px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    
+    .sheet-btn-secondary {
+      flex: 1;
+      background: white;
+      border: 1.5px solid #e0e0e7;
+      color: #1e1e2f;
+      border-radius: 40px;
+      padding: 16px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    
+    .sheet-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(4px);
+      z-index: 2999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    
+    .sheet-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
   </style>
 </head>
 <body>
@@ -998,7 +1102,7 @@
     </div>
   </div>
 
-  <!-- Start Chat Modal -->
+  <!-- Start Chat Modal (still used for direct message initiation) -->
   <div id="startChatModal" class="modal-overlay hidden">
     <div class="modal">
       <h3 id="startChatModalTitle">Start Chat</h3>
@@ -1018,6 +1122,13 @@
 
   <!-- Hidden file input -->
   <input type="file" id="fileInput" accept="image/*" multiple>
+
+  <!-- Quick-View Bottom Sheet (NEW) -->
+  <div class="sheet-overlay" id="sheetOverlay"></div>
+  <div class="quick-view-sheet" id="quickViewSheet">
+    <div class="sheet-handle"></div>
+    <div id="sheetContent"></div>
+  </div>
 </div>
 
 <!-- Leaflet JS -->
@@ -1060,7 +1171,6 @@
   // Helper to add thumbnail parameters to any ImageKit URL
   const getThumbnailUrl = (url, w = 400) => {
     if (!url) return DEFAULT_AVATAR;
-    // Add transformation parameters to existing URL
     return url.includes('?') ? `${url}&tr=w-${w}` : `${url}?tr=w-${w}`;
   };
 
@@ -1095,6 +1205,9 @@
   const cancelStartChatBtn = document.getElementById('cancelStartChatBtn');
   const confirmStartChatBtn = document.getElementById('confirmStartChatBtn');
   const fileInput = document.getElementById('fileInput');
+  const quickViewSheet = document.getElementById('quickViewSheet');
+  const sheetOverlay = document.getElementById('sheetOverlay');
+  const sheetContent = document.getElementById('sheetContent');
 
   // Profile elements
   const profileImage = document.getElementById('profileImage');
@@ -1136,6 +1249,58 @@
   let isTouchingMap = false;
   let isUploading = false;
   let currentUploadType = null;
+  let currentSheetProvider = null;
+
+  // ==================== QUICK-VIEW SHEET FUNCTIONS ====================
+  function openQuickView(providerId, providerData) {
+    currentSheetProvider = { id: providerId, ...providerData };
+    
+    const portfolioImages = providerData.portfolioImages || [
+      'https://ik.imagekit.io/GigsCourt/sample1',
+      'https://ik.imagekit.io/GigsCourt/sample2',
+      'https://ik.imagekit.io/GigsCourt/sample3'
+    ];
+    
+    const bioPreview = providerData.bio ? providerData.bio.substring(0, 100) + '…' : 'No bio yet.';
+    
+    sheetContent.innerHTML = `
+      <div class="sheet-profile-row">
+        <img class="sheet-profile-img" src="${getThumbnailUrl(providerData.profileImage, 200)}">
+        <div>
+          <h3 style="margin-bottom: 4px;">${providerData.businessName || 'Business'}</h3>
+          <div style="color: #4b5563;">⭐ ${providerData.rating || 0} (${providerData.reviewCount || 0}) · 1.2 km</div>
+        </div>
+      </div>
+      <div style="margin: 12px 0; color: #2c3e50;">${(providerData.skills || []).join(' · ')}</div>
+      <div style="color: #6b7280; margin-bottom: 16px;">${bioPreview}</div>
+      <div class="sheet-portfolio-grid">
+        ${portfolioImages.slice(0, 3).map(url => `<img src="${getThumbnailUrl(url, 300)}">`).join('')}
+      </div>
+      <div class="sheet-buttons">
+        <button class="sheet-btn-secondary" id="sheetViewProfileBtn">View Profile</button>
+        <button class="sheet-btn-primary" id="sheetMessageBtn">Message</button>
+      </div>
+    `;
+    
+    quickViewSheet.classList.add('active');
+    sheetOverlay.classList.add('active');
+    
+    // Add event listeners for buttons
+    document.getElementById('sheetMessageBtn')?.addEventListener('click', () => {
+      closeQuickView();
+      showStartChatModal(providerId, providerData.businessName, providerData.profileImage);
+    });
+    
+    document.getElementById('sheetViewProfileBtn')?.addEventListener('click', () => {
+      alert('Full profile coming in next phase');
+      closeQuickView();
+    });
+  }
+  
+  function closeQuickView() {
+    quickViewSheet.classList.remove('active');
+    sheetOverlay.classList.remove('active');
+  }
 
   // ==================== PULL TO REFRESH ====================
   function createRefreshIndicator() {
@@ -1239,9 +1404,13 @@
     }, { passive: true });
   }
 
-  // ==================== IMAGE COMPRESSION - REMOVED FOR TEST ====================
+  // ==================== IMAGE COMPRESSION - TEMPORARILY DISABLED ====================
+  // Will be restored in Phase 2
+  async function compressImage(file) {
+    return file; // Return original file without compression for now
+  }
 
-  // ==================== IMAGEKIT UPLOAD - TEST VERSION (NO COMPRESSION) ====================
+  // ==================== IMAGEKIT UPLOAD ====================
   async function uploadToImageKit(file, type) {
     if (isUploading) {
       alert('Upload already in progress');
@@ -1259,16 +1428,23 @@
     if (uploadError) uploadError.classList.add('hidden');
 
     try {
-      // Step 1: Get authentication parameters from your API with the file name
-      const authResponse = await fetch(`/api/imagekit-auth?fileName=${encodeURIComponent(file.name)}`);
+      const compressedFile = await compressImage(file);
+      
+      const authResponse = await fetch('/api/imagekit-auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileName: file.name })
+      });
+      
       if (!authResponse.ok) {
         throw new Error('Failed to get upload authentication');
       }
       const authData = await authResponse.json();
       
-      // Step 2: Upload the original file (no compression)
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressedFile);
       formData.append('publicKey', IK_PUBLIC_KEY);
       formData.append('signature', authData.signature);
       formData.append('token', authData.token);
@@ -1289,7 +1465,6 @@
       }
 
       const result = await response.json();
-      console.log('Upload successful, URL:', result.url);
       return result.url;
 
     } catch (error) {
@@ -1434,9 +1609,10 @@
       <div class="skills">${d.skills.slice(0, 2).join(', ')}${d.skills.length > 2 ? '…' : ''}</div>
     `;
     
+    // Updated click handler - opens Quick-View instead of chat modal
     card.addEventListener('click', (e) => {
       if (!e.target.classList.contains('distance')) {
-        showStartChatModal(id, d.businessName, d.profileImage);
+        openQuickView(id, d);
       }
     });
     
@@ -1543,25 +1719,23 @@
 
       const marker = L.marker([user.location.latitude, user.location.longitude], { icon: customIcon }).addTo(map);
       
-      const profileImageUrl = getThumbnailUrl(user.profileImage, 100);
-      
+      // Updated popup to have a button that opens Quick-View
       const popupContent = document.createElement('div');
       popupContent.innerHTML = `
         <b>${user.businessName}</b><br>
         ⭐ ${user.rating} (${user.reviewCount})<br>
-        <button class="message-btn" data-id="${user.id}" data-name="${user.businessName}" data-image="${user.profileImage}">Message</button>
+        <button class="quick-view-btn" data-id="${user.id}" style="background:#0066ff;color:white;border:none;border-radius:20px;padding:8px 16px;margin-top:8px;width:100%;">View</button>
       `;
       
       marker.bindPopup(popupContent);
       
       marker.on('popupopen', () => {
-        const msgBtn = document.querySelector('.message-btn');
-        if (msgBtn) {
-          msgBtn.addEventListener('click', (e) => {
+        const viewBtn = document.querySelector('.quick-view-btn');
+        if (viewBtn) {
+          viewBtn.addEventListener('click', (e) => {
             const id = e.target.dataset.id;
-            const name = e.target.dataset.name;
-            const image = e.target.dataset.image;
-            showStartChatModal(id, name, image);
+            openQuickView(id, user);
+            map.closePopup();
           });
         }
       });
@@ -1597,7 +1771,7 @@
         `;
         item.addEventListener('click', (e) => {
           if (!e.target.classList.contains('distance')) {
-            showStartChatModal(user.id, user.businessName, user.profileImage);
+            openQuickView(user.id, user);
           }
         });
         providerListDrawer.appendChild(item);
@@ -2113,6 +2287,9 @@
       }
     }
   });
+
+  // ==================== CLOSE QUICK-VIEW ====================
+  sheetOverlay.addEventListener('click', closeQuickView);
 
   // ==================== AUTH UI ====================
   document.getElementById('toggleEmailSignup').addEventListener('click', () => {
