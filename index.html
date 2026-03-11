@@ -277,8 +277,9 @@
   // Make sure PhotoSwipe is available globally
   window.PhotoSwipe = PhotoSwipe;
   window.PhotoSwipeLightbox = PhotoSwipeLightbox;
+  console.log('PhotoSwipe loaded:', !!window.PhotoSwipe);
 </script>
-<!-- Our app code -->
-<script type="module" src="app.js"></script>
+<!-- Our app code - load AFTER PhotoSwipe -->
+<script type="module" src="app.js" defer></script>
 </body>
 </html>
