@@ -29,9 +29,12 @@ export default function handler(req, res) {
       return res.status(400).json({ error: 'fileName is required' });
     }
 
-    // Generate authentication parameters with the fileName
-    const token = imagekit.helper.getAuthenticationParameters().token;
-    const expire = imagekit.helper.getAuthenticationParameters().expire;
+    // Generate authentication parameters correctly - one call only [citation:1]
+    const authParams = imagekit.helper.getAuthenticationParameters();
+    const token = authParams.token;
+    const expire = authParams.expire;
+    
+    // Generate signature using the SAME token and expire [citation:5]
     const signature = imagekit.helper.getAuthenticationParameters(token, expire, fileName).signature;
 
     res.status(200).json({
