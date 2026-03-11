@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cleanup Seed Users</title>
+</head>
+<body>
+    <h1>Deleting Seed Users...</h1>
+    <div id="status"></div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { 
+            getFirestore, collection, getDocs, deleteDoc, doc 
+        } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD7dRYpXukVlyV6ipmCfbCXEJ4kp8t1Gmg",
+            authDomain: "gigscourt.firebaseapp.com",
+            projectId: "gigscourt",
+            storageBucket: "gigscourt.firebasestorage.app",
+            messagingSenderId: "1055157379736",
+            appId: "1:1055157379736:web:215763c63606c2c5a966ed",
+            measurementId: "G-BY1YBSYJHV"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function deleteSeedUsers() {
+            const status = document.getElementById('status');
+            const usersRef = collection(db, 'users');
+            const snapshot = await getDocs(usersRef);
+            
+            let deletedCount = 0;
+            
+            for (const userDoc of snapshot.docs) {
+                const userData = userDoc.data();
+                
+                // Check if it's a seed user
+                const isSeed = 
+                    userData.email?.includes('seed') || 
+                    userData.email?.includes('example.com') ||
+                    userData.signupMethod === 'seed' ||
+                    userDoc.id.startsWith('seed_');
+                
+                if (isSeed) {
+                    await deleteDoc(doc(db, 'users', userDoc.id));
+                    deletedCount++;
+                    status.innerHTML += `<p>Deleted: ${userData.businessName || userDoc.id}</p>`;
+                }
+            }
+            
+            status.innerHTML += `<h2>Done! Deleted ${deletedCount} seed users.</h2>`;
+        }
+
+        deleteSeedUsers();
+    </script>
+</body>
+</html>
