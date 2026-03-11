@@ -1239,50 +1239,9 @@
     }, { passive: true });
   }
 
-  // ==================== IMAGE COMPRESSION ====================
-  function compressImage(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          let width = img.width;
-          let height = img.height;
-          const maxSize = 1600;
-          
-          if (width > maxSize || height > maxSize) {
-            if (width > height) {
-              height = Math.round((height * maxSize) / width);
-              width = maxSize;
-            } else {
-              width = Math.round((width * maxSize) / height);
-              height = maxSize;
-            }
-          }
-          
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          canvas.toBlob((blob) => {
-            const compressedFile = new File([blob], file.name, {
-              type: 'image/jpeg',
-              lastModified: Date.now()
-            });
-            resolve(compressedFile);
-          }, 'image/jpeg', 0.85);
-        };
-        img.onerror = reject;
-      };
-      reader.onerror = reject;
-    });
-  }
+  // ==================== IMAGE COMPRESSION - REMOVED FOR TEST ====================
 
-  // ==================== IMAGEKIT UPLOAD - RETURNS URL ====================
+  // ==================== IMAGEKIT UPLOAD - TEST VERSION (NO COMPRESSION) ====================
   async function uploadToImageKit(file, type) {
     if (isUploading) {
       alert('Upload already in progress');
@@ -1300,19 +1259,16 @@
     if (uploadError) uploadError.classList.add('hidden');
 
     try {
-      // Step 1: Compress the image first
-      const compressedFile = await compressImage(file);
-      
-      // Step 2: Get authentication parameters from your API with the file name
+      // Step 1: Get authentication parameters from your API with the file name
       const authResponse = await fetch(`/api/imagekit-auth?fileName=${encodeURIComponent(file.name)}`);
       if (!authResponse.ok) {
         throw new Error('Failed to get upload authentication');
       }
       const authData = await authResponse.json();
       
-      // Step 3: Upload the compressed file with the auth parameters
+      // Step 2: Upload the original file (no compression)
       const formData = new FormData();
-      formData.append('file', compressedFile);
+      formData.append('file', file);
       formData.append('publicKey', IK_PUBLIC_KEY);
       formData.append('signature', authData.signature);
       formData.append('token', authData.token);
@@ -1333,8 +1289,6 @@
       }
 
       const result = await response.json();
-      
-      // Return the URL instead of fileId
       console.log('Upload successful, URL:', result.url);
       return result.url;
 
