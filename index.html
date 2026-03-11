@@ -9,6 +9,16 @@
   <!-- PhotoSwipe CSS for Instagram-style gallery -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe.min.css" />
   <style>
+    /* Fullscreen app lock - NO browser movement */
+    html, body {
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+      position: fixed;
+      margin: 0;
+      padding: 0;
+    }
+    
     * {
       margin: 0;
       padding: 0;
@@ -18,22 +28,25 @@
     }
     body {
       background: #f5f7fa;
-      min-height: 100vh;
+      height: 100%;
       width: 100%;
     }
     #app {
       height: 100vh;
+      height: 100dvh; /* dynamic viewport height for mobile */
       width: 100%;
       display: flex;
       flex-direction: column;
       background: white;
       overflow: hidden;
+      position: relative;
     }
     .auth-container {
       flex: 1;
       overflow-y: auto;
       padding: 28px 20px;
       background: white;
+      -webkit-overflow-scrolling: touch;
     }
     .hidden {
       display: none !important;
@@ -44,6 +57,7 @@
       flex-direction: column;
       height: 100%;
       overflow: hidden;
+      position: relative;
     }
     .tab-content {
       flex: 1;
@@ -51,6 +65,15 @@
       -webkit-overflow-scrolling: touch;
       padding-bottom: 80px;
       position: relative;
+      height: 100%;
+    }
+    /* Search tab specific - no pull refresh */
+    #searchTab {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden !important;
+      padding-bottom: 0;
+      height: 100%;
     }
     .tab-bar {
       position: fixed;
@@ -464,11 +487,13 @@
       display: flex;
       flex-direction: column;
       height: 100%;
+      overflow: hidden;
     }
     .map-container {
       height: 40vh;
       width: 100%;
       position: relative;
+      flex-shrink: 0;
     }
     #map {
       height: 100%;
@@ -483,6 +508,7 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      flex-shrink: 0;
     }
     .search-input {
       width: 100%;
@@ -526,6 +552,7 @@
       padding: 16px;
       overflow-y: auto;
       box-shadow: 0 -4px 20px rgba(0,0,0,0.02);
+      flex: 1;
     }
     .pull-handle {
       width: 48px;
@@ -1492,7 +1519,7 @@
     sheetOverlay.classList.remove('active');
   }
 
-  // ==================== PULL TO REFRESH - MAXIMUM INTENTIONAL ====================
+  // ==================== PULL TO REFRESH - INSTAGRAM STYLE ====================
   function createRefreshIndicator() {
     const indicator = document.createElement('div');
     indicator.className = 'refresh-indicator';
@@ -1515,15 +1542,28 @@
       }
       isTouchingMap = false;
       
-      if (tabContent.scrollTop <= 5) {
+      // Only start pull if at exact top and not on search tab
+      const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
+      if (activeTab === 'searchTab') {
+        isPulling = false;
+        return;
+      }
+      
+      if (tabContent.scrollTop === 0) {
         pullStartY = e.touches[0].clientY;
         isPulling = true;
       }
     }, { passive: true });
 
     tabContent.addEventListener('touchmove', (e) => {
+      const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
+      if (activeTab === 'searchTab') {
+        isPulling = false;
+        return;
+      }
+      
       if (isTouchingMap) return;
-      if (!isPulling || tabContent.scrollTop > 5) return;
+      if (!isPulling || tabContent.scrollTop > 0) return;
       
       const currentY = e.touches[0].clientY;
       let diff = currentY - pullStartY;
@@ -1535,8 +1575,6 @@
         if (diff > 30) resistance = 0.7;
         if (diff > 60) resistance = 0.4;
         if (diff > 90) resistance = 0.25;
-        if (diff > 120) resistance = 0.15;
-        if (diff > 150) resistance = 0.08;
         
         const pullDistance = Math.min(diff * resistance, 100);
         
@@ -1546,14 +1584,8 @@
         
         refreshIndicator.style.transform = `translateY(${pullDistance + 60}px)`;
         
-        if (diff > 150) {
-          refreshIndicator.querySelector('span').textContent = 'PULL HARDER... almost there!';
-        } else if (diff > 120) {
-          refreshIndicator.querySelector('span').textContent = 'Keep pulling... getting hard';
-        } else if (diff > 90) {
-          refreshIndicator.querySelector('span').textContent = 'Pull harder...';
-        } else if (diff > 60) {
-          refreshIndicator.querySelector('span').textContent = 'Keep pulling...';
+        if (diff > 90) {
+          refreshIndicator.querySelector('span').textContent = 'Release to refresh';
         } else {
           refreshIndicator.querySelector('span').textContent = 'Pull to refresh';
         }
@@ -1561,6 +1593,12 @@
     }, { passive: false });
 
     tabContent.addEventListener('touchend', async (e) => {
+      const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
+      if (activeTab === 'searchTab') {
+        isPulling = false;
+        return;
+      }
+      
       if (isTouchingMap) {
         isTouchingMap = false;
         return;
@@ -1571,16 +1609,11 @@
       const endY = e.changedTouches[0].clientY;
       const diff = endY - pullStartY;
       
-      if (diff > 220 && tabContent.scrollTop <= 5) {
+      if (diff > 100 && tabContent.scrollTop === 0) {
         refreshIndicator.querySelector('span').textContent = 'Refreshing...';
-        
-        const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
         
         if (activeTab === 'homeTab') {
           await loadProviders(true);
-        } else if (activeTab === 'searchTab' && map) {
-          await loadAllUsers();
-          await updateMapAndList();
         } else if (activeTab === 'messagesTab') {
           await loadConversations();
         } else if (activeTab === 'profileTab' && currentUser) {
@@ -1618,14 +1651,14 @@
     const profileTab = document.getElementById('profileTab');
     
     profileTab.addEventListener('touchstart', (e) => {
-      if (profileTab.scrollTop <= 5) {
+      if (profileTab.scrollTop === 0) {
         profilePullStartY = e.touches[0].clientY;
         isPullingProfile = true;
       }
     }, { passive: true });
 
     profileTab.addEventListener('touchmove', (e) => {
-      if (!isPullingProfile || profileTab.scrollTop > 5) return;
+      if (!isPullingProfile || profileTab.scrollTop > 0) return;
       
       const currentY = e.touches[0].clientY;
       let diff = currentY - profilePullStartY;
@@ -1637,8 +1670,6 @@
         if (diff > 30) resistance = 0.7;
         if (diff > 60) resistance = 0.4;
         if (diff > 90) resistance = 0.25;
-        if (diff > 120) resistance = 0.15;
-        if (diff > 150) resistance = 0.08;
         
         const pullDistance = Math.min(diff * resistance, 100);
         
@@ -1648,14 +1679,8 @@
         
         refreshIndicator.style.transform = `translateY(${pullDistance + 60}px)`;
         
-        if (diff > 150) {
-          refreshIndicator.querySelector('span').textContent = 'PULL HARDER... almost there!';
-        } else if (diff > 120) {
-          refreshIndicator.querySelector('span').textContent = 'Keep pulling... getting hard';
-        } else if (diff > 90) {
-          refreshIndicator.querySelector('span').textContent = 'Pull harder...';
-        } else if (diff > 60) {
-          refreshIndicator.querySelector('span').textContent = 'Keep pulling...';
+        if (diff > 90) {
+          refreshIndicator.querySelector('span').textContent = 'Release to refresh';
         } else {
           refreshIndicator.querySelector('span').textContent = 'Pull to refresh';
         }
@@ -1668,7 +1693,7 @@
       const endY = e.changedTouches[0].clientY;
       const diff = endY - profilePullStartY;
       
-      if (diff > 220 && profileTab.scrollTop <= 5) {
+      if (diff > 100 && profileTab.scrollTop === 0) {
         refreshIndicator.querySelector('span').textContent = 'Refreshing...';
         
         if (currentUser) {
