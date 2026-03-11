@@ -376,9 +376,14 @@
       gap: 6px;
       padding: 16px;
     }
-    .portfolio-grid img {
+    .portfolio-grid .portfolio-item {
+      position: relative;
       width: 100%;
       aspect-ratio: 1;
+    }
+    .portfolio-grid img {
+      width: 100%;
+      height: 100%;
       border-radius: 18px;
       object-fit: cover;
       cursor: pointer;
@@ -387,6 +392,29 @@
       transition: opacity 0.3s;
     }
     .portfolio-grid img.loaded {
+      opacity: 1;
+    }
+    .delete-overlay {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(220, 38, 38, 0.9);
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 10;
+    }
+    .portfolio-item:hover .delete-overlay,
+    .portfolio-item.long-press .delete-overlay {
       opacity: 1;
     }
     .star-rating-input {
@@ -891,6 +919,65 @@
       opacity: 1;
       pointer-events: auto;
     }
+
+    /* Full-screen profile image viewer */
+    .profile-viewer {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 4000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .profile-viewer.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .profile-viewer img {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+    }
+    .profile-viewer-close {
+      position: absolute;
+      top: 40px;
+      right: 20px;
+      color: white;
+      font-size: 40px;
+      cursor: pointer;
+    }
+
+    /* Delete confirmation modal */
+    .delete-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 32px;
+      padding: 24px;
+      max-width: 340px;
+      width: 90%;
+      z-index: 5000;
+      display: none;
+    }
+    .delete-modal.active {
+      display: block;
+    }
+    .delete-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 4500;
+      display: none;
+    }
+    .delete-modal-overlay.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -1021,9 +1108,10 @@
           </div>
           <div>
             <div class="business-name" id="profileBusinessName"></div>
-            <div class="profile-stats">
+            <div class="profile-stats" id="profileStats">
               <div><span class="stat-number" id="profileJobs">0</span> <span class="stat-label">jobs</span></div>
               <div><span class="stat-number" id="profileRating">0</span> <span class="stat-label">⭐</span></div>
+              <div><span class="stat-number" id="profileReviews">0</span> <span class="stat-label">reviews</span></div>
             </div>
           </div>
         </div>
@@ -1050,7 +1138,7 @@
         </div>
 
         <div class="portfolio-header">
-          <h4>Portfolio</h4>
+          <h4>Portfolio <span id="portfolioCount" style="font-size: 14px; color: #6b7280; margin-left: 8px;"></span></h4>
           <button class="add-portfolio-btn" id="addPortfolioBtn">+ Add</button>
         </div>
         <div class="portfolio-grid" id="portfolioGrid"></div>
@@ -1128,6 +1216,23 @@
     <div class="sheet-handle"></div>
     <div id="sheetContent"></div>
   </div>
+
+  <!-- Profile Image Full-Screen Viewer -->
+  <div class="profile-viewer" id="profileViewer">
+    <span class="profile-viewer-close" id="closeProfileViewer">&times;</span>
+    <img id="profileViewerImg" src="" alt="">
+  </div>
+
+  <!-- Delete Portfolio Image Modal -->
+  <div class="delete-modal-overlay" id="deletePortfolioOverlay"></div>
+  <div class="delete-modal" id="deletePortfolioModal">
+    <h3>Delete Image</h3>
+    <p>Are you sure you want to delete this image?</p>
+    <div class="modal-actions">
+      <button class="btn-outline" id="cancelDeletePortfolio">Cancel</button>
+      <button class="btn-danger" id="confirmDeletePortfolio">Delete</button>
+    </div>
+  </div>
 </div>
 
 <!-- Leaflet JS -->
@@ -1145,7 +1250,7 @@
   import { 
     getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc,
     collection, query, orderBy, limit, startAfter, getDocs, GeoPoint,
-    addDoc, onSnapshot, Timestamp, where, writeBatch, arrayUnion
+    addDoc, onSnapshot, Timestamp, where, writeBatch, arrayUnion, arrayRemove
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -1207,6 +1312,16 @@
   const quickViewSheet = document.getElementById('quickViewSheet');
   const sheetOverlay = document.getElementById('sheetOverlay');
   const sheetContent = document.getElementById('sheetContent');
+  const profileViewer = document.getElementById('profileViewer');
+  const profileViewerImg = document.getElementById('profileViewerImg');
+  const closeProfileViewer = document.getElementById('closeProfileViewer');
+  const deletePortfolioModal = document.getElementById('deletePortfolioModal');
+  const deletePortfolioOverlay = document.getElementById('deletePortfolioOverlay');
+  const cancelDeletePortfolio = document.getElementById('cancelDeletePortfolio');
+  const confirmDeletePortfolio = document.getElementById('confirmDeletePortfolio');
+  const profileStats = document.getElementById('profileStats');
+  const profileReviews = document.getElementById('profileReviews');
+  const portfolioCount = document.getElementById('portfolioCount');
 
   // Profile elements
   const profileImage = document.getElementById('profileImage');
@@ -1249,6 +1364,54 @@
   let isUploading = false;
   let currentUploadType = null;
   let currentSheetProvider = null;
+  let longPressTimer = null;
+  let selectedImageIndex = null;
+  let selectedImageUrl = null;
+  let isPullingProfile = false;
+  let profilePullStartY = 0;
+
+  // ==================== IMAGE COMPRESSION - RESTORED ====================
+  async function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          const maxSize = 1600;
+          
+          if (width > maxSize || height > maxSize) {
+            if (width > height) {
+              height = Math.round((height * maxSize) / width);
+              width = maxSize;
+            } else {
+              width = Math.round((width * maxSize) / height);
+              height = maxSize;
+            }
+          }
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve(compressedFile);
+          }, 'image/jpeg', 0.85);
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  }
 
   // ==================== QUICK-VIEW SHEET FUNCTIONS ====================
   function openQuickView(providerId, providerData) {
@@ -1339,14 +1502,12 @@
       if (diff > 0) {
         e.preventDefault();
         
-        // AGGRESSIVE RESISTANCE - gets very hard very fast
-        // Requires INTENTIONAL force to pull all the way
         let resistance = 1;
-        if (diff > 30) resistance = 0.7;      // Light resistance
-        if (diff > 60) resistance = 0.4;       // Medium resistance  
-        if (diff > 90) resistance = 0.25;      // Hard resistance
-        if (diff > 120) resistance = 0.15;     // Very hard
-        if (diff > 150) resistance = 0.08;     // Maximum resistance - must really mean it
+        if (diff > 30) resistance = 0.7;
+        if (diff > 60) resistance = 0.4;
+        if (diff > 90) resistance = 0.25;
+        if (diff > 120) resistance = 0.15;
+        if (diff > 150) resistance = 0.08;
         
         const pullDistance = Math.min(diff * resistance, 100);
         
@@ -1356,7 +1517,6 @@
         
         refreshIndicator.style.transform = `translateY(${pullDistance + 60}px)`;
         
-        // More aggressive text prompts
         if (diff > 150) {
           refreshIndicator.querySelector('span').textContent = 'PULL HARDER... almost there!';
         } else if (diff > 120) {
@@ -1382,7 +1542,6 @@
       const endY = e.changedTouches[0].clientY;
       const diff = endY - pullStartY;
       
-      // HIGH THRESHOLD - 220px requires a very deliberate pull
       if (diff > 220 && tabContent.scrollTop === 0) {
         refreshIndicator.querySelector('span').textContent = 'Refreshing...';
         
@@ -1425,9 +1584,92 @@
     }, { passive: true });
   }
 
-  // ==================== IMAGE COMPRESSION - TEMPORARILY DISABLED ====================
-  async function compressImage(file) {
-    return file;
+  // ==================== PROFILE TAB PULL TO REFRESH ====================
+  function initProfilePullToRefresh() {
+    const profileTab = document.getElementById('profileTab');
+    
+    profileTab.addEventListener('touchstart', (e) => {
+      if (profileTab.scrollTop === 0) {
+        profilePullStartY = e.touches[0].clientY;
+        isPullingProfile = true;
+      }
+    }, { passive: true });
+
+    profileTab.addEventListener('touchmove', (e) => {
+      if (!isPullingProfile || profileTab.scrollTop > 0) return;
+      
+      const currentY = e.touches[0].clientY;
+      let diff = currentY - profilePullStartY;
+      
+      if (diff > 0) {
+        e.preventDefault();
+        
+        let resistance = 1;
+        if (diff > 30) resistance = 0.7;
+        if (diff > 60) resistance = 0.4;
+        if (diff > 90) resistance = 0.25;
+        if (diff > 120) resistance = 0.15;
+        if (diff > 150) resistance = 0.08;
+        
+        const pullDistance = Math.min(diff * resistance, 100);
+        
+        if (!refreshIndicator) {
+          refreshIndicator = createRefreshIndicator();
+        }
+        
+        refreshIndicator.style.transform = `translateY(${pullDistance + 60}px)`;
+        
+        if (diff > 150) {
+          refreshIndicator.querySelector('span').textContent = 'PULL HARDER... almost there!';
+        } else if (diff > 120) {
+          refreshIndicator.querySelector('span').textContent = 'Keep pulling... getting hard';
+        } else if (diff > 90) {
+          refreshIndicator.querySelector('span').textContent = 'Pull harder...';
+        } else if (diff > 60) {
+          refreshIndicator.querySelector('span').textContent = 'Keep pulling...';
+        } else {
+          refreshIndicator.querySelector('span').textContent = 'Pull to refresh';
+        }
+      }
+    }, { passive: false });
+
+    profileTab.addEventListener('touchend', async (e) => {
+      if (!isPullingProfile || !refreshIndicator) return;
+      
+      const endY = e.changedTouches[0].clientY;
+      const diff = endY - profilePullStartY;
+      
+      if (diff > 220 && profileTab.scrollTop === 0) {
+        refreshIndicator.querySelector('span').textContent = 'Refreshing...';
+        
+        if (currentUser) {
+          await loadProfileData();
+        }
+        
+        refreshIndicator.style.transform = 'translateY(60px)';
+        setTimeout(() => {
+          refreshIndicator.style.transform = 'translateY(-60px)';
+          setTimeout(() => {
+            if (refreshIndicator) {
+              refreshIndicator.remove();
+              refreshIndicator = null;
+            }
+          }, 200);
+        }, 500);
+      } else {
+        if (refreshIndicator) {
+          refreshIndicator.style.transform = 'translateY(-60px)';
+          setTimeout(() => {
+            if (refreshIndicator) {
+              refreshIndicator.remove();
+              refreshIndicator = null;
+            }
+          }, 200);
+        }
+      }
+      
+      isPullingProfile = false;
+    }, { passive: true });
   }
 
   // ==================== IMAGEKIT UPLOAD ====================
@@ -1499,6 +1741,81 @@
       isUploading = false;
     }
   }
+
+  // ==================== PROFILE PICTURE ZOOM ====================
+  if (profileImage) {
+    profileImage.addEventListener('click', () => {
+      profileViewerImg.src = profileImage.src;
+      profileViewer.classList.add('active');
+    });
+  }
+
+  if (closeProfileViewer) {
+    closeProfileViewer.addEventListener('click', () => {
+      profileViewer.classList.remove('active');
+    });
+  }
+
+  profileViewer?.addEventListener('click', (e) => {
+    if (e.target === profileViewer) {
+      profileViewer.classList.remove('active');
+    }
+  });
+
+  // ==================== LONG PRESS DELETE ====================
+  function setupLongPress() {
+    const images = document.querySelectorAll('.portfolio-item');
+    images.forEach((item, index) => {
+      item.addEventListener('touchstart', (e) => {
+        longPressTimer = setTimeout(() => {
+          const url = item.dataset.url;
+          selectedImageIndex = index;
+          selectedImageUrl = url;
+          deletePortfolioModal.classList.add('active');
+          deletePortfolioOverlay.classList.add('active');
+          item.classList.add('long-press');
+        }, 500);
+      });
+
+      item.addEventListener('touchend', () => {
+        clearTimeout(longPressTimer);
+        item.classList.remove('long-press');
+      });
+
+      item.addEventListener('touchmove', () => {
+        clearTimeout(longPressTimer);
+        item.classList.remove('long-press');
+      });
+    });
+  }
+
+  cancelDeletePortfolio?.addEventListener('click', () => {
+    deletePortfolioModal.classList.remove('active');
+    deletePortfolioOverlay.classList.remove('active');
+  });
+
+  deletePortfolioOverlay?.addEventListener('click', () => {
+    deletePortfolioModal.classList.remove('active');
+    deletePortfolioOverlay.classList.remove('active');
+  });
+
+  confirmDeletePortfolio?.addEventListener('click', async () => {
+    if (!currentUser || !selectedImageUrl) return;
+    
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, {
+        portfolioImages: arrayRemove(selectedImageUrl)
+      });
+      await loadProfileData();
+    } catch (err) {
+      console.error('Error deleting image:', err);
+      alert('Failed to delete image');
+    } finally {
+      deletePortfolioModal.classList.remove('active');
+      deletePortfolioOverlay.classList.remove('active');
+    }
+  });
 
   // ==================== PHOTOSWIPE GALLERY ====================
   function openGallery(images, startIndex = 0) {
@@ -2100,6 +2417,7 @@
     profileBusinessName.textContent = data.businessName || '';
     profileJobs.textContent = data.jobsDone || 0;
     profileRating.textContent = data.rating || 0;
+    profileReviews.textContent = data.reviewCount || 0;
     bioTextarea.value = data.bio || '';
     
     const profileImageUrl = getThumbnailUrl(data.profileImage, 200);
@@ -2110,13 +2428,19 @@
       'https://ik.imagekit.io/GigsCourt/sample2',
       'https://ik.imagekit.io/GigsCourt/sample3'
     ];
+    
+    portfolioCount.textContent = `(${portfolio.length})`;
     portfolioGrid.innerHTML = '';
     
     portfolio.slice(0, 9).forEach((url, index) => {
+      const item = document.createElement('div');
+      item.className = 'portfolio-item';
+      item.dataset.url = url;
+      item.dataset.index = index;
+      
       const img = document.createElement('img');
       img.src = getThumbnailUrl(url, 300);
       img.loading = 'lazy';
-      img.dataset.index = index;
       img.classList.add('lazy-load');
       
       img.onload = () => img.classList.add('loaded');
@@ -2125,8 +2449,16 @@
         openGallery(portfolio, index);
       });
       
-      portfolioGrid.appendChild(img);
+      const deleteBtn = document.createElement('div');
+      deleteBtn.className = 'delete-overlay';
+      deleteBtn.innerHTML = '×';
+      
+      item.appendChild(img);
+      item.appendChild(deleteBtn);
+      portfolioGrid.appendChild(item);
     });
+
+    setupLongPress();
 
     if (!data.email && data.signupMethod === 'phone') {
       missingContactContainer.innerHTML = `
@@ -2569,6 +2901,7 @@
       switchTab(getSavedTab());
       await loadProfileData();
       setTimeout(initPullToRefresh, 500);
+      setTimeout(initProfilePullToRefresh, 1000);
     } else if (user && !user.emailVerified) {
       authContainer.classList.remove('hidden');
       mainApp.classList.add('hidden');
