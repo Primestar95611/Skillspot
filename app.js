@@ -1682,37 +1682,7 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 observer.observe(sentinel);
 
-// ==================== AUTH STATE ====================
-onAuthStateChanged(auth, async (user) => {
-  currentUser = user;
-  if (user && user.emailVerified) {
-    if (user.email === 'agboghidiaugust@gmail.com') {
-      adminTabBtn.style.display = 'flex';
-    } else {
-      adminTabBtn.style.display = 'none';
-    }
-    
-    authContainer.classList.add('hidden');
-    mainApp.classList.remove('hidden');
-    switchTab(getSavedTab());
-    await loadProfileData();
-    setTimeout(initPullToRefresh, 500);
-    setTimeout(initProfilePullToRefresh, 1000);
-  } else if (user && !user.emailVerified) {
-    authContainer.classList.remove('hidden');
-    mainApp.classList.add('hidden');
-    emailSignupView.classList.add('hidden');
-    phoneSignupView.classList.add('hidden');
-    loginView.classList.add('hidden');
-    verifyView.classList.remove('hidden');
-  } else {
-    authContainer.classList.remove('hidden');
-    mainApp.classList.add('hidden');
-    emailSignupView.classList.remove('hidden');
-    phoneSignupView.classList.add('hidden');
-    loginView.classList.add('hidden');
-    verifyView.classList.add('hidden');
-  } // ==================== ADMIN FUNCTIONS ====================
+// ==================== ADMIN FUNCTIONS ====================
 async function loadPendingSkills() {
   if (!currentUser || currentUser.email !== 'agboghidiaugust@gmail.com') return;
   
@@ -1773,3 +1743,36 @@ window.editSkill = async (userId, oldSkill) => {
   loadPendingSkills();
 };
 });
+
+
+// ==================== AUTH STATE ====================
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  if (user && user.emailVerified) {
+    if (user.email === 'agboghidiaugust@gmail.com') {
+      adminTabBtn.style.display = 'flex';
+    } else {
+      adminTabBtn.style.display = 'none';
+    }
+    
+    authContainer.classList.add('hidden');
+    mainApp.classList.remove('hidden');
+    switchTab(getSavedTab());
+    await loadProfileData();
+    setTimeout(initPullToRefresh, 500);
+    setTimeout(initProfilePullToRefresh, 1000);
+  } else if (user && !user.emailVerified) {
+    authContainer.classList.remove('hidden');
+    mainApp.classList.add('hidden');
+    emailSignupView.classList.add('hidden');
+    phoneSignupView.classList.add('hidden');
+    loginView.classList.add('hidden');
+    verifyView.classList.remove('hidden');
+  } else {
+    authContainer.classList.remove('hidden');
+    mainApp.classList.add('hidden');
+    emailSignupView.classList.remove('hidden');
+    phoneSignupView.classList.add('hidden');
+    loginView.classList.add('hidden');
+    verifyView.classList.add('hidden');
+  } 
