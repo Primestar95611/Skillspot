@@ -1744,7 +1744,6 @@ window.editSkill = async (userId, oldSkill) => {
 };
 });
 
-
 // ==================== AUTH STATE ====================
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
