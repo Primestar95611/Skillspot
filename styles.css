@@ -1097,29 +1097,6 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   background: #f5f5f5;
 }
 
-/* Dark mode styles - add these inside your existing dark mode section */
-@media (prefers-color-scheme: dark) {
-  .profile-username {
-    color: #aaa;
-  }
-  
-  .contact-text {
-    color: white;
-  }
-  
-  .profile-btn-secondary {
-    border-color: #333;
-    color: white;
-  }
-  
-  .profile-btn-secondary:active {
-    background: #2a2a2a;
-  }
-  
-  .stat-label {
-    color: #aaa;
-  }
-}
 @media (prefers-color-scheme: dark) {
   /* Base */
   html { background: #1a1a1a; }
