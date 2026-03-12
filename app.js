@@ -1324,6 +1324,8 @@ function switchTab(tabId) {
   if (tabId === 'search') setTimeout(initMap, 100);
   if (tabId === 'messages') {
     loadConversations();
+  } if (tabId === 'admin') {
+    loadPendingSkills();
   }
 }
 
