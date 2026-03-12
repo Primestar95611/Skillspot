@@ -1904,4 +1904,183 @@ onAuthStateChanged(auth, async (user) => {
     loginView.classList.add('hidden');
     verifyView.classList.add('hidden');
   } 
+
+// ==================== EDIT PROFILE SCREEN ====================
+const editProfileScreen = document.getElementById('editProfileScreen');
+const backFromEditBtn = document.getElementById('backFromEditBtn');
+const saveEditProfileBtn = document.getElementById('saveEditProfileBtn');
+const editProfileImage = document.getElementById('editProfileImage');
+const editBusinessName = document.getElementById('editBusinessName');
+const editUsername = document.getElementById('editUsername');
+const editBio = document.getElementById('editBio');
+const editPhone = document.getElementById('editPhone');
+const editAddress = document.getElementById('editAddress');
+const editSkillsContainer = document.getElementById('editSkillsContainer');
+const newSkillInput = document.getElementById('newSkillInput');
+const addSkillBtn = document.getElementById('addSkillBtn');
+const businessNameTimer = document.getElementById('businessNameTimer');
+const usernameTimer = document.getElementById('usernameTimer');
+const editLogoutBtn = document.getElementById('editLogoutBtn');
+const editDeleteAccountBtn = document.getElementById('editDeleteAccountBtn');
+
+if (editProfileBtn) {
+  editProfileBtn.addEventListener('click', () => {
+    loadEditProfileData();
+    profileTab.classList.add('hidden');
+    editProfileScreen.classList.remove('hidden');
+  });
+}
+
+if (backFromEditBtn) {
+  backFromEditBtn.addEventListener('click', () => {
+    editProfileScreen.classList.add('hidden');
+    profileTab.classList.remove('hidden');
+  });
+}
+
+async function loadEditProfileData() {
+  if (!currentUser) return;
+  const userRef = doc(db, 'users', currentUser.uid);
+  const userDoc = await getDoc(userRef);
+  const data = userDoc.data();
+  
+  editProfileImage.src = getThumbnailUrl(data.profileImage, 200);
+  editBusinessName.value = data.businessName || '';
+  editUsername.value = data.username || '';
+  editBio.value = data.bio || '';
+  editPhone.value = data.phoneNumber || '';
+  editAddress.value = data.address || '';
+  
+  renderSkills(data.skills || []);
+  checkNameTimers(data);
+}
+
+function renderSkills(skills) {
+  editSkillsContainer.innerHTML = '';
+  skills.forEach(skill => {
+    const skillTag = document.createElement('span');
+    skillTag.style.cssText = 'display: inline-flex; align-items: center; background: #f0f3f8; padding: 8px 12px; border-radius: 40px; font-size: 14px;';
+    skillTag.innerHTML = `
+      ${skill}
+      <span style="margin-left: 8px; cursor: pointer; color: #dc2626; font-weight: bold;" onclick="removeSkill('${skill}')">×</span>
+    `;
+    editSkillsContainer.appendChild(skillTag);
+  });
+}
+
+window.removeSkill = async function(skill) {
+  if (!currentUser) return;
+  const userRef = doc(db, 'users', currentUser.uid);
+  const userDoc = await getDoc(userRef);
+  const data = userDoc.data();
+  
+  const updatedSkills = (data.skills || []).filter(s => s !== skill);
+  await updateDoc(userRef, { skills: updatedSkills });
+  renderSkills(updatedSkills);
+};
+
+if (addSkillBtn) {
+  addSkillBtn.addEventListener('click', async () => {
+    const newSkill = newSkillInput.value.trim();
+    if (!newSkill || !currentUser) return;
+    
+    const userRef = doc(db, 'users', currentUser.uid);
+    const userDoc = await getDoc(userRef);
+    const data = userDoc.data();
+    
+    const updatedSkills = [...(data.skills || []), newSkill];
+    await updateDoc(userRef, { skills: updatedSkills });
+    renderSkills(updatedSkills);
+    newSkillInput.value = '';
+  });
+}
+
+function checkNameTimers(data) {
+  const now = Date.now();
+  const fourteenDays = 14 * 24 * 60 * 60 * 1000;
+  
+  if (data.businessNameLastChanged) {
+    const daysLeft = Math.ceil((data.businessNameLastChanged + fourteenDays - now) / (24 * 60 * 60 * 1000));
+    if (daysLeft > 0) {
+      businessNameTimer.textContent = `Can change again in ${daysLeft} days`;
+      editBusinessName.disabled = true;
+    } else {
+      businessNameTimer.textContent = '';
+      editBusinessName.disabled = false;
+    }
+  }
+  
+  if (data.usernameLastChanged) {
+    const daysLeft = Math.ceil((data.usernameLastChanged + fourteenDays - now) / (24 * 60 * 60 * 1000));
+    if (daysLeft > 0) {
+      usernameTimer.textContent = `Can change again in ${daysLeft} days`;
+      editUsername.disabled = true;
+    } else {
+      usernameTimer.textContent = '';
+      editUsername.disabled = false;
+    }
+  }
+}
+
+if (saveEditProfileBtn) {
+  saveEditProfileBtn.addEventListener('click', async () => {
+    if (!currentUser) return;
+    
+    const userRef = doc(db, 'users', currentUser.uid);
+    const userDoc = await getDoc(userRef);
+    const data = userDoc.data();
+    
+    const updates = {};
+    const now = Date.now();
+    const fourteenDays = 14 * 24 * 60 * 60 * 1000;
+    
+    if (editBusinessName.value !== data.businessName) {
+      if (!data.businessNameLastChanged || (now - data.businessNameLastChanged) > fourteenDays) {
+        updates.businessName = editBusinessName.value;
+        updates.businessNameLastChanged = now;
+      } else {
+        alert('Business name can only be changed every 14 days');
+      }
+    }
+    
+    if (editUsername.value !== data.username) {
+      if (!data.usernameLastChanged || (now - data.usernameLastChanged) > fourteenDays) {
+        updates.username = editUsername.value;
+        updates.usernameLastChanged = now;
+      } else {
+        alert('Username can only be changed every 14 days');
+      }
+    }
+    
+    updates.bio = editBio.value;
+    updates.phoneNumber = editPhone.value;
+    updates.address = editAddress.value;
+    
+    await updateDoc(userRef, updates);
+    await loadProfileData();
+    
+    editProfileScreen.classList.add('hidden');
+    profileTab.classList.remove('hidden');
+    alert('Profile updated!');
+  });
+}
+
+if (editLogoutBtn) {
+  editLogoutBtn.addEventListener('click', async () => {
+    await signOut(auth);
+  });
+}
+
+if (editDeleteAccountBtn) {
+  editDeleteAccountBtn.addEventListener('click', () => {
+    deleteModal.classList.remove('hidden');
+  });
+}
+
+const existingLogoutBtn = document.getElementById('logoutBtn');
+if (existingLogoutBtn) {
+  existingLogoutBtn.addEventListener('click', async () => {
+    await signOut(auth);
+  });
+}
 });
