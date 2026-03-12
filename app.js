@@ -1043,8 +1043,8 @@ async function startChat() {
 async function getUsersBatch(userIds) {
   const users = [];
   const uncached = [];
-  
-  userIds.forEach(id => {
+  const validUserIds = userIds.filter(id => id != null);
+  validUserIds.forEach(id => {
     if (userCache.has(id)) {
       users.push({ id, ...userCache.get(id) });
     } else {
