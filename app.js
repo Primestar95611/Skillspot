@@ -89,7 +89,6 @@ const profileBusinessName = document.getElementById('profileBusinessName');
 const profileUsername = document.getElementById('profileUsername');
 const profileJobs = document.getElementById('profileJobs');
 const profileRating = document.getElementById('profileRating');
-const profileReviews = document.getElementById('profileReviews');
 const profileBio = document.getElementById('profileBio');
 const profilePhone = document.getElementById('profilePhone');
 const profilePhoneContainer = document.getElementById('profilePhoneContainer');
