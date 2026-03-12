@@ -1774,3 +1774,4 @@ onAuthStateChanged(auth, async (user) => {
     loginView.classList.add('hidden');
     verifyView.classList.add('hidden');
   } 
+});
