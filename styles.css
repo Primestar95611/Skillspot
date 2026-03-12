@@ -89,17 +89,14 @@ body {
   position: relative;
   flex: 1;
 }
-
 .tab-icon {
   font-size: 24px;
   color: #8e94a7;
   transition: color 0.2s ease;
 }
-
 .tab-item.active .tab-icon {
   color: #0066ff;
 }
-
 .tab-item.active::after {
   content: '';
   position: absolute;
@@ -111,16 +108,14 @@ body {
   background: #0066ff;
   border-radius: 3px;
 }
-
-/* Hide the text labels */
 .tab-item {
   font-size: 0;
 }
-
 .tab-item .tab-icon {
   font-size: 24px;
 }
 
+/* Auth & Forms - Keep (still used) */
 h2 { margin-bottom: 24px; font-weight: 600; }
 .input-field {
   width: 100%;
@@ -159,12 +154,6 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   width: 100%;
   margin-top: 12px;
   cursor: pointer;
-}
-.btn-disabled {
-  background: #e5e9f0;
-  color: #9ca3af;
-  cursor: not-allowed;
-  pointer-events: none;
 }
 .error-msg { color: #dc2626; font-size: 14px; margin: 12px 0; text-align: center; }
 .auth-toggle {
@@ -238,6 +227,8 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   font-size: 16px;
   cursor: pointer;
 }
+
+/* Home Tab */
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -294,16 +285,12 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.tab-placeholder {
-  padding: 40px 20px;
-  text-align: center;
-  color: #6b7280;
-  font-size: 16px;
-}
 #sentinel {
   height: 10px;
   width: 100%;
 }
+
+/* Profile Tab - Instagram Styles */
 .profile-header {
   display: flex;
   gap: 20px;
@@ -343,51 +330,96 @@ h2 { margin-bottom: 24px; font-weight: 600; }
 .profile-stats {
   display: flex;
   gap: 24px;
-  margin: 12px 0;
+  justify-content: center;
+  margin: 0;
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 .stat-number {
   font-weight: 700;
-  font-size: 20px;
+  font-size: 18px;
 }
 .stat-label {
-  color: #6b7280;
   font-size: 13px;
+  color: #8e94a7;
 }
-.bio-section {
-  padding: 20px;
-  background: #f8fafc;
-  border-radius: 28px;
-  margin: 16px;
+.profile-name-section {
+  padding: 0 16px 12px;
+  text-align: left;
 }
-.bio-section textarea {
-  width: 100%;
-  border: none;
-  background: transparent;
-  font-size: 15px;
+.profile-business-name {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.profile-username {
+  font-size: 14px;
+  color: #8e94a7;
+  margin: 0;
+}
+.profile-bio {
+  padding: 0 16px 16px;
+  font-size: 14px;
   line-height: 1.5;
-  resize: vertical;
-  min-height: 80px;
+  white-space: pre-wrap;
 }
-.bio-section textarea:focus {
-  outline: none;
+.profile-contact {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.settings-section {
-  padding: 16px;
-  margin: 16px;
-  background: #f8fafc;
-  border-radius: 28px;
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
 }
-.settings-title {
-  font-weight: 600;
-  margin-bottom: 16px;
+.contact-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+.contact-text {
   color: #1e1e2f;
 }
-.missing-contact {
-  background: #f0f4fe;
-  border-radius: 24px;
-  padding: 16px;
-  margin-bottom: 16px;
+.profile-actions {
+  display: flex;
+  gap: 10px;
+  padding: 0 16px 20px;
 }
+.profile-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+.profile-btn-primary {
+  background: #0066ff;
+  color: white;
+  border: none;
+}
+.profile-btn-primary:active {
+  opacity: 0.8;
+}
+.profile-btn-secondary {
+  background: transparent;
+  border: 1px solid #dbdbdb;
+  color: #1e1e2f;
+}
+.profile-btn-secondary:active {
+  background: #f5f5f5;
+}
+
+/* Portfolio */
 .portfolio-header {
   display: flex;
   justify-content: space-between;
@@ -408,7 +440,6 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   padding: 16px;
-  /* Remove max-height and overflow-y */
 }
 .portfolio-grid .portfolio-item {
   position: relative;
@@ -450,48 +481,8 @@ h2 { margin-bottom: 24px; font-weight: 600; }
 .portfolio-item.long-press .delete-overlay {
   opacity: 1;
 }
-.star-rating-input {
-  display: flex;
-  gap: 8px;
-  font-size: 30px;
-  margin: 12px 0;
-}
-.star-rating-input span {
-  cursor: pointer;
-  color: #d1d5db;
-}
-.star-rating-input span.selected {
-  color: #f5b342;
-}
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-.modal {
-  background: white;
-  border-radius: 32px;
-  padding: 24px;
-  max-width: 340px;
-  width: 100%;
-}
-.modal h3 {
-  margin-bottom: 12px;
-}
-.modal p {
-  color: #6b7280;
-  margin-bottom: 24px;
-}
-.modal-actions {
-  display: flex;
-  gap: 12px;
-}
+
+/* Search Tab */
 .search-container {
   display: flex;
   flex-direction: column;
@@ -591,6 +582,8 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   padding: 40px 20px;
   color: #6b7280;
 }
+
+/* Map Markers */
 .custom-marker {
   position: relative;
 }
@@ -628,6 +621,8 @@ h2 { margin-bottom: 24px; font-weight: 600; }
 .pulse-marker .marker-pin {
   animation: pulse 1s ease infinite;
 }
+
+/* Messages Tab */
 .conversations-list {
   padding: 16px;
 }
@@ -670,46 +665,6 @@ h2 { margin-bottom: 24px; font-weight: 600; }
 .timestamp {
   font-size: 11px;
   color: #9ca3af;
-}
-.leaflet-popup-content .message-btn {
-  background: #0066ff;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 8px 16px;
-  margin-top: 8px;
-  width: 100%;
-  cursor: pointer;
-}
-.refresh-indicator {
-  position: fixed;
-  top: -60px;
-  left: 0;
-  width: 100%;
-  height: 60px;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 14px;
-  color: #0066ff;
-  font-weight: 500;
-  z-index: 2000;
-  transition: transform 0.2s;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-  border-bottom: 1px solid #f0f3f8;
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-.spinner-small {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #e5e9f0;
-  border-top-color: #0066ff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
 }
 .message {
   max-width: 70%;
@@ -788,53 +743,65 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   font-size: 18px;
   cursor: pointer;
 }
-.pswp__bg {
-  background: rgba(0, 0, 0, 0.9);
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
-.pswp__counter {
-  color: white;
+.modal {
+  background: white;
+  border-radius: 32px;
+  padding: 24px;
+  max-width: 340px;
+  width: 100%;
 }
-.pswp__button--close {
-  color: white;
+.modal h3 {
+  margin-bottom: 12px;
 }
-.upload-progress {
+.modal p {
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+.delete-modal {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background: white;
-  padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-  z-index: 3000;
-  text-align: center;
-}
-.upload-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f0f3f8;
-  border-top-color: #0066ff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  margin: 0 auto 12px;
-}
-.error-banner {
-  background: #fee2e2;
-  color: #dc2626;
-  padding: 12px;
-  margin: 16px;
-  border-radius: 12px;
-  text-align: center;
-  font-size: 14px;
-  border: 1px solid #fecaca;
-}
-.btn-disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
-#fileInput {
+  border-radius: 32px;
+  padding: 24px;
+  max-width: 340px;
+  width: 90%;
+  z-index: 5000;
   display: none;
 }
+.delete-modal.active {
+  display: block;
+}
+.delete-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 4500;
+  display: none;
+}
+.delete-modal-overlay.active {
+  display: block;
+}
+
+/* Quick View Sheet */
 .quick-view-sheet {
   position: fixed;
   bottom: 0;
@@ -926,6 +893,8 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   opacity: 1;
   pointer-events: auto;
 }
+
+/* Profile Image Viewer */
 .profile-viewer {
   position: fixed;
   inset: 0;
@@ -955,150 +924,75 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   font-size: 40px;
   cursor: pointer;
 }
-.delete-modal {
+
+/* Utilities */
+.refresh-indicator {
+  position: fixed;
+  top: -60px;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #0066ff;
+  font-weight: 500;
+  z-index: 2000;
+  transition: transform 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  border-bottom: 1px solid #f0f3f8;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e9f0;
+  border-top-color: #0066ff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.upload-progress {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background: white;
-  border-radius: 32px;
-  padding: 24px;
-  max-width: 340px;
-  width: 90%;
-  z-index: 5000;
-  display: none;
-}
-.delete-modal.active {
-  display: block;
-}
-.delete-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 4500;
-  display: none;
-}
-.delete-modal-overlay.active {
-  display: block;
-}
-/* ==================== INSTAGRAM-STYLE PROFILE ==================== */
-
-/* Profile stats in a row */
-.profile-stats {
-  display: flex;
-  gap: 24px;
-  justify-content: center;
-  margin: 0;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  z-index: 3000;
   text-align: center;
 }
-
-.stat-number {
-  font-weight: 700;
-  font-size: 18px;
+.upload-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f0f3f8;
+  border-top-color: #0066ff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 12px;
 }
-
-.stat-label {
-  font-size: 13px;
-  color: #8e94a7;
-}
-
-/* Business name and username */
-.profile-name-section {
-  padding: 0 16px 12px;
-  text-align: left;
-}
-
-.profile-business-name {
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 2px;
-}
-
-.profile-username {
-  font-size: 14px;
-  color: #8e94a7;
-  margin: 0;
-}
-
-/* Bio section */
-.profile-bio {
-  padding: 0 16px 16px;
-  font-size: 14px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-}
-
-/* Contact information */
-.profile-contact {
-  padding: 0 16px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.contact-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-}
-
-.contact-icon {
-  font-size: 16px;
-  width: 20px;
+.error-banner {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 12px;
+  margin: 16px;
+  border-radius: 12px;
   text-align: center;
-}
-
-.contact-text {
-  color: #1e1e2f;
-}
-
-/* Action buttons */
-.profile-actions {
-  display: flex;
-  gap: 10px;
-  padding: 0 16px 20px;
-}
-
-.profile-btn {
-  flex: 1;
-  padding: 10px 0;
-  border-radius: 8px;
-  font-weight: 600;
   font-size: 14px;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
+  border: 1px solid #fecaca;
+}
+#fileInput {
+  display: none;
 }
 
-.profile-btn-primary {
-  background: #0066ff;
-  color: white;
-  border: none;
-}
-
-.profile-btn-primary:active {
-  opacity: 0.8;
-}
-
-.profile-btn-secondary {
-  background: transparent;
-  border: 1px solid #dbdbdb;
-  color: #1e1e2f;
-}
-
-.profile-btn-secondary:active {
-  background: #f5f5f5;
-}
-
+/* Dark Mode */
 @media (prefers-color-scheme: dark) {
-  /* Base */
   html { background: #1a1a1a; }
   body { background: #1a1a1a !important; }
   #app { background: #1a1a1a; }
@@ -1134,7 +1028,7 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   .skills { color: #aaa; }
   .distance { color: #0066ff; }
   
-  /* Search tab - everything */
+  /* Search tab */
   .search-controls { background: #1a1a1a; border-bottom-color: #333; }
   .search-input { background: #2a2a2a; border-color: #444; color: white; }
   .search-input::placeholder { color: #888; }
@@ -1158,66 +1052,24 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   .profile-header { background: #1a1a1a; }
   .profile-stats .stat-number { color: white; }
   .profile-stats .stat-label { color: #aaa; }
-  .bio-section { background: #2a2a2a; }
-  .bio-section textarea { background: #2a2a2a; color: white; }
-  .bio-section textarea::placeholder { color: #888; }
-  .settings-section { background: #2a2a2a; }
-  .settings-title { color: white; }
-  .missing-contact { background: #333; }
-  .missing-contact h4 { color: white; }
-  
-  /* Profile tab - Instagram styles */
-  .profile-business-name {
-    color: white;
-  }
-  
-  .profile-username {
-    color: #aaa;
-  }
-  
-  .profile-bio {
-    color: white;
-  }
-  
-  .contact-text {
-    color: white;
-  }
-  
-  .profile-btn-secondary {
-    border-color: #333;
-    color: white;
-    background: transparent;
-  }
-  
-  .profile-btn-secondary:active {
-    background: #2a2a2a;
-  }
-  
-  .portfolio-header h4 {
-    color: white;
-  }
-  
-  .portfolio-header span {
-    color: #aaa;
-  }
-  
-  /* Portfolio */
+  .profile-business-name { color: white; }
+  .profile-username { color: #aaa; }
+  .profile-bio { color: white; }
+  .contact-text { color: white; }
+  .profile-btn-secondary { border-color: #333; color: white; background: transparent; }
+  .profile-btn-secondary:active { background: #2a2a2a; }
   .portfolio-header h4 { color: white; }
   .portfolio-header span { color: #aaa; }
   .add-portfolio-btn { background: #0066ff; }
   .portfolio-grid { background: #1a1a1a; }
   
-  /* Review section */
-  .star-rating-input span { color: #444; }
-  .star-rating-input span.selected { color: #f5b342; }
-  
-  /* Modals and popups */
+  /* Modals */
   .modal-overlay { background: rgba(0, 0, 0, 0.8); }
   .modal { background: #2a2a2a; }
   .modal h3 { color: white; }
   .modal p { color: #ccc; }
   
-  /* Quick view sheet */
+  /* Quick view */
   .quick-view-sheet { background: #1a1a1a; }
   .quick-view-sheet h3 { color: white; }
   .quick-view-sheet div { color: #ccc; }
@@ -1230,20 +1082,20 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   .chat-input { background: #1e293b; border-color: #334155; color: white; }
   .send-btn { background: #5B21B6; }
   
-  /* All backgrounds */
+  /* Backgrounds */
   .tab-content { background: #1a1a1a; }
   .grid-2 { background: #1a1a1a; }
   .empty-state { color: #888; }
   .coming-soon { background: #333; color: #fbbf24; }
   .error-msg { color: #f87171; }
   .error-banner { background: #451a1a; color: #f87171; border-color: #7f1d1d; }
-  /* Admin tab dark mode */
+  
+  /* Admin tab */
   #adminTab,
   .tab-placeholder {
     background: #1a1a1a !important;
     color: white;
   }
-  
   #adminTab h2,
   #adminTab h3,
   #adminTab p,
@@ -1251,65 +1103,50 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   #adminTab span {
     color: white;
   }
-  
   #adminTab div[style*="background:#f0f0f0"] {
     background: #2a2a2a !important;
     border-color: #444 !important;
   }
-  
   #pendingList button {
     color: white;
   }
-  
   #pendingList button[style*="background:green"] {
     background: #00a86b !important;
   }
-  
   #pendingList button[style*="background:blue"] {
     background: #2563eb !important;
   }
-  /* Edit Profile Screen Dark Mode */
+  
+  /* Edit Profile Screen */
   #editProfileScreen {
     background: #000 !important;
   }
-  
-  #editProfileScreen .edit-profile-header {
-    background: #000 !important;
-    border-bottom-color: #262626 !important;
-  }
-  
   #editProfileScreen h2,
   #editProfileScreen button,
   #editProfileScreen div,
   #editProfileScreen label {
     color: #fff !important;
   }
-  
   #editProfileScreen input,
   #editProfileScreen textarea {
     color: #fff !important;
     background: transparent !important;
   }
-  
   #editProfileScreen input::placeholder,
   #editProfileScreen textarea::placeholder {
     color: #8e8e8e !important;
   }
-  
   #editProfileScreen [style*="border-bottom: 1px solid #efefef"] {
     border-bottom-color: #262626 !important;
   }
-  
   #editProfileScreen [style*="border: 1px solid #dbdbdb"] {
     border-color: #333 !important;
     background: #1a1a1a !important;
   }
-  
   #editProfileScreen #addSkillBtn {
     background: #0095f6 !important;
     color: white !important;
   }
-  
   #editProfileScreen #editLogoutBtn,
   #editProfileScreen #editDeleteAccountBtn {
     color: #ed4956 !important;
