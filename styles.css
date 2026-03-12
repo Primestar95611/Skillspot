@@ -408,8 +408,7 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   padding: 16px;
-  max-height: 400px;
-  overflow-y: auto;
+  /* Remove max-height and overflow-y */
 }
 .portfolio-grid .portfolio-item {
   position: relative;
