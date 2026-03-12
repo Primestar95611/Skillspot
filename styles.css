@@ -1237,4 +1237,35 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   .coming-soon { background: #333; color: #fbbf24; }
   .error-msg { color: #f87171; }
   .error-banner { background: #451a1a; color: #f87171; border-color: #7f1d1d; }
+  /* Admin tab dark mode */
+  #adminTab,
+  .tab-placeholder {
+    background: #1a1a1a !important;
+    color: white;
+  }
+  
+  #adminTab h2,
+  #adminTab h3,
+  #adminTab p,
+  #adminTab div,
+  #adminTab span {
+    color: white;
+  }
+  
+  #adminTab div[style*="background:#f0f0f0"] {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+  }
+  
+  #pendingList button {
+    color: white;
+  }
+  
+  #pendingList button[style*="background:green"] {
+    background: #00a86b !important;
+  }
+  
+  #pendingList button[style*="background:blue"] {
+    background: #2563eb !important;
+  }
 }
