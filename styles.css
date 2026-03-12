@@ -499,7 +499,7 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   overflow: hidden;
 }
 .map-container {
-  height: 40vh;
+  height: 35vh;
   width: 100%;
   position: relative;
   flex-shrink: 0;
@@ -510,7 +510,7 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   z-index: 1;
 }
 .search-controls {
-  height: 15vh;
+  height: 10vh;
   padding: 12px 16px;
   background: white;
   border-bottom: 1px solid #f0f3f8;
@@ -555,7 +555,7 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   box-shadow: 0 2px 8px rgba(0,102,255,0.3);
 }
 .drawer-list {
-  height: 45vh;
+  height: 55vh;
   background: white;
   border-radius: 32px 32px 0 0;
   padding: 16px;
