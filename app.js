@@ -1464,18 +1464,12 @@ if (confirmDeleteBtn) {
 }
 
 // ==================== REVIEW ====================
-document.getElementById('submitReviewBtn').addEventListener('click', () => {
-  alert('Review submitted (demo)');
-});
-
-document.querySelectorAll('#starRatingInput span').forEach((star, index) => {
-  star.addEventListener('click', () => {
-    document.querySelectorAll('#starRatingInput span').forEach((s, i) => {
-      if (i <= index) s.classList.add('selected');
-      else s.classList.remove('selected');
-    });
+const submitReviewBtn = document.getElementById('submitReviewBtn');
+if (submitReviewBtn) {
+  submitReviewBtn.addEventListener('click', () => {
+    alert('Review submitted (demo)');
   });
-});
+}
 
 // ==================== SEARCH CONTROLS ====================
 if (radiusSlider) {
