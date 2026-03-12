@@ -1742,7 +1742,6 @@ window.editSkill = async (userId, oldSkill) => {
   alert('Updated!');
   loadPendingSkills();
 };
-});
 
 // ==================== AUTH STATE ====================
 onAuthStateChanged(auth, async (user) => {
