@@ -342,7 +342,8 @@ backBtn.style.zIndex = '100';
 backBtn.style.background = 'white';
 backBtn.firstChild.addEventListener('click', () => {
   window.viewedProvider = null;
-  loadProfileData(); // Go back to your own profile
+  const previousTab = localStorage.getItem('lastNonMessagesTab') || 'home';
+switchTab(previousTab);
 });
 profileHeader.parentNode.insertBefore(backBtn, profileHeader);
     
