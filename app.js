@@ -341,6 +341,7 @@ backBtn.style.top = '0';
 backBtn.style.zIndex = '100';
 backBtn.style.background = 'white';
 backBtn.firstChild.addEventListener('click', () => {
+  window.viewedProvider = null;
   loadProfileData(); // Go back to your own profile
 });
 profileHeader.parentNode.insertBefore(backBtn, profileHeader);
