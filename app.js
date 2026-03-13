@@ -305,13 +305,6 @@ function openQuickView(providerId, providerData) {
     });
     
     
-    
-    // Back button functionality
-    document.getElementById('backFromProfileView').addEventListener('click', () => {
-      document.querySelector('.profile-view-header')?.remove();
-      loadProfileData(); // Reload current user's profile
-    });
-    
     // Add Message button next to Share
 const shareBtn = document.querySelector('.profile-btn-secondary');
 if (shareBtn) {
