@@ -183,6 +183,8 @@ async function compressImage(file) {
 // ==================== QUICK-VIEW SHEET ====================
 function openQuickView(providerId, providerData) {
   currentSheetProvider = { id: providerId, ...providerData };
+  console.log('Viewing provider:', viewedProvider);
+console.log('Current user:', currentUser);
   
   const portfolioImages = providerData.portfolioImages || [
     'https://ik.imagekit.io/GigsCourt/sample1',
