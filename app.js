@@ -1234,11 +1234,11 @@ if (!existingBackBtn) {
     <span style="font-size:18px; font-weight:600;">Messages</span>
   `;
   
-  backBtnContainer.firstChild.addEventListener('click', () => {
-    // Go back to the previous tab (home, search, or profile)
-    const lastTab = localStorage.getItem('lastNonMessagesTab') || 'home';
-    switchTab(lastTab);
-  });
+  const backButton = backBtnContainer.querySelector('button');
+backButton.addEventListener('click', () => {
+  const lastTab = localStorage.getItem('lastNonMessagesTab') || 'home';
+  switchTab(lastTab);
+});
   
   messagesTab.insertBefore(backBtnContainer, messagesTab.firstChild);
 }
