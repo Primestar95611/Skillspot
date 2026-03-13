@@ -229,6 +229,13 @@ function openQuickView(providerId, providerData) {
   switchTab('profile');
   
   setTimeout(async () => {
+    setTimeout(async () => {
+  // Remove any existing back buttons and message buttons from previous views
+  document.querySelectorAll('.profile-view-back-btn, .profile-view-message-btn, .dynamic-back-btn, .dynamic-message-btn').forEach(el => el.remove());
+  
+  // Also remove any back buttons that might have been added to the profile header
+  const existingBackBtn = document.querySelector('.profile-header').parentNode.querySelector('div[style*="position: sticky"]');
+  if (existingBackBtn) existingBackBtn.remove();
     // Hide edit/profile buttons and camera
     editProfileBtn.style.display = 'none';
     addPortfolioBtn.style.display = 'none';
