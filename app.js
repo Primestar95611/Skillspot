@@ -304,30 +304,7 @@ function openQuickView(providerId, providerData) {
       portfolioGrid.appendChild(item);
     });
     
-    // Add Instagram-style header with back arrow and message button
-    const existingHeader = document.querySelector('.profile-view-header');
-    if (existingHeader) existingHeader.remove();
     
-    const header = document.createElement('div');
-    header.className = 'profile-view-header';
-    header.style.cssText = `
-      position: sticky;
-      top: 0;
-      background: white;
-      border-bottom: 1px solid #efefef;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      z-index: 100;
-    `;
-    
-    header.innerHTML = `
-      <button id="backFromProfileView" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 8px; color: #262626; margin-right: 8px;">←</button>
-      <h2 style="flex: 1; font-size: 18px; font-weight: 600;">${viewedProvider.businessName || 'Profile'}</h2>
-      <button id="messageFromProfileBtn" style="background: #0095f6; color: white; border: none; border-radius: 8px; padding: 8px 16px; font-weight: 600; cursor: pointer;">Message</button>
-    `;
-    
-    profileTab.insertBefore(header, profileTab.firstChild);
     
     // Back button functionality
     document.getElementById('backFromProfileView').addEventListener('click', () => {
