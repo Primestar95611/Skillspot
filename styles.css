@@ -1137,6 +1137,24 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   .portfolio-header span { color: #aaa; }
   .add-portfolio-btn { background: #0066ff; }
   .portfolio-grid { background: #1a1a1a; }
+
+  /* Profile skills in dark mode */
+#profileSkillsList span {
+  background: #2a2a2a !important;
+  color: white !important;
+  border: 1px solid #444 !important;
+}
+
+/* Skills heading */
+.profile-skills div[style*="color: #666"] {
+  color: #aaa !important;
+}
+
+/* Edit Profile button */
+.profile-btn-primary {
+  background: #0066ff !important;
+  color: white !important;
+}
   
   /* Modals */
   .modal-overlay { background: rgba(0, 0, 0, 0.8); }
