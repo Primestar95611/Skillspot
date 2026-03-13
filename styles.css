@@ -20,6 +20,31 @@ body {
   height: 100%;
   width: 100%;
 }
+/* Light mode - auth container text black */
+.auth-container,
+.auth-container * {
+  color: black;
+}
+
+.auth-container input {
+  color: black;
+  background: white;
+}
+
+.auth-container input::placeholder {
+  color: #999;
+}
+
+.auth-container .btn {
+  background: #0066ff;
+  color: white;
+}
+
+.auth-container .btn-outline {
+  background: white;
+  border: 1px solid #e5e9f0;
+  color: #1e1e2f;
+}
 #app {
   height: 100vh;
   height: 100dvh;
@@ -1085,6 +1110,18 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   .conversation-name { color: white; }
   .last-message { color: #aaa; }
   .timestamp { color: #888; }
+
+  /* Skill tags in auth container */
+  .auth-container .skill-tag {
+    background: #2a2a2a !important;
+    color: #ddd !important;
+    border-color: #444 !important;
+  }
+  
+  .auth-container .skill-tag.selected {
+    background: #0066ff !important;
+    color: white !important;
+  }
   
   /* Profile tab */
   .profile-header { background: #1a1a1a; }
