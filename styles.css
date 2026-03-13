@@ -1250,7 +1250,9 @@ h2 { margin-bottom: 24px; font-weight: 600; }
     color: #ed4956 !important;
     border-bottom-color: #262626 !important;
   }
-}/* Home page brand styling */
+}
+
+/* Home page brand styling */
 .home-brand {
   font-size: 32px;
   font-weight: 700;
