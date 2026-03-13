@@ -36,9 +36,9 @@
         <span class="skill-tag" data-skill="Marketing">Marketing</span>
       </div>
       <div style="margin: 20px 0 10px 0;">
-        <p style="margin-bottom: 8px; color: #666;">Can't find your skill? Type it here:</p>
+        <p style="margin-bottom: 8px; color: #666;">Can't find your service? Type it here:</p>
         <input type="text" id="customSkillInput" class="input-field" placeholder="e.g., Wig Maker, Gele Tying, etc." maxlength="50">
-        <p style="font-size: 12px; color: #999; margin-top: 5px;">You can add multiple skills by separating with commas (e.g., Wig Maker, Hair Stylist)</p>
+        <p style="font-size: 12px; color: #999; margin-top: 5px;">You can add multiple services by separating with commas (e.g., Wig Maker, Hair Stylist)</p>
       </div>
       <button class="btn" id="signupWithEmailBtn">Sign up with Email</button>
       <div class="auth-footer">
@@ -63,7 +63,7 @@
         <input type="tel" id="phoneNumber" class="input-field" placeholder="Phone number" disabled>
       </div>
       <input type="password" id="phonePassword" class="input-field" placeholder="Password" disabled>
-      <div style="margin: 12px 0;">Skills (select multiple)</div>
+      <div style="margin: 12px 0;">Services (select multiple)</div>
       <div id="phoneSkillsContainer">
         <span class="skill-tag" data-skill="Barber">Barber</span>
         <span class="skill-tag" data-skill="Tech">Tech</span>
@@ -117,7 +117,7 @@
             <div id="map"></div>
           </div>
           <div class="search-controls">
-            <input type="text" id="skillSearch" class="search-input" placeholder="Search by skill (e.g., Barber, Tech)">
+            <input type="text" id="skillSearch" class="search-input" placeholder="Search by service (e.g., Barber, Tech)">
             <div class="slider-row">
               <span>📍 <span id="radiusValue">25</span>km</span>
               <input type="range" id="radiusSlider" min="1" max="50" value="25">
@@ -300,10 +300,10 @@
 
       <!-- Skills Section -->
       <div style="padding: 16px 0;">
-        <div style="font-size: 14px; font-weight: 600; color: #262626; margin-bottom: 12px;">Skills</div>
+        <div style="font-size: 14px; font-weight: 600; color: #262626; margin-bottom: 12px;">Services</div>
         <div id="editSkillsContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;"></div>
         <div style="display: flex; gap: 8px;">
-          <input type="text" id="newSkillInput" style="flex: 1; border: 1px solid #dbdbdb; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #262626; background: #fafafa;" placeholder="Add a new skill">
+          <input type="text" id="newSkillInput" style="flex: 1; border: 1px solid #dbdbdb; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #262626; background: #fafafa;" placeholder="Add a new service">
           <button id="addSkillBtn" style="background: #0095f6; color: white; border: none; border-radius: 8px; padding: 0 16px; font-weight: 600; font-size: 14px; cursor: pointer;">Add</button>
         </div>
       </div>
