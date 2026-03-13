@@ -229,7 +229,6 @@ function openQuickView(providerId, providerData) {
   switchTab('profile');
   
   setTimeout(async () => {
-    setTimeout(async () => {
   // Remove any existing back buttons and message buttons from previous views
   document.querySelectorAll('.profile-view-back-btn, .profile-view-message-btn, .dynamic-back-btn, .dynamic-message-btn').forEach(el => el.remove());
   
