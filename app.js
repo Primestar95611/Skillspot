@@ -2069,6 +2069,7 @@ if (saveEditProfileBtn) {
 if (editLogoutBtn) {
   editLogoutBtn.addEventListener('click', async () => {
     await signOut(auth);
+    window.location.reload();
   });
 }
 
