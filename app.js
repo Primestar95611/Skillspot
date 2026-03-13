@@ -224,6 +224,7 @@ function openQuickView(providerId, providerData) {
   
   // Save the provider we're viewing
   const viewedProvider = currentSheetProvider;
+    window.viewedProvider = viewedProvider;
   
   // Switch to profile tab
   switchTab('profile');
