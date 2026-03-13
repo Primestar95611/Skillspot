@@ -666,6 +666,41 @@ async function loadProfileData() {
       profileAddressContainer.style.display = 'none';
     }
   }
+
+  // Display skills on profile page (non-editable)
+const profileSkillsContainer = document.getElementById('profileSkillsContainer');
+if (!profileSkillsContainer) {
+  // Create skills container if it doesn't exist
+  const skillsSection = document.createElement('div');
+  skillsSection.className = 'profile-skills';
+  skillsSection.id = 'profileSkillsContainer';
+  skillsSection.innerHTML = `
+    <div style="padding: 0 16px 16px;">
+      <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #666;">Skills</div>
+      <div id="profileSkillsList" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+    </div>
+  `;
+  
+  // Insert after bio or contact section
+  const bioSection = document.querySelector('.profile-bio');
+  if (bioSection) {
+    bioSection.insertAdjacentElement('afterend', skillsSection);
+  } else {
+    document.querySelector('.profile-name-section').insertAdjacentElement('afterend', skillsSection);
+  }
+}
+
+// Populate skills
+const skillsList = document.getElementById('profileSkillsList');
+if (skillsList && data.skills) {
+  skillsList.innerHTML = '';
+  data.skills.forEach(skill => {
+    const skillTag = document.createElement('span');
+    skillTag.style.cssText = 'background: #f0f3f8; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #1e1e2f;';
+    skillTag.textContent = skill;
+    skillsList.appendChild(skillTag);
+  });
+}
   
   const portfolio = data.portfolioImages || [
     'https://ik.imagekit.io/GigsCourt/sample1',
