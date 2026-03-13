@@ -1516,6 +1516,7 @@ if (tabId !== 'messages') {
   document.querySelector(`.tab-item[data-tab="${tabId}"]`).classList.add('active');
   saveCurrentTab(tabId);
   if (tabId === 'home') loadProviders(true);
+  if (tabId === 'profile') loadProfileData();
   if (tabId === 'search') setTimeout(initMap, 100);
   if (tabId === 'messages') {
     loadConversations();
