@@ -2350,7 +2350,11 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
     map.removeControl(window.currentRoute);
   }
   
-  // Create routing control
+  // Remove existing toggle button
+  const oldBtn = document.getElementById('directionsToggleBtn');
+  if (oldBtn) oldBtn.remove();
+  
+  // Create routing control with panel visible initially
   window.currentRoute = L.Routing.control({
     waypoints: [
       L.latLng(userLat, userLng),
@@ -2363,7 +2367,9 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
       styles: [{ color: '#4287f5', weight: 5, opacity: 0.7 }]
     },
     createMarker: function() { return null; }, // Hide markers
-    show: false // Hide directions panel
+    show: true, // Show directions panel initially
+    addWaypoints: false,
+    draggableWaypoints: false
   }).addTo(map);
   
   // Add user marker (blue dot)
@@ -2381,6 +2387,29 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
     fillOpacity: 0.8,
     radius: 8
   }).addTo(map).bindPopup('Provider location');
+  
+  // Add toggle button
+  const toggleBtn = document.createElement('button');
+  toggleBtn.id = 'directionsToggleBtn';
+  toggleBtn.className = 'directions-toggle-btn active';
+  toggleBtn.innerHTML = '📋 Hide Directions';
+  
+  toggleBtn.addEventListener('click', function() {
+    const container = document.querySelector('.leaflet-routing-container');
+    if (container) {
+      if (container.style.display === 'none') {
+        container.style.display = 'block';
+        this.innerHTML = '📋 Hide Directions';
+        this.classList.add('active');
+      } else {
+        container.style.display = 'none';
+        this.innerHTML = '🗺️ Show Directions';
+        this.classList.remove('active');
+      }
+    }
+  });
+  
+  document.getElementById('map').appendChild(toggleBtn);
 }
 
   // Close profile viewer modal
