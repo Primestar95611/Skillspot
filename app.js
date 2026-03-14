@@ -215,9 +215,13 @@ function openQuickView(providerId, providerData) {
   sheetOverlay.classList.add('active');
   
   document.getElementById('sheetMessageBtn')?.addEventListener('click', () => {
-    closeQuickView();
-    showStartChatModal(providerId, providerData.businessName, providerData.profileImage);
-  });
+  // Save the current tab before opening chat
+  const currentTab = document.querySelector('.tab-pane:not(.hidden)').id.replace('Tab', '');
+  localStorage.setItem('chatReturnTab', currentTab);
+  
+  closeQuickView();
+  showStartChatModal(providerId, providerData.businessName, providerData.profileImage);
+});
   
   document.getElementById('sheetViewProfileBtn')?.addEventListener('click', () => {
   closeQuickView();
