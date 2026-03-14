@@ -2252,6 +2252,12 @@ if (editDeleteAccountBtn) {
   });
 }
 
+  // Close profile viewer modal
+document.getElementById('closeProfileViewerModal').addEventListener('click', () => {
+  document.getElementById('profileViewerModal').classList.add('hidden');
+  mainApp.classList.remove('hidden');
+});
+  
 // Make sure logout button exists before adding listener
 setTimeout(() => {
   const existingLogoutBtn = document.getElementById('logoutBtn');
