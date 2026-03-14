@@ -827,6 +827,14 @@ async function loadProfileData() {
   if (profileBio) {
     profileBio.textContent = data.bio || 'No bio yet.';
   }
+
+  // Load save count
+getSaveCount(viewedProvider.id).then(count => {
+  const saveCountEl = document.getElementById('profileSaveCount');
+  if (saveCountEl) {
+    saveCountEl.textContent = count;
+  }
+});
   
   const profileImageUrl = getThumbnailUrl(data.profileImage, 200);
   if (profileImage) profileImage.src = profileImageUrl;
