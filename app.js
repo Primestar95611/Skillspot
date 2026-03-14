@@ -1871,7 +1871,19 @@ if (backToConversations) {
   backToConversations.addEventListener('click', () => {
     chatView.classList.add('hidden');
     mainApp.classList.remove('hidden');
-    messagesTab.classList.remove('hidden');
+    
+    // Check if we came from a specific tab via quick view
+    const returnTab = localStorage.getItem('chatReturnTab');
+    if (returnTab) {
+      // Clear it so it doesn't affect future chats
+      localStorage.removeItem('chatReturnTab');
+      // Switch to that tab
+      switchTab(returnTab);
+    } else {
+      // Default to messages tab if no saved tab
+      messagesTab.classList.remove('hidden');
+    }
+    
     if (unsubscribeMessages) {
       unsubscribeMessages();
     }
