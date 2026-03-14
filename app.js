@@ -2888,6 +2888,87 @@ async function updateProfileSaveCount(userId) {
 
 // Show saved profiles modal
 async function showSavedProfiles() {
+  // Show people who saved your profile
+async function showSavesProfiles() {
+  if (!currentUser) {
+    alert('Please log in to see who saved you');
+    return;
+  }
+  
+  const modal = document.getElementById('savedProfilesModal');
+  const list = document.getElementById('savedProfilesList');
+  
+  if (!modal || !list) return;
+  
+  // Change the modal title to show it's for "Saves"
+  const modalTitle = document.querySelector('#savedProfilesModal h3');
+  if (modalTitle) {
+    modalTitle.textContent = 'People Who Saved You';
+  }
+  
+  // Show loading state
+  list.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">Loading...</div>';
+  modal.classList.remove('hidden');
+  
+  // Query for all saves where current user is the one being saved
+  const savesQuery = query(
+    collection(db, 'saves'),
+    where('savedUserId', '==', currentUser.uid),
+    orderBy('timestamp', 'desc')
+  );
+  
+  const snapshot = await getDocs(savesQuery);
+  
+  if (snapshot.empty) {
+    list.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No one has saved you yet</div>';
+    return;
+  }
+  
+  // Get all the user IDs who saved you
+  const saverIds = [];
+  snapshot.forEach(doc => {
+    saverIds.push(doc.data().saverId);
+  });
+  
+  // Get the actual user data for these IDs
+  const savers = await getUsersBatch(saverIds);
+  
+  let html = '';
+  
+  savers.forEach(user => {
+    html += `
+      <div class="saved-profile-item" data-user-id="${user.id}">
+        <img src="${getThumbnailUrl(user.profileImage, 100)}" loading="lazy">
+        <div class="saved-profile-info">
+          <div class="saved-profile-name">${user.businessName || 'Business'}</div>
+          <div class="saved-profile-rating">
+            <span class="star">★</span> ${user.rating || 0} (${user.reviewCount || 0})
+          </div>
+        </div>
+        <!-- No Unsave button here because you can't control who saves you -->
+      </div>
+    `;
+  });
+  
+  list.innerHTML = html;
+  
+  // Add click handlers for profile items
+  document.querySelectorAll('.saved-profile-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const userId = item.dataset.userId;
+      const user = savers.find(u => u.id === userId);
+      if (user) {
+        modal.classList.add('hidden');
+        // Reset modal title back for next time
+        if (modalTitle) {
+          modalTitle.textContent = 'Saved Profiles';
+        }
+        // Open profile viewer for this user
+        openQuickView(user.id, user);
+      }
+    });
+  });
+}
   if (!currentUser) {
     alert('Please log in to see your saved profiles');
     return;
