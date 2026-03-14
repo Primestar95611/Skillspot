@@ -920,6 +920,22 @@ async function loadProfileData() {
   if (profileJobs) profileJobs.textContent = data.jobsDone || 0;
   if (profileRating) profileRating.textContent = data.rating || 0;
   if (profileReviews) profileReviews.textContent = data.reviewCount || 0;
+
+  // Load save count for your own profile
+getSaveCount(auth.currentUser.uid).then(count => {
+  const saveCountEl = document.getElementById('profileSaveCount');
+  if (saveCountEl) {
+    saveCountEl.textContent = count;
+  }
+});
+
+// Make saves stat clickable to open saved list
+const saveStat = document.getElementById('profileSaveStat');
+if (saveStat) {
+  saveStat.addEventListener('click', () => {
+    showSavedProfiles();
+  });
+}
   
   if (profileBio) {
     profileBio.textContent = data.bio || 'No bio yet.';
