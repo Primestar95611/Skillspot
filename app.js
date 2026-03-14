@@ -1461,11 +1461,17 @@ async function initMap() {
   
   // Create map with smoother zoom and better controls
   map = L.map('map', {
-    zoomControl: false,  // We'll add custom zoom control
-    fadeAnimation: true,
-    zoomAnimation: true,
-    markerZoomAnimation: true
-  }).setView([7.0667, 6.2667], 12);
+  zoomControl: false,
+  fadeAnimation: true,
+  zoomAnimation: true,
+  markerZoomAnimation: true,
+  rotate: true,           // Enable rotation
+  bearing: 0,             // Initial bearing (0 = north)
+  trackResize: true,
+  rotateControl: true,    // Show rotation control
+  touchRotate: true,      // Enable touch rotation (two-finger rotate)
+  shiftKeyRotate: true    // Enable shift+click drag rotation
+}).setView([7.0667, 6.2667], 12);
   
   // Add dark theme with better contrast
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
