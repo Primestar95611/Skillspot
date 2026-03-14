@@ -331,12 +331,13 @@ document.getElementById('sheetDirectionsBtn')?.addEventListener('click', () => {
       ` : ''}
       
       <!-- Action Buttons -->
-      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-        ${viewedProvider.id !== currentUser?.uid ? `
-          <button id="modalMessageBtn" style="flex: 1; background: #666666; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer;">Message</button>
-        ` : ''}
-        <button id="modalShareBtn" style="flex: 1; background: transparent; border: 1px solid #dbdbdb; border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer;">Share</button>
-      </div>
+<div style="display: flex; gap: 10px; margin-bottom: 20px;">
+  ${viewedProvider.id !== currentUser?.uid ? `
+    <button id="modalMessageBtn" style="flex: 1; background: #666666; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer;">Message</button>
+    <button id="modalSaveBtn" style="flex: 1; background: transparent; border: 1px solid #dbdbdb; border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer;">Save</button>
+  ` : ''}
+  <button id="modalShareBtn" style="flex: 1; background: transparent; border: 1px solid #dbdbdb; border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer;">Share</button>
+</div>
       
       <!-- Portfolio Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
