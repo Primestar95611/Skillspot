@@ -331,6 +331,8 @@ if (viewedProvider.id !== currentUser?.uid) {
   }
 }
 
+    // Add back button only if we came from a card
+if (window.viewedProvider) {
     // Add back button at the top
 const profileHeader = document.querySelector('.profile-header');
 const backBtn = document.createElement('div');
@@ -346,6 +348,7 @@ backBtn.firstChild.addEventListener('click', () => {
 switchTab(previousTab);
 });
 profileHeader.parentNode.insertBefore(backBtn, profileHeader);
+}
     
   }, 100);
 });
