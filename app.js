@@ -135,6 +135,10 @@ let selectedImageUrl = null;
 let isPullingProfile = false;
 let profilePullStartY = 0;
 let portfolioStartIndex = 0;
+let unreadNotifications = 0;
+let notifications = [];
+let savesList = [];
+let notificationListener = null;
 const portfolioBatchSize = 9;
 
 // ==================== IMAGE COMPRESSION ====================
