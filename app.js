@@ -287,23 +287,27 @@ document.getElementById('sheetDirectionsBtn')?.addEventListener('click', () => {
   profileViewerContent.innerHTML = `
     <div style="padding: 20px;">
       <!-- Profile Header -->
-      <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 20px;">
-        <img src="${getThumbnailUrl(viewedProvider.profileImage, 200)}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
-        <div style="display: flex; gap: 24px;">
-          <div style="text-align: center;">
-            <div style="font-weight: 700; font-size: 18px;">${viewedProvider.jobsDone || 0}</div>
-            <div style="font-size: 13px; color: #8e94a7;">jobs</div>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-weight: 700; font-size: 18px;">${viewedProvider.rating || 0}</div>
-            <div style="font-size: 13px; color: #8e94a7;">★</div>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-weight: 700; font-size: 18px;">${viewedProvider.reviewCount || 0}</div>
-            <div style="font-size: 13px; color: #8e94a7;">reviews</div>
-          </div>
-        </div>
-      </div>
+<div style="display: flex; gap: 20px; align-items: center; margin-bottom: 20px;">
+  <img src="${getThumbnailUrl(viewedProvider.profileImage, 200)}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+  <div style="display: flex; gap: 24px;">
+    <div style="text-align: center;">
+      <div style="font-weight: 700; font-size: 18px;">${viewedProvider.jobsDone || 0}</div>
+      <div style="font-size: 13px; color: #8e94a7;">jobs</div>
+    </div>
+    <div style="text-align: center;">
+      <div style="font-weight: 700; font-size: 18px;">${viewedProvider.rating || 0}</div>
+      <div style="font-size: 13px; color: #8e94a7;">★</div>
+    </div>
+    <div style="text-align: center;">
+      <div style="font-weight: 700; font-size: 18px;">${viewedProvider.reviewCount || 0}</div>
+      <div style="font-size: 13px; color: #8e94a7;">reviews</div>
+    </div>
+    <div style="text-align: center;" id="saveStatContainer">
+      <div style="font-weight: 700; font-size: 18px;" id="profileSaveCount">0</div>
+      <div style="font-size: 13px; color: #8e94a7;">saves</div>
+    </div>
+  </div>
+</div>
       
       <!-- Business Name -->
       <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 2px;">${viewedProvider.businessName || 'Business'}</h2>
