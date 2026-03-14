@@ -2369,6 +2369,13 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
     },
     createMarker: function() { return null; }, // Hide markers
     show: false, // Hide directions panel initially
+    // Make sure container is hidden initially
+setTimeout(() => {
+  const container = document.querySelector('.leaflet-routing-container');
+  if (container) {
+    container.style.display = 'none';
+  }
+}, 100);
     addWaypoints: false,
     draggableWaypoints: false
   }).addTo(map);
