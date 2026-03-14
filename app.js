@@ -1630,15 +1630,20 @@ document.querySelectorAll('.tab-item').forEach(btn => {
     
     const isActive = !tabElement.classList.contains('hidden');
     
-    if (isActive && tabId === lastTapTab && (now - lastTapTime) < 500) {
-      if (tabId === 'home') loadProviders(true);
-      if (tabId === 'search') {
+    if (isActive) {
+      // If already on this tab
+      if (tabId === 'home') {
+        // Single tap on Home tab refreshes
+        loadProviders(true);
+      } else if (tabId === 'search') {
+        // Single tap on Search tab refreshes map
         loadAllUsers().then(() => updateMapAndList());
+      } else {
+        // For other tabs, just scroll to top
+        tabElement.scrollTop = 0;
       }
-      if (tabId === 'messages') loadConversations();
-    } else if (isActive) {
-      tabElement.scrollTop = 0;
     } else {
+      // Switching to a different tab
       switchTab(tabId);
     }
     
