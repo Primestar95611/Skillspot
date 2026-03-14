@@ -2467,6 +2467,204 @@ setTimeout(() => {
   document.getElementById('map').appendChild(toggleBtn);
 }
 
+let unreadNotifications = 0;
+let notifications = [];
+let savesList = [];
+let notificationListener = null;
+
+// ==================== NOTIFICATION FUNCTIONS ====================
+
+// Listen for notifications for current user
+function listenForNotifications() {
+  if (!currentUser) return;
+  
+  // Remove existing listener
+  if (notificationListener) {
+    notificationListener();
+  }
+  
+  const notificationsQuery = query(
+    collection(db, 'notifications'),
+    where('userId', '==', currentUser.uid),
+    orderBy('timestamp', 'desc'),
+    limit(50)
+  );
+  
+  notificationListener = onSnapshot(notificationsQuery, (snapshot) => {
+    notifications = [];
+    unreadNotifications = 0;
+    
+    snapshot.forEach(doc => {
+      const notification = { id: doc.id, ...doc.data() };
+      notifications.push(notification);
+      if (!notification.read) {
+        unreadNotifications++;
+      }
+    });
+    
+    updateNotificationBadge();
+  });
+}
+
+// Update the notification badge on the bell icon
+function updateNotificationBadge() {
+  const badge = document.getElementById('notificationCount');
+  if (!badge) return;
+  
+  if (unreadNotifications > 0) {
+    badge.textContent = unreadNotifications > 99 ? '99+' : unreadNotifications;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Mark all notifications as read
+async function markAllNotificationsRead() {
+  if (!currentUser || notifications.length === 0) return;
+  
+  const batch = writeBatch(db);
+  let hasUnread = false;
+  
+  notifications.forEach(notification => {
+    if (!notification.read) {
+      const notifRef = doc(db, 'notifications', notification.id);
+      batch.update(notifRef, { read: true });
+      hasUnread = true;
+    }
+  });
+  
+  if (hasUnread) {
+    await batch.commit();
+    // The onSnapshot will automatically update the UI
+  }
+}
+
+// Format notification time
+function formatNotificationTime(timestamp) {
+  if (!timestamp) return 'Just now';
+  
+  const now = new Date();
+  const notifDate = timestamp.toDate();
+  const diffMs = now - notifDate;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return 'Yesterday';
+  return `${diffDays}d ago`;
+}
+
+// Show notifications panel
+function toggleNotificationPanel() {
+  const panel = document.getElementById('notificationPanel');
+  if (!panel) return;
+  
+  panel.classList.toggle('active');
+  
+  if (panel.classList.contains('active')) {
+    renderNotifications();
+  }
+}
+
+// Render notifications in the panel
+async function renderNotifications() {
+  const list = document.getElementById('notificationList');
+  if (!list) return;
+  
+  if (notifications.length === 0) {
+    list.innerHTML = '<div class="notification-empty">No notifications yet</div>';
+    return;
+  }
+  
+  // Group saves by timestamp to create "X people saved your profile" messages
+  const groupedNotifications = {};
+  
+  notifications.forEach(notif => {
+    if (notif.type === 'save') {
+      // Group saves that happened around the same time (within 1 hour)
+      const date = notif.timestamp.toDate();
+      const hourKey = `${date.toDateString()}_${date.getHours()}`;
+      
+      if (!groupedNotifications[hourKey]) {
+        groupedNotifications[hourKey] = {
+          type: 'save',
+          timestamp: notif.timestamp,
+          users: [],
+          read: notif.read,
+          ids: []
+        };
+      }
+      
+      groupedNotifications[hourKey].users.push(notif.fromUserId);
+      groupedNotifications[hourKey].ids.push(notif.id);
+      // If any in group is unread, mark group as unread
+      if (!notif.read) {
+        groupedNotifications[hourKey].read = false;
+      }
+    }
+  });
+  
+  let html = '';
+  
+  // Convert grouped notifications to array and sort by timestamp
+  const groupedArray = Object.values(groupedNotifications).sort((a, b) => 
+    b.timestamp.toDate() - a.timestamp.toDate()
+  );
+  
+  for (const group of groupedArray) {
+    // Get user data for the first user in group (to show profile pic)
+    const users = await getUsersBatch(group.users.slice(0, 1));
+    const user = users[0] || { businessName: 'Someone', profileImage: DEFAULT_AVATAR };
+    
+    const timeStr = formatNotificationTime(group.timestamp);
+    const count = group.users.length;
+    
+    html += `
+      <div class="notification-item ${group.read ? '' : 'unread'}" data-notification-ids='${JSON.stringify(group.ids)}'>
+        <img src="${getThumbnailUrl(user.profileImage, 100)}" loading="lazy">
+        <div class="notification-content">
+          <div class="notification-text">
+            ${count === 1 ? 'Someone just saved your profile' : `${count} people saved your profile`}
+          </div>
+          <div class="notification-time">${timeStr}</div>
+        </div>
+      </div>
+    `;
+  }
+  
+  list.innerHTML = html;
+  
+  // Add click handlers for notification items
+  document.querySelectorAll('.notification-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      // Mark these notifications as read
+      const ids = JSON.parse(item.dataset.notificationIds);
+      const batch = writeBatch(db);
+      
+      ids.forEach(id => {
+        const notifRef = doc(db, 'notifications', id);
+        batch.update(notifRef, { read: true });
+      });
+      
+      await batch.commit();
+      
+      // Close panel and show saves list (we'll implement this next)
+      toggleNotificationPanel();
+      showSavedByList(ids);
+    });
+  });
+}
+
+// Show list of who saved your profile (to be implemented)
+async function showSavedByList(notificationIds) {
+  // We'll implement this in the next step
+  alert('Show saved by list - coming soon');
+}
+
   // Close profile viewer modal
 document.getElementById('closeProfileViewerModal').addEventListener('click', () => {
   document.getElementById('profileViewerModal').classList.add('hidden');
