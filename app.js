@@ -2896,6 +2896,20 @@ async function updateProfileSaveCount(userId) {
 
 // Show saved profiles modal
 async function showSavedProfiles() {
+  // Reset modal title to "Saved Profiles"
+  const modalTitle = document.querySelector('#savedProfilesModal h3');
+  if (modalTitle) {
+    modalTitle.textContent = 'Saved Profiles';
+  }
+  
+  if (!currentUser) {
+    alert('Please log in to see your saved profiles');
+    return;
+  }
+  // ... rest of the function
+}
+// Show saved profiles modal
+async function showSavedProfiles() {
   // Show people who saved your profile
 async function showSavesProfiles() {
   if (!currentUser) {
