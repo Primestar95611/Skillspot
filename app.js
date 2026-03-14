@@ -1486,6 +1486,37 @@ async function initMap() {
     metric: true,
     position: 'bottomleft'
   }).addTo(map);
+
+  // Get user's current location
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      function(position) {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+        
+        // Set map view to user's location with zoom level 14
+        map.setView([userLat, userLng], 14);
+        
+        // Add a pulsing blue dot for user location
+        L.circleMarker([userLat, userLng], {
+          color: '#4287f5',
+          fillColor: '#4287f5',
+          fillOpacity: 0.8,
+          radius: 8,
+          weight: 2,
+          opacity: 1
+        }).addTo(map).bindPopup('You are here');
+        
+        console.log('Map centered to your location');
+      },
+      function(error) {
+        console.log('Could not get location. Using default view.');
+        // Keep default view if location access denied
+      }
+    );
+  } else {
+    console.log('Geolocation not supported');
+  }
   
   await loadAllUsers();
   await updateMapAndList();
