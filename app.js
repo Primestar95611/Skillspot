@@ -225,6 +225,35 @@ function openQuickView(providerId, providerData) {
   closeQuickView();
   showStartChatModal(providerId, providerData.businessName, providerData.profileImage);
 });
+
+  // Directions button functionality
+document.getElementById('sheetDirectionsBtn')?.addEventListener('click', () => {
+  closeQuickView();
+  
+  // Switch to search tab to show map
+  switchTab('search');
+  
+  // Get user's location
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(position) {
+      const userLat = position.coords.latitude;
+      const userLng = position.coords.longitude;
+      const providerLat = providerData.location?.latitude;
+      const providerLng = providerData.location?.longitude;
+      
+      if (providerLat && providerLng) {
+        // Draw route between user and provider
+        drawRoute(userLat, userLng, providerLat, providerLng);
+      } else {
+        alert('Provider location not available');
+      }
+    }, function(error) {
+      alert('Could not get your location. Please enable location services.');
+    });
+  } else {
+    alert('Geolocation is not supported by your browser');
+  }
+});
   
   document.getElementById('sheetViewProfileBtn')?.addEventListener('click', () => {
   closeQuickView();
@@ -2314,12 +2343,52 @@ if (editDeleteAccountBtn) {
   });
 }
 
+// ==================== DRAW ROUTE ON MAP ====================
+function drawRoute(userLat, userLng, providerLat, providerLng) {
+  // Clear any existing routes
+  if (window.currentRoute) {
+    map.removeControl(window.currentRoute);
+  }
+  
+  // Create routing control
+  window.currentRoute = L.Routing.control({
+    waypoints: [
+      L.latLng(userLat, userLng),
+      L.latLng(providerLat, providerLng)
+    ],
+    routeWhileDragging: false,
+    showAlternatives: false,
+    fitSelectedRoutes: true,
+    lineOptions: {
+      styles: [{ color: '#4287f5', weight: 5, opacity: 0.7 }]
+    },
+    createMarker: function() { return null; }, // Hide markers
+    show: false // Hide directions panel
+  }).addTo(map);
+  
+  // Add user marker (blue dot)
+  L.circleMarker([userLat, userLng], {
+    color: '#4287f5',
+    fillColor: '#4287f5',
+    fillOpacity: 0.8,
+    radius: 8
+  }).addTo(map).bindPopup('Your location');
+  
+  // Add provider marker (red dot)
+  L.circleMarker([providerLat, providerLng], {
+    color: '#ef4444',
+    fillColor: '#ef4444',
+    fillOpacity: 0.8,
+    radius: 8
+  }).addTo(map).bindPopup('Provider location');
+}
+
   // Close profile viewer modal
 document.getElementById('closeProfileViewerModal').addEventListener('click', () => {
   document.getElementById('profileViewerModal').classList.add('hidden');
   mainApp.classList.remove('hidden');
 });
-  
+
 // Make sure logout button exists before adding listener
 setTimeout(() => {
   const existingLogoutBtn = document.getElementById('logoutBtn');
