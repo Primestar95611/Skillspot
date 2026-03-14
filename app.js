@@ -238,6 +238,20 @@ async function getUserSaves() {
   
   return [];
 }
+
+// Get count of profiles current user has saved
+async function getUserSavesCount() {
+  if (!currentUser) return 0;
+  
+  const savesQuery = query(
+    collection(db, 'saves'),
+    where('saverId', '==', currentUser.uid)
+  );
+  
+  const snapshot = await getDocs(savesQuery);
+  return snapshot.size;
+}
+
 // ==================== IMAGE COMPRESSION ====================
 async function compressImage(file) {
   return new Promise((resolve, reject) => {
