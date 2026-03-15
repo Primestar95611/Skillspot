@@ -3119,41 +3119,75 @@ function openLocationPicker() {
   
 // Initialize location picker map
 function initLocationPickerMap() {
-  if (locationPickerMap) return;
+  console.log('Starting initLocationPickerMap');
   
-  locationPickerMap = L.map('locationPickerMap').setView([7.0667, 6.2667], 13);
-  
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap, © CartoDB',
-    subdomains: 'abcd',
-    maxZoom: 20
-  }).addTo(locationPickerMap);
-  
-  // Get user's current location
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      function(position) {
-        const userLat = position.coords.latitude;
-        const userLng = position.coords.longitude;
-        
-        locationPickerMap.setView([userLat, userLng], 15);
-        
-        // Add blue dot for user location
-        L.circleMarker([userLat, userLng], {
-          color: '#4287f5',
-          fillColor: '#4287f5',
-          fillOpacity: 0.8,
-          radius: 6
-        }).addTo(locationPickerMap).bindPopup('You are here');
-      },
-      function(error) {
-        console.log('Could not get location');
-      }
-    );
+  // Check if map already exists
+  if (locationPickerMap) {
+    console.log('Map already exists');
+    return;
   }
   
-  // Update pin when map moves
-  locationPickerMap.on('moveend', updatePinPosition);
+  // Check if map container exists
+  const mapContainer = document.getElementById('locationPickerMap');
+  if (!mapContainer) {
+    console.log('Map container not found!');
+    return;
+  }
+  console.log('Map container found:', mapContainer);
+  
+  try {
+    // Create map
+    locationPickerMap = L.map('locationPickerMap').setView([7.0667, 6.2667], 13);
+    console.log('Map created');
+    
+    // Add tile layer
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap, © CartoDB',
+      subdomains: 'abcd',
+      maxZoom: 20
+    }).addTo(locationPickerMap);
+    console.log('Tile layer added');
+    
+    // Force map to resize after a moment
+    setTimeout(() => {
+      if (locationPickerMap) {
+        locationPickerMap.invalidateSize();
+        console.log('Map resized');
+      }
+    }, 300);
+    
+    // Get user's current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+          
+          locationPickerMap.setView([userLat, userLng], 15);
+          
+          // Add blue dot for user location
+          L.circleMarker([userLat, userLng], {
+            color: '#4287f5',
+            fillColor: '#4287f5',
+            fillOpacity: 0.8,
+            radius: 6
+          }).addTo(locationPickerMap).bindPopup('You are here');
+          
+          console.log('User location added');
+        },
+        function(error) {
+          console.log('Could not get location:', error);
+        }
+      );
+    }
+    
+    // Update pin when map moves
+    locationPickerMap.on('moveend', updatePinPosition);
+    console.log('Event listener added');
+    
+  } catch (error) {
+    console.log('Error creating map:', error);
+  }
 }
 
     // Update pin when map moves
