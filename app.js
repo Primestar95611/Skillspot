@@ -3117,6 +3117,12 @@ function openLocationPicker() {
   
   modal.classList.remove('hidden');
   
+  // Initialize map if not already done
+  setTimeout(() => {
+    initLocationPickerMap();
+  }, 100);
+}
+
 // Initialize location picker map
 function initLocationPickerMap() {
   console.log('Starting initLocationPickerMap');
