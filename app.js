@@ -3155,8 +3155,13 @@ function initLocationPickerMap() {
       function(error) {
         console.log('Could not get location');
       }
-      }
     );
+  }
+  
+  // Update pin when map moves
+  locationPickerMap.on('moveend', updatePinPosition);
+}
+
     // Update pin when map moves
   locationPickerMap.on('moveend', updatePinPosition);
   }
