@@ -3050,6 +3050,71 @@ document.getElementById('savedProfilesModal')?.addEventListener('click', (e) => 
   }
 });
 
+// ==================== LOCATION PICKER ====================
+
+let locationPickerMap = null;
+let locationPickerMarker = null;
+let selectedLat = null;
+let selectedLng = null;
+let searchCache = new Map(); // Cache for search results
+
+// Open location picker
+function openLocationPicker() {
+  const modal = document.getElementById('locationPickerModal');
+  if (!modal) return;
+  
+  modal.classList.remove('hidden');
+  
+  // Initialize map if not already done
+  setTimeout(() => {
+    initLocationPickerMap();
+  }, 100);
+}
+
+// Initialize location picker map
+function initLocationPickerMap() {
+  if (locationPickerMap) return;
+  
+  locationPickerMap = L.map('locationPickerMap').setView([7.0667, 6.2667], 13);
+  
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap, © CartoDB',
+    subdomains: 'abcd',
+    maxZoom: 20
+  }).addTo(locationPickerMap);
+  
+  // Get user's current location
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      function(position) {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+        
+        locationPickerMap.setView([userLat, userLng], 15);
+        
+        // Add blue dot for user location
+        L.circleMarker([userLat, userLng], {
+          color: '#4287f5',
+          fillColor: '#4287f5',
+          fillOpacity: 0.8,
+          radius: 6
+        }).addTo(locationPickerMap).bindPopup('You are here');
+      },
+      function(error) {
+        console.log('Could not get location');
+      }
+    );
+  }
+}
+
+// Close location picker
+document.getElementById('closeLocationPicker')?.addEventListener('click', () => {
+  document.getElementById('locationPickerModal').classList.add('hidden');
+});
+
+// Set Location button in Edit Profile
+document.getElementById('setLocationBtn')?.addEventListener('click', openLocationPicker);
+
   // Close profile viewer modal
 document.getElementById('closeProfileViewerModal').addEventListener('click', () => {
   document.getElementById('profileViewerModal').classList.add('hidden');
