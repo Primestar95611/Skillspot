@@ -3107,6 +3107,110 @@ function initLocationPickerMap() {
   }
 }
 
+// Search for locations with caching
+let searchTimeout = null;
+const searchInput = document.getElementById('locationSearch');
+const suggestionsDiv = document.getElementById('searchSuggestions');
+
+if (searchInput) {
+  searchInput.addEventListener('input', function(e) {
+    const query = e.target.value.trim();
+    
+    // Clear previous timeout
+    if (searchTimeout) clearTimeout(searchTimeout);
+    
+    // Hide suggestions if query is too short
+    if (query.length < 3) {
+      suggestionsDiv.style.display = 'none';
+      return;
+    }
+    
+    // Set timeout to avoid too many requests
+    searchTimeout = setTimeout(() => {
+      performSearch(query);
+    }, 500);
+  });
+}
+
+async function performSearch(query) {
+  // Check cache first
+  if (searchCache.has(query)) {
+    displaySuggestions(searchCache.get(query));
+    return;
+  }
+  
+  try {
+    // Nominatim API (free, 1 request/second limit)
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ng&limit=5`,
+      {
+        headers: {
+          'User-Agent': 'GigsCourt/1.0' // Required by Nominatim
+        }
+      }
+    );
+    
+    const results = await response.json();
+    
+    // Save to cache
+    searchCache.set(query, results);
+    
+    // Display results
+    displaySuggestions(results);
+    
+  } catch (error) {
+    console.error('Search error:', error);
+  }
+}
+
+function displaySuggestions(results) {
+  if (!suggestionsDiv) return;
+  
+  if (results.length === 0) {
+    suggestionsDiv.style.display = 'none';
+    return;
+  }
+  
+  let html = '';
+  results.forEach(result => {
+    html += `
+      <div class="suggestion-item" data-lat="${result.lat}" data-lng="${result.lon}" data-display="${result.display_name}">
+        ${result.display_name}
+      </div>
+    `;
+  });
+  
+  suggestionsDiv.innerHTML = html;
+  suggestionsDiv.style.display = 'block';
+  
+  // Add click handlers
+  document.querySelectorAll('.suggestion-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const lat = parseFloat(this.dataset.lat);
+      const lng = parseFloat(this.dataset.lng);
+      const displayName = this.dataset.display;
+      
+      // Move map to selected location
+      if (locationPickerMap) {
+        locationPickerMap.setView([lat, lng], 17);
+      }
+      
+      // Hide suggestions
+      suggestionsDiv.style.display = 'none';
+      
+      // Clear search input
+      searchInput.value = displayName;
+    });
+  });
+}
+
+// Click outside to close suggestions
+document.addEventListener('click', function(e) {
+  if (suggestionsDiv && !suggestionsDiv.contains(e.target) && e.target !== searchInput) {
+    suggestionsDiv.style.display = 'none';
+  }
+});
+
 // Close location picker
 document.getElementById('closeLocationPicker')?.addEventListener('click', () => {
   document.getElementById('locationPickerModal').classList.add('hidden');
