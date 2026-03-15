@@ -3211,6 +3211,68 @@ document.addEventListener('click', function(e) {
   }
 });
 
+// Get pin position (center of map)
+function updatePinPosition() {
+  if (!locationPickerMap) return;
+  
+  const center = locationPickerMap.getCenter();
+  selectedLat = center.lat;
+  selectedLng = center.lng;
+}
+
+// Update pin when map moves
+locationPickerMap?.on('moveend', updatePinPosition);
+
+// Confirm location button
+document.getElementById('confirmLocationBtn')?.addEventListener('click', function() {
+  const description = document.getElementById('locationDescriptionInput').value.trim();
+  
+  if (!selectedLat || !selectedLng) {
+    alert('Please drag the map to your location');
+    return;
+  }
+  
+  if (!description) {
+    alert('Please describe your location');
+    return;
+  }
+  
+  // Save to user profile (we'll implement this next)
+  saveUserLocation(selectedLat, selectedLng, description);
+  
+  // Close modal
+  document.getElementById('locationPickerModal').classList.add('hidden');
+  
+  // Update display in Edit Profile
+  document.getElementById('locationDisplay').style.display = 'block';
+  document.getElementById('locationDescription').textContent = description;
+  document.getElementById('setLocationBtn').style.display = 'none';
+});
+
+// Change location button
+document.getElementById('changeLocationBtn')?.addEventListener('click', function() {
+  document.getElementById('locationDisplay').style.display = 'none';
+  document.getElementById('setLocationBtn').style.display = 'block';
+  openLocationPicker();
+});
+
+// Save location to database
+async function saveUserLocation(lat, lng, description) {
+  if (!currentUser) return;
+  
+  try {
+    const userRef = doc(db, 'users', currentUser.uid);
+    await updateDoc(userRef, {
+      location: new GeoPoint(lat, lng),
+      locationDescription: description
+    });
+    console.log('Location saved');
+  } catch (error) {
+    console.error('Error saving location:', error);
+    alert('Failed to save location');
+  }
+}
+
 // Close location picker
 document.getElementById('closeLocationPicker')?.addEventListener('click', () => {
   document.getElementById('locationPickerModal').classList.add('hidden');
