@@ -2894,7 +2894,7 @@ async function updateProfileSaveCount(userId) {
 
 // ==================== SAVED LIST FUNCTIONS ====================
 
-// Show saved profiles modal
+// Show saved profiles modal (profiles YOU saved)
 async function showSavedProfiles() {
   // Reset modal title to "Saved Profiles"
   const modalTitle = document.querySelector('#savedProfilesModal h3');
@@ -2906,11 +2906,78 @@ async function showSavedProfiles() {
     alert('Please log in to see your saved profiles');
     return;
   }
-  // ... rest of the function
+  
+  const modal = document.getElementById('savedProfilesModal');
+  const list = document.getElementById('savedProfilesList');
+  
+  if (!modal || !list) return;
+  
+  // Show loading state
+  list.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">Loading...</div>';
+  modal.classList.remove('hidden');
+  
+  // Get saved profiles (profiles YOU saved)
+  const savedUsers = await getUserSaves();
+  
+  if (savedUsers.length === 0) {
+    list.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No saved profiles yet</div>';
+    return;
+  }
+  
+  let html = '';
+  
+  savedUsers.forEach(user => {
+    html += `
+      <div class="saved-profile-item" data-user-id="${user.id}">
+        <img src="${getThumbnailUrl(user.profileImage, 100)}" loading="lazy">
+        <div class="saved-profile-info">
+          <div class="saved-profile-name">${user.businessName || 'Business'}</div>
+          <div class="saved-profile-rating">
+            <span class="star">★</span> ${user.rating || 0} (${user.reviewCount || 0})
+          </div>
+        </div>
+        <button class="unsave-btn" data-user-id="${user.id}">Unsave</button>
+      </div>
+    `;
+  });
+  
+  list.innerHTML = html;
+  
+  // Add click handlers for profile items
+  document.querySelectorAll('.saved-profile-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      // Don't trigger if clicking the unsave button
+      if (e.target.classList.contains('unsave-btn')) return;
+      
+      const userId = item.dataset.userId;
+      const user = savedUsers.find(u => u.id === userId);
+      if (user) {
+        modal.classList.add('hidden');
+        // Open profile viewer for this user
+        openQuickView(user.id, user);
+      }
+    });
+  });
+  
+  // Add click handlers for unsave buttons
+  document.querySelectorAll('.unsave-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const userId = btn.dataset.userId;
+      
+      // Toggle save (which will remove it)
+      await toggleSave(userId);
+      
+      // Refresh the list
+      showSavedProfiles();
+      
+      // Also update the save count in any open profile
+      updateProfileSaveCount(userId);
+    });
+  });
 }
-// Show saved profiles modal
-async function showSavedProfiles() {
-  // Show people who saved your profile
+
+// Show people who saved your profile
 async function showSavesProfiles() {
   if (!currentUser) {
     alert('Please log in to see who saved you');
@@ -2973,100 +3040,8 @@ async function showSavesProfiles() {
   });
   
   list.innerHTML = html;
-  
-  // Add click handlers for profile items
-  document.querySelectorAll('.saved-profile-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const userId = item.dataset.userId;
-      const user = savers.find(u => u.id === userId);
-      if (user) {
-        modal.classList.add('hidden');
-        // Reset modal title back for next time
-        if (modalTitle) {
-          modalTitle.textContent = 'Saved Profiles';
-        }
-        // Open profile viewer for this user
-        openQuickView(user.id, user);
-      }
-    });
-  });
-}
-  if (!currentUser) {
-    alert('Please log in to see your saved profiles');
-    return;
-  }
-  
-  const modal = document.getElementById('savedProfilesModal');
-  const list = document.getElementById('savedProfilesList');
-  
-  if (!modal || !list) return;
-  
-  // Show loading state
-  list.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">Loading...</div>';
-  modal.classList.remove('hidden');
-  
-  // Get saved profiles
-  const savedUsers = await getUserSaves();
-  
-  if (savedUsers.length === 0) {
-    list.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No saved profiles yet</div>';
-    return;
-  }
-  
-  let html = '';
-  
-  savedUsers.forEach(user => {
-    html += `
-      <div class="saved-profile-item" data-user-id="${user.id}">
-        <img src="${getThumbnailUrl(user.profileImage, 100)}" loading="lazy">
-        <div class="saved-profile-info">
-          <div class="saved-profile-name">${user.businessName || 'Business'}</div>
-          <div class="saved-profile-rating">
-            <span class="star">★</span> ${user.rating || 0} (${user.reviewCount || 0})
-          </div>
-        </div>
-        <button class="unsave-btn" data-user-id="${user.id}">Unsave</button>
-      </div>
-    `;
-  });
-  
-  list.innerHTML = html;
-  
-  // Add click handlers for profile items
-  document.querySelectorAll('.saved-profile-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-      // Don't trigger if clicking the unsave button
-      if (e.target.classList.contains('unsave-btn')) return;
-      
-      const userId = item.dataset.userId;
-      const user = savedUsers.find(u => u.id === userId);
-      if (user) {
-        modal.classList.add('hidden');
-        // Open profile viewer for this user
-        openQuickView(user.id, user);
-      }
-    });
-  });
-  
-  // Add click handlers for unsave buttons
-  document.querySelectorAll('.unsave-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const userId = btn.dataset.userId;
-      
-      // Toggle save (which will remove it)
-      await toggleSave(userId);
-      
-      // Refresh the list
-      showSavedProfiles();
-      
-      // Also update the save count in any open profile
-      updateProfileSaveCount(userId);
-    });
-  });
-}
 
-// Close saved modal
+  // Close saved modal
 document.getElementById('closeSavedModal')?.addEventListener('click', () => {
   document.getElementById('savedProfilesModal')?.classList.add('hidden');
 });
