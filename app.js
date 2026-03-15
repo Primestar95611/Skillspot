@@ -409,10 +409,6 @@ document.getElementById('sheetDirectionsBtn')?.addEventListener('click', () => {
           <div style="font-weight: 700; font-size: 18px;">${viewedProvider.rating || 0}</div>
           <div style="font-size: 13px; color: #8e94a7;">★</div>
         </div>
-        <div style="text-align: center;">
-          <div style="font-weight: 700; font-size: 18px;">${viewedProvider.reviewCount || 0}</div>
-          <div style="font-size: 13px; color: #8e94a7;">reviews</div>
-        </div>
         <!-- Only show Saves count (people who saved this profile) - NOT clickable -->
         <div style="text-align: center;">
           <div style="font-weight: 700; font-size: 18px;" id="profileSavesCount">0</div>
