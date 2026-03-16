@@ -2652,20 +2652,29 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
         map.removeControl(window.currentRoute);
       }
       
-      // Create routing control with NO panel - just the blue line
+      // Create routing control
       window.currentRoute = L.Routing.control({
         waypoints: [
           L.latLng(userLat, userLng),
           L.latLng(providerLat, providerLng)
         ],
-        show: false, // Hides the text panel completely
         addWaypoints: false,
         draggableWaypoints: false,
         lineOptions: {
           styles: [{ color: '#4287f5', weight: 5, opacity: 0.7 }]
         },
-        createMarker: function() { return null; } // Hide markers
+        createMarker: function() { return null; }, // Hide markers
+        showAlternatives: false,
+        fitSelectedRoutes: false
       }).addTo(map);
+      
+      // Hide the container after it's created
+      setTimeout(function() {
+        var container = document.querySelector('.leaflet-routing-container');
+        if (container) {
+          container.style.display = 'none';
+        }
+      }, 100);
       
     } catch (error) {
       alert('Error drawing route: ' + error.message);
