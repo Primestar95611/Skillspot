@@ -1783,3 +1783,8 @@ h2 { margin-bottom: 24px; font-weight: 600; }
     color: #ccc !important;
   }
 }
+
+/* Force pin to show above map */
+#locationPickerModal .modal div[style*="position: absolute"][style*="pointer-events: none"] {
+  z-index: 1000 !important;
+}
