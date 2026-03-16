@@ -3120,7 +3120,7 @@ function openLocationPicker() {
   // Initialize map if not already done
   setTimeout(() => {
     initLocationPickerMap();
-  }, 100);
+  }, 300);
 }
 
 // Initialize location picker map
@@ -3160,7 +3160,7 @@ function initLocationPickerMap() {
         locationPickerMap.invalidateSize();
         console.log('Map resized');
       }
-    }, 300);
+    }, 500);
     
     // Get user's current location
     if (navigator.geolocation) {
