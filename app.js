@@ -2663,6 +2663,13 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
     draggableWaypoints: false
   }).addTo(map);
 
+  // Force map to update after adding route
+  setTimeout(() => {
+    if (map) {
+      map.invalidateSize();
+    }
+  }, 100);
+
   // Make sure container is hidden initially
 setTimeout(() => {
   const container = document.querySelector('.leaflet-routing-container');
