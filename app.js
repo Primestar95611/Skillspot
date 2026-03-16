@@ -2168,13 +2168,45 @@ if (submitReviewBtn) {
 // ==================== SEARCH CONTROLS ====================
 if (radiusSlider) {
   let sliderTimeout;
+  let radiusCircle = null;
+  
   radiusSlider.addEventListener('input', (e) => {
     aktuellerRadius = parseInt(e.target.value);
     radiusValue.textContent = aktuellerRadius;
     
     clearTimeout(sliderTimeout);
     sliderTimeout = setTimeout(async () => {
-      if (map) await updateMapAndList();
+      if (map) {
+        // Update the list
+        await updateMapAndList();
+        
+        // Get user's location
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            
+            // Remove old circle if exists
+            if (radiusCircle) {
+              map.removeLayer(radiusCircle);
+            }
+            
+            // Draw new circle (radius in meters: km * 1000)
+            radiusCircle = L.circle([userLat, userLng], {
+              color: '#4287f5',
+              fillColor: '#4287f5',
+              fillOpacity: 0.1,
+              radius: aktuellerRadius * 1000
+            }).addTo(map);
+            
+            // Zoom map to fit the circle
+            map.fitBounds(radiusCircle.getBounds());
+            
+          }, function(error) {
+            console.log('Could not get location for circle');
+          });
+        }
+      }
     }, 150);
   });
 }
