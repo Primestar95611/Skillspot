@@ -547,7 +547,7 @@ function closeQuickView() {
   sheetOverlay.classList.remove('active');
 }
 
-// ==================== PULL TO REFRESH - INSTAGRAM STYLE ====================
+// ==================== INSTAGRAM-STYLE PULL TO REFRESH ====================
 function createRefreshIndicator() {
   const indicator = document.createElement('div');
   indicator.className = 'refresh-indicator';
@@ -561,8 +561,10 @@ function createRefreshIndicator() {
 
 function initPullToRefresh() {
   const tabContent = document.querySelector('.tab-content');
+  const tabs = ['homeTab', 'messagesTab', 'profileTab']; // Tabs that support pull to refresh
   
   tabContent.addEventListener('touchstart', (e) => {
+    // Don't trigger on map
     const mapElement = document.getElementById('map');
     if (mapElement && mapElement.contains(e.target)) {
       isTouchingMap = true;
@@ -570,23 +572,23 @@ function initPullToRefresh() {
     }
     isTouchingMap = false;
     
+    // Only enable on supported tabs
     const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
-    if (activeTab === 'searchTab') {
+    if (!tabs.includes(activeTab)) {
       isPulling = false;
       return;
     }
     
-    // Only allow pull-to-refresh if touch starts in top 60px of screen
-const touchY = e.touches[0].clientY;
-if (tabContent.scrollTop === 0 && touchY < 60) {
-  pullStartY = touchY;
-  isPulling = true;
-}
+    // Check if we're at the top of the content
+    if (tabContent.scrollTop === 0) {
+      pullStartY = e.touches[0].clientY;
+      isPulling = true;
+    }
   }, { passive: true });
 
   tabContent.addEventListener('touchmove', (e) => {
     const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
-    if (activeTab === 'searchTab') {
+    if (!tabs.includes(activeTab)) {
       isPulling = false;
       return;
     }
@@ -597,23 +599,28 @@ if (tabContent.scrollTop === 0 && touchY < 60) {
     const currentY = e.touches[0].clientY;
     let diff = currentY - pullStartY;
     
+    // Only handle downward pull
     if (diff > 0) {
       e.preventDefault();
       
-      let resistance = 1;
-      if (diff > 30) resistance = 0.7;
-      if (diff > 60) resistance = 0.4;
-      if (diff > 90) resistance = 0.25;
+      // Instagram-like resistance: harder to pull as you go further
+      let resistance = 0.4;
+      if (diff < 50) resistance = 0.6;
+      if (diff < 30) resistance = 0.8;
+      if (diff < 15) resistance = 1;
       
-      const pullDistance = Math.min(diff * resistance, 100);
+      const pullDistance = Math.min(diff * resistance, 80);
       
+      // Create indicator if needed
       if (!refreshIndicator) {
         refreshIndicator = createRefreshIndicator();
       }
       
-      refreshIndicator.style.transform = `translateY(${pullDistance + 60}px)`;
+      // Move indicator with the pull
+      refreshIndicator.style.transform = `translateY(${pullDistance}px)`;
       
-      if (diff > 90) {
+      // Update text based on pull distance
+      if (pullDistance > 60) {
         refreshIndicator.querySelector('span').textContent = 'Release to refresh';
       } else {
         refreshIndicator.querySelector('span').textContent = 'Pull to refresh';
@@ -623,7 +630,7 @@ if (tabContent.scrollTop === 0 && touchY < 60) {
 
   tabContent.addEventListener('touchend', async (e) => {
     const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
-    if (activeTab === 'searchTab') {
+    if (!tabs.includes(activeTab)) {
       isPulling = false;
       return;
     }
@@ -637,10 +644,13 @@ if (tabContent.scrollTop === 0 && touchY < 60) {
     
     const endY = e.changedTouches[0].clientY;
     const diff = endY - pullStartY;
+    const pullDistance = Math.min(diff * 0.4, 80);
     
-    if (diff > 100 && tabContent.scrollTop === 0) {
+    // If pulled far enough, refresh
+    if (pullDistance > 60 && tabContent.scrollTop === 0) {
       refreshIndicator.querySelector('span').textContent = 'Refreshing...';
       
+      // Refresh based on active tab
       if (activeTab === 'homeTab') {
         await loadProviders(true);
       } else if (activeTab === 'messagesTab') {
@@ -649,26 +659,23 @@ if (tabContent.scrollTop === 0 && touchY < 60) {
         await loadProfileData();
       }
       
-      refreshIndicator.style.transform = 'translateY(60px)';
+      // Animate indicator back up
+      refreshIndicator.style.transform = 'translateY(-60px)';
       setTimeout(() => {
-        refreshIndicator.style.transform = 'translateY(-60px)';
-        setTimeout(() => {
-          if (refreshIndicator) {
-            refreshIndicator.remove();
-            refreshIndicator = null;
-          }
-        }, 200);
-      }, 500);
+        if (refreshIndicator) {
+          refreshIndicator.remove();
+          refreshIndicator = null;
+        }
+      }, 300);
     } else {
-      if (refreshIndicator) {
-        refreshIndicator.style.transform = 'translateY(-60px)';
-        setTimeout(() => {
-          if (refreshIndicator) {
-            refreshIndicator.remove();
-            refreshIndicator = null;
-          }
-        }, 200);
-      }
+      // Not pulled far enough - just animate back
+      refreshIndicator.style.transform = 'translateY(-60px)';
+      setTimeout(() => {
+        if (refreshIndicator) {
+          refreshIndicator.remove();
+          refreshIndicator = null;
+        }
+      }, 200);
     }
     
     isPulling = false;
