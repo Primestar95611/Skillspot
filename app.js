@@ -2642,7 +2642,6 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
   // Function to try drawing route
   function tryDrawRoute() {
     if (!map) {
-      alert('Map still not ready, waiting...');
       setTimeout(tryDrawRoute, 500);
       return;
     }
@@ -2653,16 +2652,20 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
         map.removeControl(window.currentRoute);
       }
       
-      // Create a simple routing control
+      // Create routing control with NO panel
       window.currentRoute = L.Routing.control({
         waypoints: [
           L.latLng(userLat, userLng),
           L.latLng(providerLat, providerLng)
         ],
-        show: true
+        show: false, // HIDE the directions panel
+        addWaypoints: false,
+        draggableWaypoints: false,
+        lineOptions: {
+          styles: [{ color: '#4287f5', weight: 5, opacity: 0.7 }]
+        },
+        createMarker: function() { return null; } // Hide markers
       }).addTo(map);
-      
-      alert('Route drawn successfully!');
       
     } catch (error) {
       alert('Error drawing route: ' + error.message);
