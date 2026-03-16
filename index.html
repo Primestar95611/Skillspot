@@ -1,494 +1,1785 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GigsCourt</title>
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <!-- PhotoSwipe CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe.min.css" />
-  <!-- Feather Icons -->
-  <script src="https://unpkg.com/feather-icons"></script>
-  <!-- Our custom styles -->
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-<div id="app">
-  <!-- AUTH CONTAINER -->
-  <div id="authContainer" class="auth-container">
-    <div class="auth-toggle">
-      <button id="toggleEmailSignup" class="active">Email</button>
-      <button id="togglePhoneSignup">Phone</button>
-    </div>
+/* Fullscreen app lock - NO browser movement */
+html, body {
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  position: fixed;
+  margin: 0;
+  padding: 0;
+}
 
-    <!-- Email Signup View -->
-    <div id="emailSignupView">
-      <h2>Create with email</h2>
-      <input type="text" id="emailBusinessName" class="input-field" placeholder="Business name">
-      <input type="email" id="emailAddress" class="input-field" placeholder="Email">
-      <input type="password" id="emailPassword" class="input-field" placeholder="Password">
-      <div style="margin: 12px 0;">Skills (select multiple)</div>
-      <div id="emailSkillsContainer">
-        <span class="skill-tag" data-skill="Barber">Barber</span>
-        <span class="skill-tag" data-skill="Tech">Tech</span>
-        <span class="skill-tag" data-skill="Design">Design</span>
-        <span class="skill-tag" data-skill="Marketing">Marketing</span>
-      </div>
-      <div style="margin: 20px 0 10px 0;">
-        <p style="margin-bottom: 8px; color: #666;">Can't find your service? Type it here:</p>
-        <input type="text" id="customSkillInput" class="input-field" placeholder="e.g., Wig Maker, Gele Tying, etc." maxlength="50">
-        <p style="font-size: 12px; color: #999; margin-top: 5px;">You can add multiple services by separating with commas (e.g., Wig Maker, Hair Stylist)</p>
-      </div>
-      <button class="btn" id="signupWithEmailBtn">Sign up with Email</button>
-      <div class="auth-footer">
-        <button id="gotoLoginFromSignup">Already have an account? Log in</button>
-      </div>
-    </div>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+body {
+  background: #f5f7fa;
+  height: 100%;
+  width: 100%;
+}
 
-    <!-- Phone Signup View -->
-    <div id="phoneSignupView" class="hidden">
-      <h2>Create with phone</h2>
-      <div class="coming-soon">
-        📱 Phone signup coming soon! Use email for now.
-      </div>
-      <input type="text" id="phoneBusinessName" class="input-field" placeholder="Business name" disabled>
-      <div class="phone-input-container">
-        <select id="phoneCountryCode" disabled>
-          <option value="+234">🇳🇬 +234</option>
-          <option value="+1">🇺🇸 +1</option>
-          <option value="+44">🇬🇧 +44</option>
-          <option value="+81">🇯🇵 +81</option>
-        </select>
-        <input type="tel" id="phoneNumber" class="input-field" placeholder="Phone number" disabled>
-      </div>
-      <input type="password" id="phonePassword" class="input-field" placeholder="Password" disabled>
-      <div style="margin: 12px 0;">Services (select multiple)</div>
-      <div id="phoneSkillsContainer">
-        <span class="skill-tag" data-skill="Barber">Barber</span>
-        <span class="skill-tag" data-skill="Tech">Tech</span>
-        <span class="skill-tag" data-skill="Design">Design</span>
-        <span class="skill-tag" data-skill="Marketing">Marketing</span>
-      </div>
-      <button class="btn btn-disabled" id="signupWithPhoneBtn" disabled>Sign up with Phone</button>
-      <div class="auth-footer">
-        <button id="gotoLoginFromPhone">Already have an account? Log in</button>
-      </div>
-    </div>
+/* Light mode - auth container text black */
+.auth-container,
+.auth-container * {
+  color: black;
+}
 
-    <!-- Login View -->
-    <div id="loginView" class="hidden">
-      <h2>Welcome back</h2>
-      <input type="email" id="loginEmail" class="input-field" placeholder="Email">
-      <input type="password" id="loginPassword" class="input-field" placeholder="Password">
-      <button class="btn" id="loginBtn">Log in</button>
-      <div class="auth-footer">
-        <button id="gotoSignupFromLogin">Don't have an account? Sign up</button>
-      </div>
-      <div id="loginError" class="error-msg"></div>
-    </div>
+.auth-container input {
+  color: black;
+  background: white;
+}
 
-    <!-- Verify View -->
-    <div id="verifyView" class="hidden">
-      <h2>Verify your email</h2>
-      <p style="margin: 24px 0; color: #4b5563;">We sent a verification link to your email.</p>
-      <button class="btn" id="checkVerificationBtn">I've verified</button>
-      <button class="btn btn-outline" id="resendVerifyBtn">Resend link</button>
-    </div>
+.auth-container input::placeholder {
+  color: #999;
+}
 
-    <div id="authError" class="error-msg"></div>
-  </div>
+.auth-container .btn {
+  background: #666666;
+  color: white;
+}
 
-  <!-- MAIN APP -->
-  <div id="mainApp" class="main-app hidden">
-    <!-- Tab Content -->
-    <div class="tab-content" id="tabContent">
-      <!-- Home Tab -->
-      <div id="homeTab" class="tab-pane">
-  <div style="padding: 20px 16px 4px; display: flex; justify-content: space-between; align-items: flex-start; position: relative;">
-    <div style="display: flex; flex-direction: column;">
-      <span style="font-size: 26px; font-weight: 650;">Discover</span>
-      <span style="font-size: 14px; color: #CC0000; margin-top: 4px; font-style: italic;">best talents closest to you</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 15px;">
-      <!-- Bell Icon with Notification Count -->
-      <div id="notificationBell" style="position: relative; cursor: pointer;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-        </svg>
-        <span id="notificationCount" style="position: absolute; top: -5px; right: -5px; background: #CC0000; color: white; font-size: 11px; font-weight: bold; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; display: none;">0</span>
-      </div>
-      <div class="home-brand" style="font-size: 32px; font-weight: 700; display: flex; flex-direction: column; align-items: center; line-height: 1.2;">
-        <span class="gigs">Gigs</span>
-        <span class="court">Court</span>
-      </div>
-    </div>
-  </div>
-        <!-- ADD THIS NOTIFICATION PANEL RIGHT HERE -->
-  <div id="notificationPanel" class="notification-panel">
-    <div class="notification-header">
-      <h3>Notifications</h3>
-      <button id="markAllReadBtn">Mark all as read</button>
-    </div>
-    <div id="notificationList" class="notification-list">
-      <!-- Notifications will be added here dynamically -->
-    </div>
-  </div>
-  <div id="homeGrid" class="grid-2"></div>
-  <div id="sentinel"></div>
-</div>
+.auth-container .btn-outline {
+  background: white;
+  border: 1px solid #e5e9f0;
+  color: #1e1e2f;
+}
+#app {
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  overflow: hidden;
+  position: relative;
+}
+.auth-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 20px;
+  background: white;
+  -webkit-overflow-scrolling: touch;
+}
+.hidden {
+  display: none !important;
+}
+.main-app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 80px;
+  position: relative;
+  height: 100%;
+}
+#searchTab {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+  padding-bottom: 0;
+  height: 100%;
+}
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0 22px;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  z-index: 1000;
+}
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 8px 0;
+  cursor: pointer;
+  position: relative;
+  flex: 1;
+}
+.tab-icon {
+  font-size: 24px;
+  color: #8e94a7;
+  transition: color 0.2s ease;
+}
+.tab-item.active .tab-icon {
+  color: #000000;
+}
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  background: #666666;
+  border-radius: 3px;
+}
+.tab-item {
+  font-size: 0;
+}
+.tab-item .tab-icon {
+  font-size: 24px;
+}
 
-      <!-- Search Tab -->
-      <div id="searchTab" class="tab-pane hidden">
-        <div class="search-container">
-          <div class="map-container" style="position: relative;">
-  <div id="map"></div>
-</div>
-          <div class="search-controls">
-            <input type="text" id="skillSearch" class="search-input" placeholder="Search by service (e.g., Barber, Tech)">
-            <div class="slider-row">
-              <span>📍 <span id="radiusValue">25</span>km</span>
-              <input type="range" id="radiusSlider" min="1" max="50" value="25">
-            </div>
-          </div>
-          <div class="drawer-list">
-            <div class="pull-handle"></div>
-            <div id="providerListDrawer"></div>
-          </div>
-        </div>
-      </div>
+/* Auth & Forms - Keep (still used) */
+h2 { margin-bottom: 24px; font-weight: 600; }
+.input-field {
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid #e5e9f0;
+  border-radius: 30px;
+  font-size: 16px;
+  margin-bottom: 16px;
+  background: #fafbfc;
+}
+.btn {
+  background: #666666;
+  color: white;
+  border: none;
+  border-radius: 40px;
+  padding: 16px;
+  font-weight: 600;
+  font-size: 16px;
+  width: 100%;
+  margin-top: 12px;
+  cursor: pointer;
+}
+.btn-outline {
+  background: white;
+  border: 1px solid #e5e9f0;
+  color: #1e1e2f;
+}
+.btn-danger {
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 40px;
+  padding: 16px;
+  font-weight: 600;
+  font-size: 16px;
+  width: 100%;
+  margin-top: 12px;
+  cursor: pointer;
+}
+.error-msg { color: #dc2626; font-size: 14px; margin: 12px 0; text-align: center; }
+.auth-toggle {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 28px;
+  background: #f0f3f8;
+  border-radius: 60px;
+  padding: 6px;
+}
+.auth-toggle button {
+  flex: 1;
+  padding: 14px;
+  border-radius: 60px;
+  border: none;
+  font-weight: 600;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+}
+.auth-toggle button.active {
+  background: #666666;
+  color: white;
+}
+.phone-input-container {
+  display: flex;
+  gap: 10px;
+}
+.phone-input-container select {
+  width: 30%;
+  padding: 16px;
+  border-radius: 30px;
+  border: 1px solid #e5e9f0;
+  background: #fafbfc;
+  font-size: 16px;
+}
+.phone-input-container input {
+  width: 70%;
+}
+.skill-tag {
+  display: inline-block;
+  background: #f0f3f8;
+  padding: 10px 20px;
+  border-radius: 40px;
+  margin: 5px 6px 0 0;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.skill-tag.selected {
+  background: #666666;
+  color: white;
+}
+.coming-soon {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 12px;
+  border-radius: 30px;
+  text-align: center;
+  font-size: 14px;
+  margin: 16px 0;
+}
+.auth-footer {
+  text-align: center;
+  margin-top: 20px;
+}
+.auth-footer button {
+  background: none;
+  border: none;
+  color: #000000;
+  font-size: 16px;
+  cursor: pointer;
+}
 
-      <!-- Messages Tab -->
-      <div id="messagesTab" class="tab-pane hidden">
-        <div id="conversationsList" class="conversations-list"></div>
-      </div>
-      
-      <!-- Profile Tab -->
-<div id="profileTab" class="tab-pane hidden">
-  <div id="uploadError" class="error-banner hidden" style="margin-top: 0;"></div>
+/* Home Tab */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px;
+}
+.provider-card {
+  background: white;
+  border-radius: 24px;
+  padding: 14px 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.provider-card:active {
+  transform: scale(0.98);
+}
+.card-img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 20px;
+  background: #f0f3f8;
+  object-fit: cover;
+  margin-bottom: 10px;
+}
+.business-name {
+  font-weight: 650;
+  font-size: 15px;
+  line-height: 1.3;
+}
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  margin: 4px 0;
+}
+.star {
+  color: #f5b342;
+}
+.distance {
+  font-size: 12px;
+  color: #000000;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  font-weight: 600;
+}
+.skills {
+  font-size: 12px;
+  color: #8e94a7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#sentinel {
+  height: 10px;
+  width: 100%;
+}
+
+/* Profile Tab - Instagram Styles */
+.profile-header {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  align-items: center;
+  background: white;
+  position: relative;
+}
+.profile-image-container {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.profile-image-container img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+}
+.camera-icon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #666666;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  border: 2px solid white;
+}
+.profile-stats {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin: 0;
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.stat-number {
+  font-weight: 700;
+  font-size: 18px;
+}
+.stat-label {
+  font-size: 13px;
+  color: #8e94a7;
+}
+.profile-name-section {
+  padding: 0 16px 12px;
+  text-align: left;
+}
+.profile-business-name {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.profile-username {
+  font-size: 14px;
+  color: #8e94a7;
+  margin: 0;
+}
+.profile-bio {
+  padding: 0 16px 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.profile-contact {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+.contact-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+.contact-text {
+  color: #1e1e2f;
+}
+.profile-actions {
+  display: flex;
+  gap: 10px;
+  padding: 0 16px 20px;
+}
+.profile-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+.profile-btn-primary {
+  background: transparent;
+  border: 1px solid #dbdbdb;
+  color: #1e1e2f;
+}
+.profile-btn-primary:active {
+  opacity: 0.8;
+}
+.profile-btn-secondary {
+  background: transparent;
+  border: 1px solid #dbdbdb;
+  color: #1e1e2f;
+}
+.profile-btn-secondary:active {
+  background: #f5f5f5;
+}
+
+/* Portfolio */
+.portfolio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 16px 8px;
+}
+.add-portfolio-btn {
+  background: transparent;
+  border: 1px solid #dbdbdb;
+  color: #1e1e2f;
+  border-radius: 30px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 16px;
+}
+.portfolio-grid .portfolio-item {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+}
+.portfolio-grid img {
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.portfolio-grid img.loaded {
+  opacity: 1;
+}
+.delete-overlay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(220, 38, 38, 0.9);
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 10;
+}
+.portfolio-item.long-press .delete-overlay {
+  opacity: 1;
+}
+
+/* Search Tab */
+.search-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.map-container {
+  height: 30vh;
+  width: 100%;
+  position: relative;
+  flex-shrink: 0;
+}
+#map {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+.search-controls {
+  height: 15vh;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid #f0f3f8;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e5e9f0;
+  border-radius: 40px;
+  font-size: 15px;
+  background: #fafbfc;
+}
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.slider-row span {
+  font-weight: 500;
+  color: #1e1e2f;
+  min-width: 70px;
+  font-size: 14px;
+}
+.slider-row input {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  background: #e5e9f0;
+  border-radius: 10px;
+}
+.slider-row input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #666666;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(102,102,102,0.3);
+}
+.drawer-list {
+  height: 55vh;
+  background: white;
+  border-radius: 32px 32px 0 0;
+  padding: 16px;
+  overflow-y: auto;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.02);
+  flex: 1;
+}
+.pull-handle {
+  width: 48px;
+  height: 5px;
+  background: #d0d5dd;
+  border-radius: 10px;
+  margin: 0 auto 16px;
+}
+.provider-list-item {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+  background: #fafbfc;
+  border-radius: 24px;
+  margin-bottom: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+.provider-list-item img {
+  width: 50px;
+  height: 50px;
+  border-radius: 25px;
+  object-fit: cover;
+}
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+/* Map Markers */
+.custom-marker {
+  position: relative;
+}
+.marker-container {
+  position: relative;
+  display: inline-block;
+}
+.marker-pin {
+  display: block;
+  width: 25px;
+  height: 41px;
+}
+.rating-badge {
+  position: absolute;
+  top: -8px;
+  right: -12px;
+  background: #666666;
+  color: white;
+  border-radius: 12px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  z-index: 10;
+  white-space: nowrap;
+}
+.highlighted-pin .marker-pin {
+  filter: drop-shadow(0 0 10px #666666);
+}
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.pulse-marker .marker-pin {
+  animation: pulse 1s ease infinite;
+}
+
+/* Messages Tab */
+.conversations-list {
+  padding: 16px;
+}
+.conversation-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-bottom: 1px solid #f0f3f8;
+  align-items: center;
+  cursor: pointer;
+}
+.conversation-item:active {
+  background: #f8fafc;
+}
+.conversation-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.conversation-details {
+  flex: 1;
+}
+.conversation-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.last-message {
+  color: #6b7280;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.blue-tick {
+  color: #34b7f1;
+  font-size: 16px;
+}
+.timestamp {
+  font-size: 11px;
+  color: #9ca3af;
+}
+.message {
+  max-width: 70%;
+  padding: 8px 12px;
+  border-radius: 18px;
+  position: relative;
+  word-wrap: break-word;
+  margin: 4px 0;
+  color: white;
+}
+.message.sent {
+  background: #5B21B6;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+  margin-left: auto;
+}
+.message.received {
+  background: #4F46E5;
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+.message-time {
+  font-size: 10px;
+  margin-top: 4px;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+  color: rgba(255, 255, 255, 0.9);
+}
+.tick-white {
+  color: white;
+  font-size: 14px;
+}
+.tick-red {
+  color: #ef4444;
+  font-size: 14px;
+}
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  -webkit-overflow-scrolling: touch;
+  background: #0f172a;
+}
+.chat-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #334155;
+  border-radius: 24px;
+  font-size: 15px;
+  background: #1e293b;
+  color: white;
+}
+.chat-input:focus {
+  outline: none;
+  border-color: #5B21B6;
+}
+.chat-input::placeholder {
+  color: #94a3b8;
+}
+.send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #444444;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal {
+  background: white;
+  border-radius: 32px;
+  padding: 24px;
+  max-width: 340px;
+  width: 100%;
+}
+.modal h3 {
+  margin-bottom: 12px;
+}
+.modal p {
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+.delete-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 32px;
+  padding: 24px;
+  max-width: 340px;
+  width: 90%;
+  z-index: 5000;
+  display: none;
+}
+.delete-modal.active {
+  display: block;
+}
+.delete-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 4500;
+  display: none;
+}
+.delete-modal-overlay.active {
+  display: block;
+}
+
+/* Quick View Sheet */
+.quick-view-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: white;
+  border-radius: 32px 32px 0 0;
+  padding: 24px 20px 30px;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.1, 1);
+  will-change: transform;
+  z-index: 3000;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.08);
+}
+.quick-view-sheet.active {
+  transform: translateY(0);
+}
+.sheet-handle {
+  width: 48px;
+  height: 5px;
+  background: #d0d5dd;
+  border-radius: 10px;
+  margin: 0 auto 24px;
+}
+.sheet-profile-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.sheet-profile-img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.sheet-portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 20px 0;
+}
+.sheet-portfolio-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  object-fit: cover;
+}
+.sheet-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+.sheet-btn-primary {
+  flex: 1;
+  background: #666666;
+  color: white;
+  border: none;
+  border-radius: 40px;
+  padding: 16px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+}
+.sheet-btn-secondary {
+  flex: 1;
+  background: white;
+  border: 1.5px solid #e0e0e7;
+  color: #1e1e2f;
+  border-radius: 40px;
+  padding: 16px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+}
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  z-index: 2999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.sheet-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Profile Image Viewer */
+.profile-viewer {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.profile-viewer.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.profile-viewer img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+}
+.profile-viewer-close {
+  position: absolute;
+  top: 40px;
+  right: 20px;
+  color: white;
+  font-size: 40px;
+  cursor: pointer;
+}
+
+/* Utilities */
+.refresh-indicator {
+  position: fixed;
+  top: -60px;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #666666;
+  font-weight: 500;
+  z-index: 2000;
+  transition: transform 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  border-bottom: 1px solid #f0f3f8;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e9f0;
+  border-top-color: #666666;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.upload-progress {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  z-index: 3000;
+  text-align: center;
+}
+.upload-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f0f3f8;
+  border-top-color: #666666;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 12px;
+}
+.error-banner {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 12px;
+  margin: 16px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 14px;
+  border: 1px solid #fecaca;
+}
+#fileInput {
+  display: none;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  html { background: #1a1a1a; }
+  body { background: #1a1a1a !important; }
+  #app { background: #1a1a1a; }
   
-  <!-- Profile Header with Picture and Stats -->
-  <div class="profile-header">
-    <div class="profile-image-container">
-      <img id="profileImage" src="" alt="Profile">
-      <div class="camera-icon" id="uploadProfilePicBtn">📷</div>
-    </div>
-    <div class="profile-stats">
-      <div class="stat-item">
-        <span class="stat-number" id="profileJobs">0</span>
-        <span class="stat-label">jobs</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-number" id="profileRating">0</span>
-        <span class="stat-label">★</span>
-      </div>
-      <!-- Saved = Profiles I saved (private, clickable only by me) -->
-      <div class="stat-item" id="savedStat" style="cursor: pointer;">
-        <span class="stat-number" id="savedCount">0</span>
-        <span class="stat-label">saved</span>
-      </div>
-      <!-- Saves = People who saved me (public count, clickable only by me) -->
-      <div class="stat-item" id="savesStat" style="cursor: pointer;">
-        <span class="stat-number" id="savesCount">0</span>
-        <span class="stat-label">saves</span>
-      </div>
-    </div> <!-- Close profile-stats -->
-  </div> <!-- Close profile-header -->
-
-  <!-- Business Name and Username -->
-  <div class="profile-name-section">
-    <h2 class="profile-business-name" id="profileBusinessName"></h2>
-    <p class="profile-username" id="profileUsername">@username</p>
-  </div>
-
-  <!-- Bio Section -->
-  <div class="profile-bio" id="profileBio"></div>
-
-  <!-- Contact Information -->
-  <div class="profile-contact">
-    <div class="contact-item" id="profilePhoneContainer" style="display: none;">
-      <span class="contact-icon">📞</span>
-      <span class="contact-text" id="profilePhone"></span>
-    </div>
-    <div class="contact-item" id="profileAddressContainer" style="display: none;">
-      <span class="contact-icon">📍</span>
-      <span class="contact-text" id="profileAddress"></span>
-    </div>
-  </div>
-
-  <!-- Action Buttons -->
-  <div class="profile-actions">
-    <button class="profile-btn profile-btn-primary" id="editProfileBtn">Edit Profile</button>
-    <button class="profile-btn profile-btn-secondary" id="shareProfileBtn">Share</button>
-  </div>
-
-  <!-- Portfolio Header -->
-  <div class="portfolio-header">
-    <h4>Portfolio <span id="portfolioCount" style="font-size: 14px; color: #6b7280; margin-left: 8px;"></span></h4>
-    <button class="add-portfolio-btn" id="addPortfolioBtn">+ Add</button>
-  </div>
-
-  <!-- Portfolio Grid -->
-  <div class="portfolio-grid" id="portfolioGrid"></div>
-</div> <!-- Close profileTab -->
-
-      <!-- Admin Tab -->
-      <div id="adminTab" class="tab-pane hidden">
-        <div class="tab-placeholder">
-          ⚙️ Admin Tab<br><br>
-          <span style="font-size: 14px;">Admin only visible for agboghidiaugust@gmail.com</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="tab-bar" id="tabBar">
-      <button class="tab-item active" data-tab="home"><span class="tab-icon" data-feather="home"></span>Home</button>
-      <button class="tab-item" data-tab="search"><span class="tab-icon" data-feather="search"></span>Search</button>
-      <button class="tab-item" data-tab="messages"><span class="tab-icon" data-feather="message-circle"></span>Messages</button>
-      <button class="tab-item" data-tab="profile"><span class="tab-icon" data-feather="user"></span>Profile</button>
-      <button class="tab-item" data-tab="admin" id="adminTabBtn"><span class="tab-icon" data-feather="settings"></span>Admin</button>
-    </div>
-  </div>
-
-  <!-- Chat View -->
-  <div id="chatView" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 2000;">
-    <div style="height: 100%; display: flex; flex-direction: column;">
-      <div style="padding: 16px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 16px; flex-shrink: 0;">
-        <span class="back-btn" id="backToConversations" style="font-size: 24px; cursor: pointer; padding: 8px; color: white;">←</span>
-        <img id="chatPartnerImg" src="" alt="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-        <h3 id="chatPartnerName" style="flex: 1; color: white;"></h3>
-      </div>
-      <div id="messagesContainer" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 4px; -webkit-overflow-scrolling: touch; background: #0f172a;"></div>
-      <div style="padding: 12px 16px; background: #1e293b; border-top: 1px solid #334155; display: flex; gap: 12px; align-items: center; flex-shrink: 0;">
-        <input type="text" id="messageInput" class="chat-input" placeholder="Type a message...">
-        <button class="send-btn" id="sendMessageBtn">➤</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Profile Viewer Modal -->
-<div id="profileViewerModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2500; overflow-y: auto;">
-  <div style="position: sticky; top: 0; background: white; border-bottom: 1px solid #efefef; padding: 12px 16px; display: flex; align-items: center; z-index: 10;">
-    <button id="closeProfileViewerModal" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 8px; color: #262626;">←</button>
-    <h2 style="margin: 0; flex: 1; text-align: center; font-size: 18px; font-weight: 600; color: #262626;">Profile</h2>
-  </div>
-  <div id="profileViewerContent"></div>
-</div>
-
-  <!-- Edit Profile Screen - Instagram Minimalist Style -->
-  <div id="editProfileScreen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; overflow-y: auto;">
-    
-    <!-- Header -->
-    <div style="position: sticky; top: 0; background: white; border-bottom: 1px solid #efefef; padding: 12px 16px; display: flex; align-items: center; z-index: 10;">
-      <button id="backFromEditBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 8px; color: #262626;">←</button>
-      <h2 style="margin: 0; flex: 1; text-align: center; font-size: 18px; font-weight: 600; color: #262626;">Edit Profile</h2>
-      <button id="saveEditProfileBtn" style="background: none; border: none; color: #0095f6; font-weight: 600; font-size: 16px; cursor: pointer; padding: 8px;">Save</button>
-    </div>
-
-    <!-- Profile Picture Section -->
-    <div style="padding: 20px 16px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #efefef;">
-      <div style="width: 60px; height: 60px; position: relative;">
-        <img id="editProfileImage" src="" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-      </div>
-      <div>
-        <div style="font-weight: 600; color: #262626;">Change Profile Photo</div>
-        <div style="font-size: 12px; color: #8e8e8e;">Tap to change from main profile</div>
-      </div>
-    </div>
-
-    <!-- Form Fields - Instagram Style -->
-    <div style="padding: 8px 16px;">
-      
-      <!-- Business Name -->
-      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-        <div style="display: flex; align-items: center;">
-          <div style="width: 100px; font-size: 14px; color: #262626;">Business name</div>
-          <input type="text" id="editBusinessName" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="Your business name">
-        </div>
-        <div id="businessNameTimer" style="font-size: 12px; color: #ed4956; margin-left: 100px;"></div>
-      </div>
-
-      <!-- Username -->
-      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-        <div style="display: flex; align-items: center;">
-          <div style="width: 100px; font-size: 14px; color: #262626;">Username</div>
-          <input type="text" id="editUsername" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="username">
-        </div>
-        <div id="usernameTimer" style="font-size: 12px; color: #ed4956; margin-left: 100px;"></div>
-      </div>
-
-      <!-- Bio -->
-      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-        <div style="display: flex;">
-          <div style="width: 100px; font-size: 14px; color: #262626;">Bio</div>
-          <textarea id="editBio" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent; min-height: 60px; resize: vertical;" placeholder="Tell us about your services..."></textarea>
-        </div>
-      </div>
-
-      <!-- Phone -->
-      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-        <div style="display: flex; align-items: center;">
-          <div style="width: 100px; font-size: 14px; color: #262626;">Phone</div>
-          <input type="tel" id="editPhone" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="Phone number">
-        </div>
-      </div>
-
-      <!-- Location -->
-<div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-  <div style="display: flex; align-items: center;">
-    <div style="width: 100px; font-size: 14px; color: #262626;">Location</div>
-    <div style="flex: 1;">
-      <div id="locationDisplay" style="display: none; margin-bottom: 8px;">
-        <span id="locationDescription" style="font-size: 14px; color: #262626;"></span>
-        <button id="changeLocationBtn" style="background: none; border: none; color: #0095f6; font-size: 14px; margin-left: 8px; cursor: pointer;">Change</button>
-      </div>
-      <button id="setLocationBtn" style="background: #0095f6; color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 600; cursor: pointer;">📍 Set Your Location</button>
-    </div>
-  </div>
-</div>
-
-      <!-- Skills Section -->
-      <div style="padding: 16px 0;">
-        <div style="font-size: 14px; font-weight: 600; color: #262626; margin-bottom: 12px;">Services</div>
-        <div id="editSkillsContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;"></div>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="newSkillInput" style="flex: 1; border: 1px solid #dbdbdb; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #262626; background: #fafafa;" placeholder="Add a new service">
-          <button id="addSkillBtn" style="background: #0095f6; color: white; border: none; border-radius: 8px; padding: 0 16px; font-weight: 600; font-size: 14px; cursor: pointer;">Add</button>
-        </div>
-      </div>
-
-      <!-- Account Actions -->
-      <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 16px;">
-        <button id="editLogoutBtn" style="width: 100%; background: none; border: none; color: #ed4956; font-size: 14px; font-weight: 600; padding: 12px; text-align: left; cursor: pointer; border-bottom: 1px solid #efefef;">Log Out</button>
-        <button id="editDeleteAccountBtn" style="width: 100%; background: none; border: none; color: #ed4956; font-size: 14px; font-weight: 600; padding: 12px; text-align: left; cursor: pointer;">Delete Account</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Delete Account Modal -->
-  <div id="deleteModal" class="modal-overlay hidden">
-    <div class="modal">
-      <h3>Delete Account</h3>
-      <p>Are you sure? This cannot be undone. All your data will be permanently removed.</p>
-      <div class="modal-actions">
-        <button class="btn-outline" id="cancelDeleteBtn" style="margin: 0;">Cancel</button>
-        <button class="btn-danger" id="confirmDeleteBtn" style="margin: 0;">Yes, Delete</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Start Chat Modal -->
-  <div id="startChatModal" class="modal-overlay hidden">
-    <div class="modal">
-      <h3 id="startChatModalTitle">Start Chat</h3>
-      <p id="startChatModalMessage">Would you like to start a conversation?</p>
-      <div class="modal-actions">
-        <button class="btn-outline" id="cancelStartChatBtn" style="margin: 0;">Cancel</button>
-        <button class="btn" id="confirmStartChatBtn" style="margin: 0;">Start Chat</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Upload Progress Indicator -->
-  <div id="uploadProgress" class="hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); z-index: 3000; text-align: center;">
-    <div style="width: 40px; height: 40px; border: 3px solid #f0f3f8; border-top-color: #0066ff; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px;"></div>
-    <p>Uploading...</p>
-  </div>
-
-  <!-- Hidden file input -->
-  <input type="file" id="fileInput" accept="image/*" multiple>
-
-  <!-- Quick-View Bottom Sheet -->
-  <div class="sheet-overlay" id="sheetOverlay"></div>
-  <div class="quick-view-sheet" id="quickViewSheet">
-    <div class="sheet-handle"></div>
-    <div id="sheetContent"></div>
-  </div>
-
-  <!-- Profile Image Full-Screen Viewer -->
-  <div class="profile-viewer" id="profileViewer">
-    <span class="profile-viewer-close" id="closeProfileViewer">&times;</span>
-    <img id="profileViewerImg" src="" alt="">
-  </div>
-
-  <!-- Delete Portfolio Image Modal -->
-  <div class="delete-modal-overlay" id="deletePortfolioOverlay"></div>
-  <div class="delete-modal" id="deletePortfolioModal">
-    <h3>Delete Image</h3>
-    <p>Are you sure you want to delete this image?</p>
-    <div class="modal-actions">
-      <button class="btn-outline" id="cancelDeletePortfolio">Cancel</button>
-      <button class="btn-danger" id="confirmDeletePortfolio">Delete</button>
-    </div>
-  </div>
-
-  <!-- Location Picker Modal -->
-<div id="locationPickerModal" class="modal-overlay hidden">
-  <div class="modal" style="max-width: 100%; width: 100%; height: 90vh; margin: 0; border-radius: 0; padding: 0; display: flex; flex-direction: column;">
-    
-    <!-- Header - Instagram Minimalist -->
-<div style="padding: 12px 16px; border-bottom: 1px solid #efefef; display: flex; align-items: center; background: white; z-index: 10;">
-  <button id="closeLocationPicker" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px; color: #262626; width: 40px;">←</button>
-  <h3 style="margin: 0; flex: 1; text-align: center; font-size: 16px; font-weight: 500;">Location</h3>
-  <button id="confirmLocationBtn" style="background: #666666; color: white; border: none; border-radius: 20px; padding: 6px 14px; font-size: 14px; font-weight: 500; cursor: pointer;">Done</button>
-</div>
-
-    <!-- Search Box - Instagram Minimalist -->
-<div style="padding: 16px 16px 8px;">
-  <input type="text" id="locationSearch" placeholder="Search area" style="width: 100%; padding: 12px 16px; border: 1px solid #dbdbdb; border-radius: 30px; font-size: 14px; background: #fafafa; outline: none;">
-  <div id="searchSuggestions" style="background: white; border: 1px solid #dbdbdb; border-radius: 16px; margin-top: 4px; max-height: 200px; overflow-y: auto; display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
-</div>
-
-    <!-- Map Container -->
-<div style="flex: 1; position: relative;">
-  <div id="locationPickerMap" style="width: 100%; height: 100%;"></div>
-  <!-- Draggable Pin -->
-  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 10; pointer-events: none;">
-    <svg width="30" height="30" viewBox="0 0 24 24" fill="#CC0000" stroke="white" stroke-width="1">
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-    </svg>
-  </div>
-</div>
-
-    <!-- Description Input - Instagram Minimalist -->
-<div style="padding: 16px; border-top: 1px solid #efefef; background: white;">
-  <textarea id="locationDescriptionInput" rows="2" placeholder="Describe your location..." style="width: 100%; padding: 12px 16px; border: 1px solid #dbdbdb; border-radius: 20px; font-size: 14px; resize: vertical; background: #fafafa; outline: none;"></textarea>
-  <p style="font-size: 12px; color: #999; margin-top: 8px; margin-left: 4px;">Example: "Beside the blue church, after the mechanic village"</p>
-</div>
-
-  </div>
-</div>
+  /* Auth screens */
+  .auth-container { background: #1a1a1a; }
+  .auth-container h2 { color: white; }
+  .auth-container,
+  .auth-container *,
+  .auth-container input,
+  .auth-container button,
+  .auth-container div,
+  .auth-container p,
+  .auth-container span {
+    color: white !important;
+  }
+  .auth-toggle { background: #2a2a2a; }
+  .auth-toggle button { color: #888; }
+  .auth-toggle button.active { background: #666666; color: white; }
+  .auth-toggle button {
+    color: #aaa !important;
+  }
   
-  <!-- Saved Profiles Modal -->
-<div id="savedProfilesModal" class="modal-overlay hidden">
-  <div class="modal" style="max-width: 400px; height: 80vh; display: flex; flex-direction: column; padding: 0;">
-    <div style="padding: 20px; border-bottom: 1px solid #efefef; display: flex; justify-content: space-between; align-items: center;">
-      <h3 style="margin: 0;">Saved Profiles</h3>
-      <button id="closeSavedModal" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
-    </div>
-    <div id="savedProfilesList" style="flex: 1; overflow-y: auto; padding: 16px;">
-      <!-- Saved profiles will appear here -->
-    </div>
-  </div>
-</div>
-</div>
+    .auth-toggle button.active {
+    background: #666666 !important;
+    color: white !important;
+  }
+  /* All text */
+  h1, h2, h3, h4, h5, h6, p, div, span { color: #fff; }
+  
+  /* Inputs */
+  .input-field { background: #2a2a2a; border-color: #444; color: white; }
+  .input-field::placeholder { color: #888; }
 
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.js"></script>
-<!-- PhotoSwipe - Alternative CDN -->
-<script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/umd/photoswipe.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/umd/photoswipe-lightbox.umd.min.js"></script>
-<script>
-  window.PhotoSwipe = PhotoSwipe;
-  window.PhotoSwipeLightbox = PhotoSwipeLightbox;
-</script>
-<!-- Our app code -->
-<script type="module" src="app.js" defer></script>
-<script>
-  feather.replace();
-</script>
-</body>
-</html>
+    .auth-container input {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+    color: white !important;
+  }
+  
+  .auth-container input::placeholder {
+    color: #aaa !important;
+  }
+  
+  /* Buttons */
+  .btn { background: #666666; color: white; }
+  .btn-outline { background: #2a2a2a; border-color: #444; color: white; }
+  .btn-outline:hover { background: #333; }
+  .btn-danger { background: #dc2626; }
+
+  /* THIS MAKES SIGNUP BUTTONS WHITE */
+  .auth-container .btn {
+    background: #666666 !important;
+    color: white !important;
+  }
+  
+  .auth-container .btn-outline {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+    color: white !important;
+  }
+  
+  /* Tabs */
+  .tab-bar { background: rgba(30, 30, 30, 0.96); border-top-color: #333; }
+  .tab-item { color: #888; }
+  .tab-item.active { color: #ffffff; }
+  
+  /* Home tab */
+  .provider-card { background: #2a2a2a; border-color: #333; }
+  .business-name { color: white; }
+  .skills { color: #aaa; }
+  .distance { color: #ffffff; }
+  
+  /* Search tab */
+  .search-controls { background: #1a1a1a; border-bottom-color: #333; }
+  .search-input { background: #2a2a2a; border-color: #444; color: white; }
+  .search-input::placeholder { color: #888; }
+  .slider-row span { color: white; }
+  .slider-row input { background: #444; }
+  .slider-row input::-webkit-slider-thumb { background: #666666; }
+  .drawer-list { background: #1a1a1a; }
+  .provider-list-item { background: #2a2a2a; }
+  .provider-list-item strong { color: white; }
+  .provider-list-item span { color: #aaa; }
+  .pull-handle { background: #444; }
+  
+  /* Messages tab */
+  .conversations-list { background: #1a1a1a; }
+  .conversation-item { background: #2a2a2a; border-bottom-color: #333; }
+  .conversation-name { color: white; }
+  .last-message { color: #aaa; }
+  .timestamp { color: #888; }
+
+  /* Skill tags in auth container */
+  .auth-container .skill-tag {
+    background: #2a2a2a !important;
+    color: #ddd !important;
+    border-color: #444 !important;
+  }
+  
+  .auth-container .skill-tag.selected {
+    background: #666666 !important;
+    color: white !important;
+  }
+  
+  /* Profile tab */
+  .profile-header { background: #1a1a1a; }
+  .profile-stats .stat-number { color: white; }
+  .profile-stats .stat-label { color: #aaa; }
+  .profile-business-name { color: white; }
+  .profile-username { color: #aaa; }
+  .profile-bio { color: white; }
+  .contact-text { color: white; }
+  .profile-btn-secondary { border-color: #333; color: white; background: transparent; }
+  .profile-btn-secondary:active { background: #2a2a2a; }
+  .portfolio-header h4 { color: white; }
+  .portfolio-header span { color: #aaa; }
+  .add-portfolio-btn {
+  background: transparent !important;
+  border: 1px solid #333 !important;
+  color: white !important;
+}
+  .portfolio-grid { background: #1a1a1a; }
+
+  /* Profile skills in dark mode */
+#profileSkillsList span {
+  background: #2a2a2a !important;
+  color: white !important;
+  border: 1px solid #444 !important;
+}
+
+/* Skills heading */
+.profile-skills div[style*="color: #666"] {
+  color: #aaa !important;
+}
+
+/* Edit Profile button */
+.profile-btn-primary {
+  background: transparent !important;
+  border: 1px solid #333 !important;
+  color: white !important;
+}
+  
+  /* Modals */
+  .modal-overlay { background: rgba(0, 0, 0, 0.8); }
+  .modal { background: #2a2a2a; }
+  .modal h3 { color: white; }
+  .modal p { color: #ccc; }
+  
+  /* Quick view */
+  .quick-view-sheet { background: #1a1a1a; }
+  .quick-view-sheet h3 { color: white; }
+  .quick-view-sheet div { color: #ccc; }
+  .sheet-handle { background: #444; }
+  .sheet-profile-row div { color: #aaa; }
+  .sheet-btn-secondary { background: #2a2a2a; border-color: #444; color: white; }
+  
+  /* Chat */
+  #chatView { background: #0f172a; }
+  .chat-input { background: #1e293b; border-color: #334155; color: white; }
+  .send-btn { background: #444444; }
+  
+  /* Backgrounds */
+  .tab-content { background: #1a1a1a; }
+  .grid-2 { background: #1a1a1a; }
+  .empty-state { color: #888; }
+  .coming-soon { background: #333; color: #fbbf24; }
+  .error-msg { color: #f87171; }
+  .error-banner { background: #451a1a; color: #f87171; border-color: #7f1d1d; }
+  
+  /* Admin tab */
+  #adminTab,
+  .tab-placeholder {
+    background: #1a1a1a !important;
+    color: white;
+  }
+  #adminTab h2,
+  #adminTab h3,
+  #adminTab p,
+  #adminTab div,
+  #adminTab span {
+    color: white;
+  }
+  #adminTab div[style*="background:#f0f0f0"] {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+  }
+  #pendingList button {
+    color: white;
+  }
+  #pendingList button[style*="background:green"] {
+    background: #666666 !important;
+  }
+  #pendingList button[style*="background:blue"] {
+    background: #666666 !important;
+  }
+  
+  /* Edit Profile Screen */
+  #editProfileScreen {
+    background: #000 !important;
+  }
+  #editProfileScreen h2,
+  #editProfileScreen button,
+  #editProfileScreen div,
+  #editProfileScreen label {
+    color: #fff !important;
+  }
+  #editProfileScreen input,
+  #editProfileScreen textarea {
+    color: #fff !important;
+    background: transparent !important;
+  }
+  #editProfileScreen input::placeholder,
+  #editProfileScreen textarea::placeholder {
+    color: #8e8e8e !important;
+  }
+  #editProfileScreen [style*="border-bottom: 1px solid #efefef"] {
+    border-bottom-color: #262626 !important;
+  }
+  #editProfileScreen [style*="border: 1px solid #dbdbdb"] {
+    border-color: #333 !important;
+    background: #1a1a1a !important;
+  }
+  #editProfileScreen #addSkillBtn {
+    background: #666666 !important;
+    color: white !important;
+  }
+  #editProfileScreen #editLogoutBtn,
+  #editProfileScreen #editDeleteAccountBtn {
+    color: #ed4956 !important;
+    border-bottom-color: #262626 !important;
+  }
+}
+
+/* Home page brand styling */
+.home-brand {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: 10px;
+}
+
+.gigs {
+  color: inherit;
+}
+
+.court {
+  color: #CC0000;
+}
+
+/* Light mode - brand colors */
+.home-brand .gigs {
+  color: #000000;
+}
+
+/* Dark mode - brand colors */
+@media (prefers-color-scheme: dark) {
+  .home-brand .gigs {
+    color: #ffffff;
+  }
+}
+
+/* Force override all inline styles in dark mode */
+@media (prefers-color-scheme: dark) {
+  #editProfileScreen [style*="color"] {
+    color: #ffffff !important;
+  }
+  
+  #editProfileScreen [style*="background"] {
+    background-color: #1a1a1a !important;
+  }
+  
+  #editProfileScreen input,
+  #editProfileScreen textarea {
+    color: #ffffff !important;
+    background-color: #1a1a1a !important;
+    border-color: #333 !important;
+  }
+}
+
+/* Modern Map Styling */
+#map {
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom marker pulse animation - makes your provider markers stand out */
+@keyframes marker-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(102, 102, 102, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(102, 102, 102, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(102, 102, 102, 0);
+  }
+}
+
+.custom-marker {
+  animation: marker-pulse 2s infinite;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+/* Modern popup styling */
+.leaflet-popup-content-wrapper {
+  border-radius: 16px;
+  background: rgba(30, 30, 30, 0.95);
+  backdrop-filter: blur(10px);
+  color: white;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.leaflet-popup-tip {
+  background: rgba(30, 30, 30, 0.95);
+}
+
+.leaflet-popup-content {
+  font-size: 14px;
+  margin: 12px 16px;
+}
+
+.leaflet-popup-content strong {
+  color: #ffffff;
+  font-size: 16px;
+}
+
+/* Modern zoom controls */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+}
+
+.leaflet-control-zoom a {
+  background: rgba(30, 30, 30, 0.9) !important;
+  color: white !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  backdrop-filter: blur(5px);
+}
+
+.leaflet-control-zoom a:hover {
+  background: rgba(102, 102, 102, 0.9) !important;
+}
+
+/* Modern scale bar */
+.leaflet-control-scale {
+  background: rgba(30, 30, 30, 0.8) !important;
+  backdrop-filter: blur(5px);
+  border-radius: 8px !important;
+  padding: 4px 8px !important;
+  color: white !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.leaflet-control-scale-line {
+  background: transparent !important;
+  border: none !important;
+  color: white !important;
+}
+
+/* Directions toggle button */
+.directions-toggle-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: #666666;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 1000;
+  display: none;
+}
+
+.directions-toggle-btn.active {
+  background: #4287f5;
+}
+
+.directions-toggle-btn:hover {
+  opacity: 0.9;
+}
+
+/* Notification Panel */
+.notification-panel {
+  position: absolute;
+  top: 70px;
+  left: 0;
+  width: 100%;
+  background: white;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 2000;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.notification-panel.active {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notification-header {
+  padding: 16px;
+  border-bottom: 1px solid #efefef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notification-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.notification-header button {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.notification-item img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-text {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.notification-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.notification-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .notification-panel {
+    background: #1a1a1a;
+    border-color: #333;
+  }
+  
+  .notification-header {
+    border-bottom-color: #333;
+  }
+  
+  .notification-header h3 {
+    color: white;
+  }
+  
+  .notification-item {
+    border-bottom-color: #333;
+  }
+  
+  .notification-text {
+    color: white;
+  }
+  
+  .notification-time {
+    color: #888;
+  }
+}
+
+/* Saved Profiles List */
+.saved-profile-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 8px;
+}
+
+.saved-profile-item:hover {
+  background: #f5f5f5;
+}
+
+.saved-profile-item img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.saved-profile-info {
+  flex: 1;
+}
+
+.saved-profile-name {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.saved-profile-rating {
+  font-size: 13px;
+  color: #666;
+}
+
+.saved-profile-rating .star {
+  color: #f5b342;
+}
+
+.unsave-btn {
+  background: transparent;
+  border: 1px solid #dbdbdb;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #dc2626;
+  transition: all 0.2s;
+}
+
+.unsave-btn:hover {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .saved-profile-item:hover {
+    background: #2a2a2a;
+  }
+  
+  .saved-profile-name {
+    color: white;
+  }
+  
+  .saved-profile-rating {
+    color: #aaa;
+  }
+  
+  .unsave-btn {
+    border-color: #444;
+    color: #ef4444;
+  }
+  
+  .unsave-btn:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+  }
+}
+
+/* Location Picker Styles */
+#locationPickerModal .modal {
+  max-width: 100%;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  border-radius: 0;
+  padding: 0;
+}
+
+#locationPickerMap {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+#searchSuggestions {
+  position: absolute;
+  background: white;
+  border: 1px solid #dbdbdb;
+  border-radius: 8px;
+  margin-top: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  width: calc(100% - 32px);
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.suggestion-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #efefef;
+  font-size: 14px;
+}
+
+.suggestion-item:hover {
+  background: #f5f5f5;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  #locationPickerModal .modal {
+    background: #1a1a1a;
+  }
+  
+  #locationPickerModal input,
+  #locationPickerModal textarea {
+    background: #2a2a2a;
+    border-color: #444;
+    color: white;
+  }
+  
+  #locationPickerModal input::placeholder,
+  #locationPickerModal textarea::placeholder {
+    color: #888;
+  }
+  
+  #searchSuggestions {
+    background: #2a2a2a;
+    border-color: #444;
+  }
+  
+  .suggestion-item {
+    border-bottom-color: #333;
+    color: white;
+  }
+  
+  .suggestion-item:hover {
+    background: #333;
+  }
+}
+
+/* ==================== LOCATION PICKER DARK MODE ==================== */
+@media (prefers-color-scheme: dark) {
+  /* Modal background */
+  #locationPickerModal .modal {
+    background: #1a1a1a !important;
+  }
+  
+  /* Header */
+  #locationPickerModal .modal > div:first-child {
+    background: #1a1a1a !important;
+    border-bottom-color: #333 !important;
+  }
+  
+  /* Header buttons and text */
+  #locationPickerModal button#closeLocationPicker {
+    color: white !important;
+  }
+  
+  #locationPickerModal h3 {
+    color: white !important;
+  }
+  
+  #locationPickerModal button#confirmLocationBtn {
+    background: #666666 !important;
+  }
+  
+  /* Search input */
+  #locationSearch {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+    color: white !important;
+  }
+  
+  #locationSearch::placeholder {
+    color: #888 !important;
+  }
+  
+  /* Search suggestions */
+  #searchSuggestions {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+  }
+  
+  .suggestion-item {
+    color: white !important;
+    border-bottom-color: #333 !important;
+  }
+  
+  .suggestion-item:hover {
+    background: #333 !important;
+  }
+  
+  /* Description textarea */
+  #locationDescriptionInput {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+    color: white !important;
+  }
+  
+  #locationDescriptionInput::placeholder {
+    color: #888 !important;
+  }
+  
+  /* Example text */
+  #locationDescriptionInput + p {
+    color: #888 !important;
+  }
+  
+  /* Bottom section */
+  #locationPickerModal .modal > div:last-child {
+    background: #1a1a1a !important;
+    border-top-color: #333 !important;
+  }
+  
+  /* Map container background */
+#locationPickerMap {
+  background: transparent !important;
+}
+}
+
+/* ==================== LOCATION PICKER MAP FIX ==================== */
+#locationPickerMap {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 300px;
+}
+
+/* Fix leaflet controls in dark mode */
+@media (prefers-color-scheme: dark) {
+  .leaflet-control-zoom a {
+    background: #2a2a2a !important;
+    color: white !important;
+    border-color: #444 !important;
+  }
+  
+  .leaflet-control-attribution {
+    background: rgba(0,0,0,0.7) !important;
+    color: #999 !important;
+  }
+  
+  .leaflet-control-attribution a {
+    color: #ccc !important;
+  }
+}
