@@ -583,7 +583,7 @@ function initPullToRefresh() {
     
     // Check if we're at the top of the content
     console.log('Scroll top:', tabContent.scrollTop);
-    if (tabContent.scrollTop === 0) {
+    if (tabContent.scrollTop <= 5) { // Allow small threshold
       pullStartY = e.touches[0].clientY;
       isPulling = true;
     }
