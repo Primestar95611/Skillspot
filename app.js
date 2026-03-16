@@ -547,68 +547,43 @@ function closeQuickView() {
   sheetOverlay.classList.remove('active');
 }
 
-// ==================== INSTAGRAM-STYLE PULL TO REFRESH ====================
-function createRefreshIndicator() {
-  const indicator = document.createElement('div');
-  indicator.className = 'refresh-indicator';
-  indicator.innerHTML = `
-    <div class="spinner-small"></div>
-    <span>Pull to refresh</span>
-  `;
-  document.body.appendChild(indicator);
-  return indicator;
-}
-
+// ==================== SIMPLE PULL TO REFRESH ====================
 function initPullToRefresh() {
   const tabContent = document.querySelector('.tab-content');
-  const tabs = ['homeTab', 'messagesTab', 'profileTab'];
+  
+  let startY = 0;
+  let pulling = false;
   
   tabContent.addEventListener('touchstart', (e) => {
-    alert('Touch started');
-    
-    const mapElement = document.getElementById('map');
-    if (mapElement && mapElement.contains(e.target)) {
-      alert('Touching map');
-      isTouchingMap = true;
-      return;
-    }
-    isTouchingMap = false;
-    
-    const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
-    alert('Active tab: ' + activeTab);
-    
-    alert('Scroll top: ' + tabContent.scrollTop);
-    
-    if (tabContent.scrollTop <= 5) {
-      pullStartY = e.touches[0].clientY;
-      isPulling = true;
-      alert('Pull started at Y: ' + pullStartY);
-    } else {
-      alert('Not at top');
-    }
+    startY = e.touches[0].clientY;
+    pulling = true;
   }, { passive: true });
-
+  
   tabContent.addEventListener('touchmove', (e) => {
-    if (!isPulling) return;
+    if (!pulling) return;
     
     const currentY = e.touches[0].clientY;
-    const diff = currentY - pullStartY;
-    alert('Pulling: ' + diff);
+    const diff = currentY - startY;
     
-    if (diff > 0) {
+    // If pulling down and at the top
+    if (diff > 50 && tabContent.scrollTop === 0) {
       e.preventDefault();
+      alert('Pull down detected - refresh!');
+      
+      // Refresh based on current tab
+      const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
+      if (activeTab === 'homeTab') loadProviders(true);
+      if (activeTab === 'messagesTab') loadConversations();
+      if (activeTab === 'profileTab') loadProfileData();
+      
+      pulling = false;
     }
   }, { passive: false });
-
-  tabContent.addEventListener('touchend', (e) => {
-    if (!isPulling) return;
-    
-    const endY = e.changedTouches[0].clientY;
-    const diff = endY - pullStartY;
-    alert('Pull ended: ' + diff);
-    
-    isPulling = false;
+  
+  tabContent.addEventListener('touchend', () => {
+    pulling = false;
   }, { passive: true });
+}
 }
 
 // ==================== PROFILE TAB PULL TO REFRESH ====================
