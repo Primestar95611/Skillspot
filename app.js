@@ -2637,6 +2637,7 @@ if (editDeleteAccountBtn) {
 
 // ==================== DRAW ROUTE ON MAP ====================
 function drawRoute(userLat, userLng, providerLat, providerLng) {
+  alert('drawRoute function is running!');
   // Clear any existing routes
   if (window.currentRoute) {
     map.removeControl(window.currentRoute);
