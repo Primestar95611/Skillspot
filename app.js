@@ -2656,16 +2656,17 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
     routeWhileDragging: false,
     showAlternatives: false,
     fitSelectedRoutes: false,
-    routeWhileDragging: false,
     lineOptions: {
       styles: [{ color: '#4287f5', weight: 5, opacity: 0.7 }]
     },
     createMarker: function() { return null; }, // Hide markers
     show: false, // Hide directions panel initially
     addWaypoints: false,
-    draggableWaypoints: false,
-    autoRoute: true
+    draggableWaypoints: false
   }).addTo(map);
+  
+  // Force route to calculate
+  window.currentRoute.route();
 
   // Force map to update after adding route
   setTimeout(() => {
