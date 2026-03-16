@@ -2672,42 +2672,49 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
         fitSelectedRoutes: false
       }).addTo(map);
       
-      // Add toggle button (top right corner)
+      // Hide panel by default
+      setTimeout(function() {
+        const container = document.querySelector('.leaflet-routing-container');
+        if (container) {
+          container.style.display = 'none';
+        }
+      }, 100);
+      
+      // Add toggle button at top right corner
       const toggleBtn = document.createElement('button');
       toggleBtn.id = 'toggleDirectionsBtn';
-      toggleBtn.innerHTML = '📋'; // Menu icon
+      toggleBtn.innerHTML = 'Show'; // Button starts with "Show" because panel is hidden
       toggleBtn.style.cssText = `
         position: absolute;
-        top: 80px;
-        right: 20px;
+        top: 10px;
+        right: 10px;
         z-index: 10000;
-        background: white;
-        border: 2px solid #4287f5;
-        border-radius: 8px;
-        width: 44px;
-        height: 44px;
-        font-size: 22px;
+        background: #4287f5;
+        border: none;
+        border-radius: 16px;
+        padding: 6px 12px;
+        font-size: 14px;
+        font-weight: 600;
         cursor: pointer;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #4287f5;
-        font-weight: bold;
+        color: white;
       `;
       
-      // Variable to track panel visibility
-      let panelVisible = true;
+      // Track panel visibility (starts hidden)
+      let panelVisible = false;
       
       toggleBtn.onclick = function() {
         const container = document.querySelector('.leaflet-routing-container');
         if (container) {
           if (panelVisible) {
             container.style.display = 'none';
-            toggleBtn.innerHTML = '🗺️'; // Map icon when hidden
+            toggleBtn.innerHTML = 'Show';
           } else {
             container.style.display = 'block';
-            toggleBtn.innerHTML = '📋'; // Menu icon when visible
+            toggleBtn.innerHTML = 'Hide';
           }
           panelVisible = !panelVisible;
         }
