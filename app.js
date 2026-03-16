@@ -584,7 +584,6 @@ function initPullToRefresh() {
     pulling = false;
   }, { passive: true });
 }
-}
 
 // ==================== PROFILE TAB PULL TO REFRESH ====================
 function initProfilePullToRefresh() {
