@@ -2652,6 +2652,10 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
         map.removeControl(window.currentRoute);
       }
       
+      // Remove existing toggle button
+      const oldToggleBtn = document.getElementById('toggleDirectionsBtn');
+      if (oldToggleBtn) oldToggleBtn.remove();
+      
       // Create routing control
       window.currentRoute = L.Routing.control({
         waypoints: [
@@ -2668,13 +2672,46 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
         fitSelectedRoutes: false
       }).addTo(map);
       
-      // Hide the container after it's created
-      setTimeout(function() {
-        var container = document.querySelector('.leaflet-routing-container');
+      // Add toggle button (top right corner)
+      const toggleBtn = document.createElement('button');
+      toggleBtn.id = 'toggleDirectionsBtn';
+      toggleBtn.innerHTML = '📋'; // Menu icon
+      toggleBtn.style.cssText = `
+        position: absolute;
+        top: 60px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+      
+      // Variable to track panel visibility
+      let panelVisible = true;
+      
+      toggleBtn.onclick = function() {
+        const container = document.querySelector('.leaflet-routing-container');
         if (container) {
-          container.style.display = 'none';
+          if (panelVisible) {
+            container.style.display = 'none';
+            toggleBtn.innerHTML = '🗺️'; // Map icon when hidden
+          } else {
+            container.style.display = 'block';
+            toggleBtn.innerHTML = '📋'; // Menu icon when visible
+          }
+          panelVisible = !panelVisible;
         }
-      }, 100);
+      };
+      
+      document.getElementById('map').appendChild(toggleBtn);
       
     } catch (error) {
       alert('Error drawing route: ' + error.message);
