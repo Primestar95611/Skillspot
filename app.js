@@ -1842,7 +1842,10 @@ if (tabId !== 'messages') {
   document.querySelector(`.tab-item[data-tab="${tabId}"]`).classList.add('active');
   saveCurrentTab(tabId); 
   if (tabId === 'profile') loadProfileData();
-  if (tabId === 'search') setTimeout(initMap, 100);
+  if (tabId === 'search') {
+  destroySearchMap();
+  setTimeout(initMap, 300);
+}
   if (tabId === 'messages') {
     loadConversations();
   } if (tabId === 'admin') {
@@ -3110,6 +3113,27 @@ let selectedLat = null;
 let selectedLng = null;
 let searchCache = new Map(); // Cache for search results
 
+// ==================== MAP CLEANUP FUNCTIONS ====================
+
+// Destroy search map
+function destroySearchMap() {
+  if (map) {
+    map.remove();
+    map = null;
+    mapMarkers = [];
+    console.log('Search map destroyed');
+  }
+}
+
+// Destroy location picker map
+function destroyLocationPickerMap() {
+  if (locationPickerMap) {
+    locationPickerMap.remove();
+    locationPickerMap = null;
+    console.log('Location picker map destroyed');
+  }
+}
+
 // Open location picker
 function openLocationPicker() {
   const modal = document.getElementById('locationPickerModal');
@@ -3117,21 +3141,17 @@ function openLocationPicker() {
   
   modal.classList.remove('hidden');
   
-  // Initialize map if not already done
+  // Destroy old map first, then create new one after modal opens
+  destroyLocationPickerMap();
+  
   setTimeout(() => {
     initLocationPickerMap();
-  }, 100);
+  }, 300);
 }
 
 // Initialize location picker map
 function initLocationPickerMap() {
   console.log('Starting initLocationPickerMap');
-  
-  // Check if map already exists
-  if (locationPickerMap) {
-    console.log('Map already exists');
-    return;
-  }
   
   // Check if map container exists
   const mapContainer = document.getElementById('locationPickerMap');
@@ -3154,13 +3174,20 @@ function initLocationPickerMap() {
     }).addTo(locationPickerMap);
     console.log('Tile layer added');
     
-    // Force map to resize
+    // Force map to resize multiple times
     setTimeout(() => {
       if (locationPickerMap) {
         locationPickerMap.invalidateSize();
-        console.log('Map resized');
+        console.log('Map resized 1');
       }
-    }, 300);
+    }, 500);
+    
+    setTimeout(() => {
+      if (locationPickerMap) {
+        locationPickerMap.invalidateSize();
+        console.log('Map resized 2');
+      }
+    }, 1000);
     
     // Get user's current location
     if (navigator.geolocation) {
