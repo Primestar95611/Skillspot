@@ -2639,21 +2639,28 @@ if (editDeleteAccountBtn) {
 function drawRoute(userLat, userLng, providerLat, providerLng) {
   alert('Trying to draw route');
   
-  // Clear any existing routes
-  if (window.currentRoute) {
-    map.removeControl(window.currentRoute);
+  try {
+    // Clear any existing routes
+    if (window.currentRoute) {
+      map.removeControl(window.currentRoute);
+    }
+    
+    alert('About to create routing control');
+    
+    // Create a simple routing control
+    window.currentRoute = L.Routing.control({
+      waypoints: [
+        L.latLng(userLat, userLng),
+        L.latLng(providerLat, providerLng)
+      ],
+      show: true // Show the directions panel
+    }).addTo(map);
+    
+    alert('Route control created and added to map');
+    
+  } catch (error) {
+    alert('Error in drawRoute: ' + error.message);
   }
-  
-  // Create a simple routing control
-  window.currentRoute = L.Routing.control({
-    waypoints: [
-      L.latLng(userLat, userLng),
-      L.latLng(providerLat, providerLng)
-    ],
-    show: true // Show the directions panel
-  }).addTo(map);
-  
-  alert('Route control added - check if panel appears');
 }
 
 let unreadNotifications = 0;
