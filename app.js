@@ -2639,34 +2639,38 @@ if (editDeleteAccountBtn) {
 function drawRoute(userLat, userLng, providerLat, providerLng) {
   alert('Trying to draw route');
   
-  try {
-    // Check if map exists
+  // Function to try drawing route
+  function tryDrawRoute() {
     if (!map) {
-      alert('Map not initialized yet. Please try again.');
+      alert('Map still not ready, waiting...');
+      setTimeout(tryDrawRoute, 500);
       return;
     }
     
-    // Clear any existing routes
-    if (window.currentRoute) {
-      map.removeControl(window.currentRoute);
+    try {
+      // Clear any existing routes
+      if (window.currentRoute) {
+        map.removeControl(window.currentRoute);
+      }
+      
+      // Create a simple routing control
+      window.currentRoute = L.Routing.control({
+        waypoints: [
+          L.latLng(userLat, userLng),
+          L.latLng(providerLat, providerLng)
+        ],
+        show: true
+      }).addTo(map);
+      
+      alert('Route drawn successfully!');
+      
+    } catch (error) {
+      alert('Error drawing route: ' + error.message);
     }
-    
-    alert('About to create routing control');
-    
-    // Create a simple routing control
-    window.currentRoute = L.Routing.control({
-      waypoints: [
-        L.latLng(userLat, userLng),
-        L.latLng(providerLat, providerLng)
-      ],
-      show: true // Show the directions panel
-    }).addTo(map);
-    
-    alert('Route control created and added to map');
-    
-  } catch (error) {
-    alert('Error in drawRoute: ' + error.message);
   }
+  
+  // Start trying to draw the route
+  setTimeout(tryDrawRoute, 1000);
 }
 
 let unreadNotifications = 0;
