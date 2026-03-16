@@ -2637,109 +2637,24 @@ if (editDeleteAccountBtn) {
 
 // ==================== DRAW ROUTE ON MAP ====================
 function drawRoute(userLat, userLng, providerLat, providerLng) {
-  alert('drawRoute function is running!');
-   
-  // Check if routing library exists
-  if (typeof L.Routing === 'undefined') {
-    alert('Routing library not loaded!');
-    return;
-  } else {
-    alert('Routing library loaded!');
-  }
+  alert('Trying to draw route');
   
   // Clear any existing routes
   if (window.currentRoute) {
     map.removeControl(window.currentRoute);
   }
   
-  // Remove existing toggle button
-  const oldBtn = document.getElementById('directionsToggleBtn');
-  if (oldBtn) oldBtn.remove();
-  
-  // Create routing control with panel visible initially
+  // Create a simple routing control
   window.currentRoute = L.Routing.control({
     waypoints: [
       L.latLng(userLat, userLng),
       L.latLng(providerLat, providerLng)
     ],
-    routeWhileDragging: false,
-    showAlternatives: false,
-    fitSelectedRoutes: false,
-    lineOptions: {
-      styles: [{ color: '#4287f5', weight: 5, opacity: 0.7 }]
-    },
-    createMarker: function() { return null; }, // Hide markers
-    show: false, // Hide directions panel initially
-    addWaypoints: false,
-    draggableWaypoints: false
+    show: true // Show the directions panel
   }).addTo(map);
   
-  // Force route to calculate
-  window.currentRoute.route();
-
-   // Add event listener to see if route is calculated
-  window.currentRoute.on('routeselected', function(e) {
-    alert('Route calculated successfully!');
-  });
-  
-  window.currentRoute.on('routingerror', function(e) {
-    alert('Routing error: ' + e.error.message);
-  });
-  
-  // Force map to update after adding route
-  setTimeout(() => {
-    if (map) {
-      map.invalidateSize();
-    }
-  }, 100);
-
-  // Make sure container is hidden initially
-setTimeout(() => {
-  const container = document.querySelector('.leaflet-routing-container');
-  if (container) {
-    container.style.display = 'none';
-  }
-}, 100);
-  
-  // Add user marker (blue dot)
-  L.circleMarker([userLat, userLng], {
-    color: '#4287f5',
-    fillColor: '#4287f5',
-    fillOpacity: 0.8,
-    radius: 8
-  }).addTo(map).bindPopup('Your location');
-  
-  // Add provider marker (red dot)
-  L.circleMarker([providerLat, providerLng], {
-    color: '#ef4444',
-    fillColor: '#ef4444',
-    fillOpacity: 0.8,
-    radius: 8
-  }).addTo(map).bindPopup('Provider location');
-  
-  // Add toggle button
-  const toggleBtn = document.createElement('button');
-  toggleBtn.id = 'directionsToggleBtn';
-  toggleBtn.className = 'directions-toggle-btn';
-  toggleBtn.innerHTML = '🗺️ Show Directions';
-  toggleBtn.style.display = 'block';
-  
-  toggleBtn.addEventListener('click', function() {
-    const container = document.querySelector('.leaflet-routing-container');
-    if (container) {
-      if (container.style.display === 'none') {
-        container.style.display = 'block';
-        this.innerHTML = '📋 Hide Directions';
-        this.classList.add('active');
-      } else {
-        container.style.display = 'none';
-        this.innerHTML = '🗺️ Show Directions';
-        this.classList.remove('active');
-      }
-    }
-  });
-  
-  document.getElementById('map').appendChild(toggleBtn);
+  alert('Route control added - check if panel appears');
+}
 }
 
 let unreadNotifications = 0;
