@@ -3167,7 +3167,7 @@ function initLocationPickerMap() {
     console.log('Map created');
     
     // Add tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap, © CartoDB',
       subdomains: 'abcd',
       maxZoom: 20
