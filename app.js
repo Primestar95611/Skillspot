@@ -621,14 +621,36 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
     
     return `
     <div class="profile-container">
-        <!-- Business Name - ABOVE everything -->
-        <div class="profile-header">
-            <h1 class="profile-business-name">${profile.businessName || 'Business Name'}</h1>
-        </div>
-        
-        <!-- Profile Picture + Stats Row - NOW BELOW business name -->
+        <!-- Profile Picture + Business Name + Stats Row (Instagram style) -->
         <div class="profile-stats-row">
             <div class="profile-picture">
+                <img src="${profile.profileImage || 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
+                ${isOwnProfile ? '<div class="camera-icon" onclick="openImageUpload()">📷</div>' : ''}
+            </div>
+            
+            <div class="profile-info-right">
+                <h1 class="profile-business-name">${profile.businessName || 'Business Name'}</h1>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number">${jobsCount}</span>
+                        <span class="stat-label">Jobs</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${rating}</span>
+                        <span class="stat-label">★ Rating</span>
+                    </div>
+                    <div class="stat-item clickable" onclick="${isOwnProfile ? 'openSavedModal()' : 'void(0)'}">
+                        <span class="stat-number">${savedCount}</span>
+                        <span class="stat-label">Saved</span>
+                    </div>
+                    <div class="stat-item clickable" onclick="${isOwnProfile ? 'openSavesModal()' : 'void(0)'}">
+                        <span class="stat-number">${savesCount}</span>
+                        <span class="stat-label">Saves</span>
+                    </div>
+                </div>
+            </div>
+        </div>
                     <img src="${profile.profileImage || 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
                     ${isOwnProfile ? '<div class="camera-icon" onclick="openImageUpload()">📷</div>' : ''}
                 </div>
