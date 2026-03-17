@@ -883,12 +883,22 @@ if (!profileSkillsContainer) {
     </div>
   `;
   
-  // Insert after bio or contact section
-  const bioSection = document.querySelector('.profile-bio');
-  if (bioSection) {
-    bioSection.insertAdjacentElement('afterend', skillsSection);
+  // Find the contact section to insert after
+  const contactSection = document.querySelector('.profile-contact');
+  if (contactSection) {
+    contactSection.insertAdjacentElement('afterend', skillsSection);
   } else {
-    document.querySelector('.profile-name-section').insertAdjacentElement('afterend', skillsSection);
+    // If no contact section, insert after bio
+    const bioSection = document.querySelector('.profile-bio');
+    if (bioSection) {
+      bioSection.insertAdjacentElement('afterend', skillsSection);
+    } else {
+      // If no bio, insert before the action buttons
+      const actionsSection = document.querySelector('.profile-actions');
+      if (actionsSection) {
+        actionsSection.insertAdjacentElement('beforebegin', skillsSection);
+      }
+    }
   }
 }
 
