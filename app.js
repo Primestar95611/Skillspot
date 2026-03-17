@@ -833,6 +833,7 @@ if (data.locationDescription) {
   const addressEl = document.getElementById('profileAddress');
   if (addressContainer && addressEl) {
     addressEl.textContent = data.locationDescription;
+    alert('Text length: ' + addressEl.textContent.length);
     alert('Text set to: ' + addressEl.textContent);
     addressContainer.style.display = 'flex';
     alert('Display set to flex');
