@@ -724,7 +724,7 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
         <!-- Profile Picture + Business Name + Stats Row (Instagram style) -->
         <div class="profile-stats-row">
             <div class="profile-picture">
-            <img src="${profile.profileImage || 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
+            <img src="${profile.profileImage ? profile.profileImage + '?tr=w-80,h-80' : 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
                 ${isOwnProfile ? '<div class="camera-icon" onclick="openImageUpload()">📷</div>' : ''}
             </div>
             
@@ -806,7 +806,7 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
                 <div class="portfolio-grid">
                     ${(profile.portfolioImages || []).map((img, index) => `
                         <div class="portfolio-item" onclick="openPhotoSwipe(${index})">
-                            <img src="${img}" loading="lazy">
+                            <img src="${img}?tr=w-150,h-150" loading="lazy">
                             ${isOwnProfile ? '<div class="delete-overlay" onclick="deleteImage(event, \'' + img + '\')">✕</div>' : ''}
                         </div>
                     `).join('')}
