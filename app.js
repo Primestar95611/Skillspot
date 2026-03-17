@@ -1700,8 +1700,17 @@ document.querySelectorAll('.tab-item').forEach(btn => {
   } else if (tabId === 'search') {
     // Search tab - refresh map AND scroll list to top
     loadAllUsers().then(() => updateMapAndList());
-    const drawerList = document.getElementById('providerListDrawer');
-    if (drawerList) drawerList.scrollTop = 0;
+    // Try multiple selectors to find the scrollable list
+    setTimeout(() => {
+      const drawerList = document.getElementById('providerListDrawer');
+      if (drawerList) {
+        drawerList.scrollTop = 0;
+      } else {
+        // Try finding by class
+        const list = document.querySelector('.drawer-list');
+        if (list) list.scrollTop = 0;
+      }
+    }, 100); // Small delay to ensure list is updated
   } else if (tabId === 'messages') {
     // Messages tab - refresh conversations
     loadConversations();
@@ -1709,9 +1718,10 @@ document.querySelectorAll('.tab-item').forEach(btn => {
     if (conversationsList) conversationsList.scrollTop = 0;
   } else if (tabId === 'profile') {
     // Profile tab - refresh profile data
-    loadProfileData();
-    const profileTab = document.getElementById('profileTab');
-    if (profileTab) profileTab.scrollTop = 0;
+    loadProfileData().then(() => {
+      const profileTab = document.getElementById('profileTab');
+      if (profileTab) profileTab.scrollTop = 0;
+    });
   } else {
     // For other tabs (admin), just scroll to top
     tabElement.scrollTop = 0;
