@@ -733,6 +733,7 @@ confirmDeletePortfolio?.addEventListener('click', async () => {
 });
 
 // ==================== LOAD PROFILE DATA ====================
+alert('loadProfileData is running');
 async function loadProfileData() {
   if (!auth.currentUser) return;
   const userRef = doc(db, 'users', auth.currentUser.uid);
