@@ -794,8 +794,8 @@ window.switchTab = (tab) => {
             loadHomeTab();
             break;
         case 'search':
-            document.getElementById('tab-content').innerHTML = '<div style="padding:20px">Search tab coming soon</div>';
-            break;
+    loadSearchTab();
+    break;
         case 'messages':
             document.getElementById('tab-content').innerHTML = '<div style="padding:20px">Messages tab coming soon</div>';
             break;
