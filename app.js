@@ -549,19 +549,22 @@ function closeQuickView() {
 
 // ==================== SIMPLE PULL TEST ====================
 function initPullToRefresh() {
-  const homeTab = document.getElementById('homeTab');
+  const tabContent = document.querySelector('.tab-content');
   
-  homeTab.addEventListener('touchstart', (e) => {
+  tabContent.addEventListener('touchstart', (e) => {
     window.startY = e.touches[0].clientY;
   }, { passive: true });
   
-  homeTab.addEventListener('touchmove', (e) => {
+  tabContent.addEventListener('touchmove', (e) => {
     const currentY = e.touches[0].clientY;
     const diff = currentY - window.startY;
     
-    if (diff > 30 && homeTab.scrollTop <= 5) {
+    // Check which tab is active
+    const activeTab = document.querySelector('.tab-pane:not(.hidden)');
+    
+    if (diff > 30 && tabContent.scrollTop <= 5 && activeTab.id !== 'searchTab') {
       e.preventDefault();
-      alert('Pull detected! Firestore error is separate issue');
+      alert('Pull detected!');
       window.startY = currentY;
     }
   }, { passive: false });
