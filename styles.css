@@ -1868,3 +1868,11 @@ html, body {
 .tab-content {
   overscroll-behavior: contain !important;
 }
+
+/* Temporary test - make address visible */
+#profileAddress {
+  color: red !important;
+  font-weight: bold !important;
+  background-color: yellow !important;
+  padding: 5px !important;
+}
