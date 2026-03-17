@@ -1037,3 +1037,285 @@ body {
     padding: 60px 20px;
     color: var(--text-secondary);
 }
+
+/* ========== SEARCH TAB STYLES ========== */
+.search-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.search-map {
+    height: 45vh;
+    width: 100%;
+    border-radius: 12px;
+    margin: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 1;
+}
+
+.search-controls {
+    height: 10vh;
+    padding: 10px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 2;
+}
+
+.search-input-container {
+    margin-bottom: 10px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--text-secondary);
+}
+
+.radius-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.radius-icon {
+    font-size: 16px;
+    filter: grayscale(100%);
+}
+
+.radius-value {
+    font-size: 14px;
+    color: var(--text-primary);
+    min-width: 50px;
+}
+
+.radius-slider {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    background: var(--border-color);
+    border-radius: 2px;
+}
+
+.radius-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.provider-drawer {
+    height: 45vh;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    border-radius: 20px 20px 0 0;
+    overflow-y: auto;
+    z-index: 3;
+}
+
+.drawer-handle {
+    width: 32px;
+    height: 3px;
+    background: var(--border-color);
+    border-radius: 3px;
+    margin: 10px auto;
+}
+
+.provider-list {
+    padding: 0 15px 15px;
+}
+
+.provider-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.provider-list-item:active {
+    background: var(--bg-secondary);
+}
+
+.list-item-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.list-item-info {
+    flex: 1;
+}
+
+.list-item-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.list-item-details {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    gap: 8px;
+}
+
+.empty-list {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-secondary);
+}
+
+.drawer-loading {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.drawer-loading.hidden {
+    display: none;
+}
+
+.spinner-small {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--text-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* Map Markers */
+.provider-marker-container {
+    background: transparent;
+    border: none;
+}
+
+.provider-marker {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.marker-pin {
+    width: 20px;
+    height: 20px;
+    background: #FF0000; /* Only allowed color - red pin */
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.rating-badge {
+    background: white;
+    color: black;
+    font-size: 10px;
+    padding: 2px 4px;
+    border-radius: 10px;
+    white-space: nowrap;
+    margin-top: 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.user-location-marker {
+    background: transparent;
+    border: none;
+}
+
+.user-dot {
+    width: 12px;
+    height: 12px;
+    background: #0000FF; /* Blue dot for user */
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Map Popup */
+.map-popup {
+    text-align: center;
+    padding: 5px;
+}
+
+.map-popup strong {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-primary);
+}
+
+.popup-btn {
+    background: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    padding: 5px 15px;
+    border-radius: 15px;
+    font-size: 12px;
+    margin-top: 8px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+}
+
+.popup-btn:active {
+    opacity: 0.7;
+}
+
+/* Directions Toggle Button */
+.directions-toggle-btn {
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    background: var(--button-bg);
+    color: var(--button-text);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.directions-toggle-btn:active {
+    opacity: 0.7;
+}
+
+/* Leaflet Routing Machine Override */
+.leaflet-routing-container {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    padding: 10px !important;
+    max-height: 200px !important;
+    overflow-y: auto !important;
+}
+
+.leaflet-routing-alt {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.leaflet-routing-alt h2 {
+    color: var(--text-primary) !important;
+    font-size: 14px !important;
+}
+
+.leaflet-routing-alt tr:hover {
+    background: var(--bg-secondary) !important;
+}
