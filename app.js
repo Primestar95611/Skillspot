@@ -15,6 +15,13 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
+// Initialize ImageKit
+var imagekit = new ImageKit({
+    publicKey: "public_t2gpKmHQ/9binh9kNSsQBq0zsys=",
+    urlEndpoint: "https://ik.imagekit.io/GigsCourt",
+    authenticationEndpoint: null // We'll use client-side upload for now
+});
+
 // Global state
 let currentUser = null;
 let providers = [];
@@ -840,7 +847,14 @@ async function getSavesCount(userId) {
 }
 
 // Placeholder functions (to be implemented)
-window.openImageUpload = () => alert('Image upload coming soon');
+window.openImageUpload = function() {
+    // Create file input
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = uploadProfileImage;
+    input.click();
+};
 window.openSavedModal = () => alert('Saved profiles modal coming soon');
 window.openSavesModal = () => alert('Saves modal coming soon');
 window.openEditProfile = function() {
@@ -1000,7 +1014,190 @@ window.addService = function() {
 window.shareProfile = (id) => alert('Share coming soon');
 window.startChat = (id) => alert('Chat coming soon');
 window.toggleSaveProfile = (id) => alert('Save feature coming soon');
-window.addPortfolioImages = () => alert('Add portfolio coming soon');
+window.addPortfolioImages = function() {
+    // Create file input that accepts multiple files
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = uploadPortfolioImages;
+    input.click();
+};
+
+async function uploadProfileImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Show loading
+    alert('Uploading image...');
+    
+    try {
+        // Compress image
+        const compressedFile = await compressImage(file);
+        
+        // Read as base64
+        const reader = new FileReader();
+        reader.readAsDataURL(compressedFile);
+        reader.onload = async () => {
+            const base64 = reader.result.split(',')[1];
+            
+            // Upload to ImageKit
+            const result = await imagekit.upload({
+                file: base64,
+                fileName: `profile_${Date.now()}.jpg`,
+                folder: '/profiles'
+            });
+            
+            // Update user profile with new image URL
+            await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+                profileImage: result.url
+            });
+            
+            alert('Profile picture updated!');
+            
+            // Refresh current view
+            if (document.querySelector('.profile-container')) {
+                loadProfileTab();
+            } else if (document.querySelector('.edit-profile-container')) {
+                window.openEditProfile();
+            }
+        };
+    } catch (error) {
+        console.error('Upload error:', error);
+        alert('Failed to upload image: ' + error.message);
+    }
+}
+
+async function uploadPortfolioImages(event) {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+    
+    alert(`Uploading ${files.length} images...`);
+    
+    try {
+        const uploadedUrls = [];
+        
+        for (const file of files) {
+            // Compress image
+            const compressedFile = await compressImage(file);
+            
+            // Read as base64
+            const base64 = await readFileAsBase64(compressedFile);
+            
+            // Upload to ImageKit
+            const result = await imagekit.upload({
+                file: base64,
+                fileName: `portfolio_${Date.now()}_${Math.random()}.jpg`,
+                folder: '/portfolios'
+            });
+            
+            uploadedUrls.push(result.url);
+        }
+        
+        // Get current user data
+        const userDoc = await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get();
+        const userData = userDoc.data();
+        const existingImages = userData.portfolioImages || [];
+        
+        // Update with new images
+        await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+            portfolioImages: [...existingImages, ...uploadedUrls]
+        });
+        
+        alert(`${uploadedUrls.length} images uploaded successfully!`);
+        
+        // Refresh profile
+        loadProfileTab();
+    } catch (error) {
+        console.error('Upload error:', error);
+        alert('Failed to upload images: ' + error.message);
+    }
+}
+
+// Helper function to compress images
+function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Max dimensions
+                const MAX_WIDTH = 1600;
+                const MAX_HEIGHT = 1600;
+                
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                canvas.toBlob((blob) => {
+                    resolve(blob);
+                }, file.type, 0.8); // 80% quality
+            };
+            img.onerror = reject;
+        };
+        reader.onerror = reject;
+    });
+}
+
+function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = reject;
+    });
+}
+
+window.deleteImage = async (event, imageUrl) => {
+    event.stopPropagation();
+    
+    if (!confirm('Delete this image?')) return;
+    
+    try {
+        const userDoc = await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get();
+        const userData = userDoc.data();
+        
+        // Filter out the deleted image
+        const updatedImages = (userData.portfolioImages || []).filter(url => url !== imageUrl);
+        
+        // Update Firestore
+        await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+            portfolioImages: updatedImages
+        });
+        
+        alert('Image deleted');
+        
+        // Refresh profile
+        loadProfileTab();
+    } catch (error) {
+        console.error('Delete error:', error);
+        alert('Failed to delete image');
+    }
+};
 window.openPhotoSwipe = (index) => alert('Photo gallery coming soon');
 window.deleteImage = (event, url) => {
     event.stopPropagation();
