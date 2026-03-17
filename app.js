@@ -1726,21 +1726,21 @@ document.addEventListener('touchstart', (e) => {
   }
 }, { passive: true });
 
-document.addEventListener('touchmove', (e) => {
-  if (touchOnMap) return;
-  
-  const currentX = e.touches[0].clientX;
-  const currentY = e.touches[0].clientY;
-  const dx = currentX - touchStartX;
-  const dy = currentY - touchStartY;
-  
-  // If horizontal movement is greater than vertical, it's likely a tab swipe
-  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
-    isSwiping = true;
-    // Optional: Add visual feedback here (like slightly moving the tab content)
-    e.preventDefault(); // Prevent scrolling while swiping horizontally
-  }
-}, { passive: false });
+// document.addEventListener('touchmove', (e) => {
+//   if (touchOnMap) return;
+//   
+//   const currentX = e.touches[0].clientX;
+//   const currentY = e.touches[0].clientY;
+//   const dx = currentX - touchStartX;
+//   const dy = currentY - touchStartY;
+//   
+//   // If horizontal movement is greater than vertical, it's likely a tab swipe
+//   if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
+//     isSwiping = true;
+//     // Optional: Add visual feedback here (like slightly moving the tab content)
+//     e.preventDefault(); // Prevent scrolling while swiping horizontally
+//   }
+// }, { passive: false });
 
 document.addEventListener('touchend', (e) => {
   if (touchOnMap || !isSwiping) return;
