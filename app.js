@@ -840,6 +840,7 @@ if (data.locationDescription) {
   
   const profileImageUrl = getThumbnailUrl(data.profileImage, 200);
   if (profileImage) profileImage.src = profileImageUrl;
+  alert('Profile image loaded');
   
   if (profilePhone && profilePhoneContainer) {
     if (data.phoneNumber) {
