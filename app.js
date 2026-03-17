@@ -620,15 +620,15 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
     const rating = profile.rating || 0;
     
     return `
-        <div class="profile-container">
-            <!-- Business Name -->
-            <div class="profile-header">
-                <h1 class="profile-business-name">${profile.businessName || 'Business Name'}</h1>
-            </div>
-            
-            <!-- Profile Picture + Stats Row -->
-            <div class="profile-stats-row">
-                <div class="profile-picture">
+    <div class="profile-container">
+        <!-- Business Name - ABOVE everything -->
+        <div class="profile-header">
+            <h1 class="profile-business-name">${profile.businessName || 'Business Name'}</h1>
+        </div>
+        
+        <!-- Profile Picture + Stats Row - NOW BELOW business name -->
+        <div class="profile-stats-row">
+            <div class="profile-picture">
                     <img src="${profile.profileImage || 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
                     ${isOwnProfile ? '<div class="camera-icon" onclick="openImageUpload()">📷</div>' : ''}
                 </div>
