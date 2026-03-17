@@ -835,6 +835,7 @@ if (data.locationDescription) {
     addressContainer.style.display = 'flex';
   }
 }
+  alert('Location data: ' + (data.locationDescription || 'none'));
   
   const profileImageUrl = getThumbnailUrl(data.profileImage, 200);
   if (profileImage) profileImage.src = profileImageUrl;
@@ -891,6 +892,7 @@ if (!profileSkillsContainer) {
 }
 
 // Populate skills
+  alert('Skills count: ' + (data.skills ? data.skills.length : 0));
 const skillsList = document.getElementById('profileSkillsList');
 if (skillsList && data.skills) {
   skillsList.innerHTML = '';
@@ -907,6 +909,7 @@ if (skillsList && data.skills) {
     'https://ik.imagekit.io/GigsCourt/sample2',
     'https://ik.imagekit.io/GigsCourt/sample3'
   ];
+  alert('Portfolio count: ' + portfolio.length);
   
   const portfolioCount = document.getElementById('portfolioCount');
   if (portfolioCount) {
