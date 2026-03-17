@@ -858,16 +858,6 @@ if (data.locationDescription) {
     } else {
       profileAddressContainer.style.display = 'none';
     }
-    // Make location clickable
-const addressContainer = document.getElementById('profileAddressContainer');
-const addressEl = document.getElementById('profileAddress');
-if (addressContainer && addressEl && viewedProvider.location) {
-  addressContainer.style.cursor = 'pointer';
-  addressContainer.addEventListener('click', () => {
-    // Open map at this location
-    window.open(`https://www.openstreetmap.org/?mlat=${viewedProvider.location.latitude}&mlon=${viewedProvider.location.longitude}#map=17/${viewedProvider.location.latitude}/${viewedProvider.location.longitude}`, '_blank');
-  });
-}
   }
 
 // Populate skills
