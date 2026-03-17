@@ -843,7 +843,160 @@ async function getSavesCount(userId) {
 window.openImageUpload = () => alert('Image upload coming soon');
 window.openSavedModal = () => alert('Saved profiles modal coming soon');
 window.openSavesModal = () => alert('Saves modal coming soon');
-window.openEditProfile = () => alert('Edit profile coming soon');
+window.openEditProfile = function() {
+    const container = document.getElementById('tab-content');
+    
+    container.innerHTML = `
+        <div class="edit-profile-container">
+            <div class="edit-profile-header">
+                <button class="back-btn" onclick="loadProfileTab()">←</button>
+                <h1>Edit Profile</h1>
+                <button class="save-btn" onclick="saveEditProfile()">Save</button>
+            </div>
+            
+            <div class="edit-profile-form">
+                <!-- Profile Picture -->
+                <div class="edit-picture-section">
+                    <div class="edit-picture">
+                        <img src="${currentUserData?.profileImage || 'https://via.placeholder.com/80'}" alt="Profile">
+                        <div class="change-picture-btn" onclick="changeProfilePicture()">Change</div>
+                    </div>
+                </div>
+                
+                <!-- Business Name (with cooldown) -->
+                <div class="form-group">
+                    <label>Business Name</label>
+                    <input type="text" id="edit-business-name" value="${currentUserData?.businessName || ''}">
+                    <small class="cooldown-hint">Can change every 14 days</small>
+                </div>
+                
+                <!-- Username (with cooldown) -->
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="edit-username" value="${currentUserData?.username || ''}">
+                    <small class="cooldown-hint">Can change every 14 days</small>
+                </div>
+                
+                <!-- Bio -->
+                <div class="form-group">
+                    <label>Bio</label>
+                    <textarea id="edit-bio" rows="3">${currentUserData?.bio || ''}</textarea>
+                </div>
+                
+                <!-- Phone -->
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="edit-phone" value="${currentUserData?.phoneNumber || ''}">
+                </div>
+                
+                <!-- Location -->
+                <div class="form-group">
+                    <label>Location</label>
+                    <button class="location-picker-btn" onclick="openLocationPicker()">
+                        📍 ${currentUserData?.location || 'Set your location'}
+                    </button>
+                </div>
+                
+                <!-- Services -->
+                <div class="form-group">
+                    <label>Services</label>
+                    <div class="current-services">
+                        ${(currentUserData?.services || []).map(service => 
+                            `<span class="service-tag">${service} <span class="remove-service" onclick="removeService('${service}')">✕</span></span>`
+                        ).join('')}
+                    </div>
+                    <div class="add-service">
+                        <input type="text" id="new-service" placeholder="Add a service">
+                        <button class="add-service-btn" onclick="addService()">Add</button>
+                    </div>
+                </div>
+                
+                <!-- Account Actions -->
+                <div class="account-actions">
+                    <button class="btn btn-outline" onclick="logout()">Log Out</button>
+                    <button class="btn btn-outline delete-account" onclick="deleteAccount()">Delete Account</button>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
+// Edit Profile Helper Functions
+window.saveEditProfile = async function() {
+    const businessName = document.getElementById('edit-business-name').value;
+    const username = document.getElementById('edit-username').value;
+    const bio = document.getElementById('edit-bio').value;
+    const phone = document.getElementById('edit-phone').value;
+    
+    if (!businessName) {
+        alert('Business name is required');
+        return;
+    }
+    
+    try {
+        await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+            businessName: businessName,
+            username: username,
+            bio: bio,
+            phoneNumber: phone
+        });
+        
+        // Reload profile tab
+        loadProfileTab();
+    } catch (error) {
+        alert('Error saving profile: ' + error.message);
+    }
+};
+
+window.changeProfilePicture = function() {
+    alert('Profile picture upload coming soon');
+};
+
+window.openLocationPicker = function() {
+    alert('Location picker coming soon (Phase 4)');
+};
+
+window.removeService = function(service) {
+    const services = currentUserData?.services || [];
+    const updatedServices = services.filter(s => s !== service);
+    
+    firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+        services: updatedServices
+    }).then(() => {
+        // Refresh edit profile
+        window.openEditProfile();
+    });
+};
+
+window.addService = function() {
+    const newService = document.getElementById('new-service').value.trim();
+    if (!newService) return;
+    
+    const services = currentUserData?.services || [];
+    const pendingServices = currentUserData?.pendingServices || [];
+    
+    // Check if it's a preset service
+    if (['Barber', 'Tech', 'Design', 'Marketing'].includes(newService)) {
+        if (!services.includes(newService)) {
+            firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+                services: [...services, newService]
+            }).then(() => {
+                document.getElementById('new-service').value = '';
+                window.openEditProfile();
+            });
+        }
+    } else {
+        // Custom service goes to pending
+        if (!pendingServices.includes(newService)) {
+            firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+                pendingServices: [...pendingServices, newService]
+            }).then(() => {
+                document.getElementById('new-service').value = '';
+                window.openEditProfile();
+            });
+        }
+    }
+};
 window.shareProfile = (id) => alert('Share coming soon');
 window.startChat = (id) => alert('Chat coming soon');
 window.toggleSaveProfile = (id) => alert('Save feature coming soon');
