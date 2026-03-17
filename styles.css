@@ -1876,3 +1876,11 @@ html, body {
   background-color: yellow !important;
   padding: 5px !important;
 }
+
+/* Force contact section to show */
+.profile-contact {
+  border: 2px solid red !important;
+  padding: 10px !important;
+  background-color: #f0f0f0 !important;
+  min-height: 50px !important;
+}
