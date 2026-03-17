@@ -833,11 +833,13 @@ if (data.locationDescription) {
   const addressEl = document.getElementById('profileAddress');
   if (addressContainer && addressEl) {
     addressEl.textContent = data.locationDescription;
-    alert('Text length: ' + addressEl.textContent.length);
-    alert('Text set to: ' + addressEl.textContent);
-    addressContainer.style.display = 'flex';
-    alert('Display set to flex');
-    alert('Address should now show: ' + data.locationDescription);
+alert('Text length: ' + addressEl.textContent.length);
+alert('Text set to: ' + addressEl.textContent);
+alert('Address element classes: ' + addressEl.className);
+alert('Address element parent classes: ' + addressEl.parentElement.className);
+addressContainer.style.display = 'flex';
+alert('Display set to flex');
+alert('Address should now show: ' + data.locationDescription);
   }
 }
 alert('Location data: ' + (data.locationDescription || 'none'));
