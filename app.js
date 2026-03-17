@@ -939,6 +939,7 @@ if (skillsList && data.skills) {
   }
 
   setupLongPress();
+  alert('FINAL CHECK - Address text: ' + document.getElementById('profileAddress').textContent);
 }
 
 // ==================== PHOTOSWIPE GALLERY - INSTAGRAM STYLE ====================
