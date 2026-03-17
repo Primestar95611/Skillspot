@@ -551,24 +551,41 @@ function closeQuickView() {
 function initPullToRefresh() {
   const homeTab = document.getElementById('homeTab');
   
+  // Create a visible test indicator
+  const testDiv = document.createElement('div');
+  testDiv.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    background: red;
+    color: white;
+    text-align: center;
+    line-height: 40px;
+    z-index: 10000;
+    display: none;
+  `;
+  testDiv.textContent = 'PULL DETECTED';
+  document.body.appendChild(testDiv);
+  
   homeTab.addEventListener('touchstart', (e) => {
-    window.lastTouchY = e.touches[0].clientY;
+    window.startY = e.touches[0].clientY;
   }, { passive: true });
   
   homeTab.addEventListener('touchmove', (e) => {
     const currentY = e.touches[0].clientY;
-    const diff = currentY - window.lastTouchY;
+    const diff = currentY - window.startY;
     
-    if (diff > 30 && homeTab.scrollTop === 0) {
+    if (diff > 30 && homeTab.scrollTop <= 5) {
       e.preventDefault();
-      alert('Pull to refresh would trigger!');
-      window.lastTouchY = currentY;
+      testDiv.style.display = 'block';
+      setTimeout(() => {
+        testDiv.style.display = 'none';
+      }, 500);
+      window.startY = currentY;
     }
   }, { passive: false });
-  
-  homeTab.addEventListener('touchend', () => {
-    // Do nothing
-  }, { passive: true });
 }
 
 // ==================== IMAGEKIT UPLOAD ====================
