@@ -3333,4 +3333,19 @@ setTimeout(() => {
       window.location.reload();
     });
   }
+  // Make sure logout button exists before adding listener
+setTimeout(() => {
+  const existingLogoutBtn = document.getElementById('logoutBtn');
+  if (existingLogoutBtn) {
+    existingLogoutBtn.addEventListener('click', async () => {
+      await signOut(auth);
+      window.location.reload();
+    });
+  }
+}, 1000);
+
+// FINAL CHECK - After everything
+setTimeout(() => {
+  alert('5 seconds later - Address text: ' + document.getElementById('profileAddress').textContent);
+}, 5000);
 }, 1000);
