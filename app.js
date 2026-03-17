@@ -35,15 +35,26 @@ firebase.auth().onAuthStateChanged(async (user) => {
     
     if (user) {
         if (user.emailVerified) {
-            // Get user data from Firestore
-            const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
-            if (userDoc.exists) {
-                currentUserData = userDoc.data();
-                loadMainApp();
-            } else {
-                // New user - create profile
-                window.location.hash = 'complete-profile';
-                loadProfileCompletion();
+            try {
+                // Get user data from Firestore
+                const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
+                
+                if (userDoc.exists) {
+                    // User document exists - normal flow
+                    currentUserData = userDoc.data();
+                    loadMainApp();
+                } else {
+                    // User document doesn't exist - redirect to profile completion
+                    console.log('User document missing, redirecting to profile setup');
+                    window.location.hash = 'complete-profile';
+                    loadProfileCompletion();
+                }
+            } catch (error) {
+                console.error('Error fetching user document:', error);
+                // Show error message to user
+                alert('Error loading your profile. Please try again.');
+                // Optionally sign out
+                firebase.auth().signOut();
             }
         } else {
             loadVerification();
