@@ -1858,3 +1858,13 @@ h2 { margin-bottom: 24px; font-weight: 600; }
 body {
   overscroll-behavior-y: none;
 }
+
+/* Stronger disable for browser pull-to-refresh */
+html, body {
+  overscroll-behavior: none !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab-content {
+  overscroll-behavior: contain !important;
+}
