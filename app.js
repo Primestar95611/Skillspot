@@ -834,6 +834,7 @@ if (data.locationDescription) {
   if (addressContainer && addressEl) {
     addressEl.textContent = data.locationDescription;
     addressContainer.style.display = 'flex';
+    alert('Display set to flex');
     alert('Address should now show: ' + data.locationDescription);
   }
 }
