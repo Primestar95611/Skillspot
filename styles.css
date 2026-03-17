@@ -1907,3 +1907,16 @@ html, body {
   font-weight: bold !important;
   background-color: transparent !important;
 }
+
+/* Force address to have height */
+#profileAddress {
+  background-color: yellow !important;
+  min-height: 40px !important;
+  height: auto !important;
+  display: block !important;
+  border: 3px solid red !important;
+  padding: 5px !important;
+  margin: 5px !important;
+  color: black !important;
+  font-size: 16px !important;
+}
