@@ -522,7 +522,64 @@ window.markAllRead = function() {
 
 // Placeholders for other functions
 window.viewProfile = (id) => alert('Profile view coming soon');
-window.messageUser = (id) => alert('Messaging coming soon');
+window.messageUser = (id) => {
+    // Switch to messages tab and open chat with this user
+    switchTab('messages');
+    // We'll implement creating a new chat here
+    setTimeout(() => {
+        createNewChat(id);
+    }, 500);
+};
+
+async function createNewChat(otherUserId) {
+    const currentUserId = firebase.auth().currentUser.uid;
+    
+    try {
+        // Check if chat already exists
+        const chatsSnapshot = await firebase.firestore()
+            .collection('chats')
+            .where('participants', 'array-contains', currentUserId)
+            .get();
+        
+        let existingChatId = null;
+        
+        chatsSnapshot.forEach(doc => {
+            const chat = doc.data();
+            if (chat.participants.includes(otherUserId)) {
+                existingChatId = doc.id;
+            }
+        });
+        
+        if (existingChatId) {
+            // Open existing chat
+            const chatData = (await firebase.firestore().collection('chats').doc(existingChatId).get()).data();
+            openChat(existingChatId, otherUserId, chatData);
+        } else {
+            // Create new chat
+            const newChatRef = await firebase.firestore().collection('chats').add({
+                participants: [currentUserId, otherUserId],
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastMessage: '',
+                lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                lastMessageSender: '',
+                lastMessageRead: true
+            });
+            
+            // Get other user's info
+            const otherUserDoc = await firebase.firestore().collection('users').doc(otherUserId).get();
+            const otherUserData = otherUserDoc.data();
+            
+            // Open the new chat
+            openChat(newChatRef.id, otherUserId, {
+                ...otherUserData,
+                otherUserName: otherUserData.businessName
+            });
+        }
+    } catch (error) {
+        console.error('Error creating chat:', error);
+        alert('Could not start chat. Please try again.');
+    }
+}
 window.getDirections = (id) => alert('Directions coming soon');
 window.showOnMap = (id) => alert('Map view coming soon');
 
