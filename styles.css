@@ -1958,3 +1958,14 @@ body {
     0%, 100% { transform: rotate(-45deg) translateY(0); }
     50% { transform: rotate(-45deg) translateY(-10px); }
 }
+
+/* Save button states */
+.btn.saved {
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    border-color: var(--text-primary);
+}
+
+.btn.saved:active {
+    opacity: 0.7;
+}
