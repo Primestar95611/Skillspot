@@ -19,6 +19,14 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <script>
+        
+        // Fix Firestore WebChannel error
+        firebase.firestore().settings({
+            experimentalForceLongPolling: true,
+            useFetchStreams: false
+        });
+    </script>
 
     <!-- ImageKit SDK v2 -->
     <script src="https://cdn.jsdelivr.net/npm/imagekit-javascript@2.0.0/dist/imagekit.min.js"></script>
