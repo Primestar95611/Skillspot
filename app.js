@@ -744,11 +744,13 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
                         <span class="stat-number">${rating}</span>
                         <span class="stat-label">★ Rating</span>
                     </div>
-                    <div class="stat-item clickable" onclick="${isOwnProfile ? 'openSavedModal()' : 'void(0)'}">
-                        <span class="stat-number">${savedCount}</span>
-                        <span class="stat-label">Saved</span>
-                    </div>
-                    <div class="stat-item clickable" onclick="${isOwnProfile ? 'openSavesModal()' : 'void(0)'}">
+                    ${isOwnProfile ? `
+                        <div class="stat-item clickable" onclick="openSavedModal()">
+                            <span class="stat-number">${savedCount}</span>
+                            <span class="stat-label">Saved</span>
+                        </div>
+                    ` : ''}
+                    <div class="stat-item ${isOwnProfile ? 'clickable' : ''}" onclick="${isOwnProfile ? 'openSavesModal()' : ''}">
                         <span class="stat-number">${savesCount}</span>
                         <span class="stat-label">Saves</span>
                     </div>
@@ -1516,9 +1518,173 @@ async function updateProfileStats(profileId) {
     if (savedStat) savedStat.textContent = savedCount;
     if (savesStat) savesStat.textContent = savesCount;
 }
+
 window.openPhotoSwipe = (index) => alert('Photo gallery coming soon');
-window.openSavedModal = () => alert('Saved profiles modal coming soon');
-window.openSavesModal = () => alert('Saves modal coming soon');
+// ========== SAVED/SAVES MODALS ==========
+window.openSavedModal = async function() {
+    const currentUserId = firebase.auth().currentUser.uid;
+    
+    try {
+        // Get all profiles that current user has saved
+        const savesSnapshot = await firebase.firestore()
+            .collection('saves')
+            .where('saverId', '==', currentUserId)
+            .orderBy('timestamp', 'desc')
+            .get();
+        
+        if (savesSnapshot.empty) {
+            alert('You haven\'t saved any profiles yet');
+            return;
+        }
+        
+        // Get the saved user IDs
+        const savedUserIds = [];
+        savesSnapshot.forEach(doc => {
+            savedUserIds.push(doc.data().savedUserId);
+        });
+        
+        // Fetch all the user profiles
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-container';
+        
+        let html = `
+            <div class="modal-header">
+                <h2>Saved Profiles</h2>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-list">
+        `;
+        
+        for (const userId of savedUserIds) {
+            const userDoc = await firebase.firestore().collection('users').doc(userId).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                html += `
+                    <div class="modal-item" onclick="viewProfileFromModal('${userId}')">
+                        <img src="${userData.profileImage ? userData.profileImage + '?tr=w-50,h-50' : 'https://via.placeholder.com/50'}" class="modal-item-image">
+                        <div class="modal-item-info">
+                            <div class="modal-item-name">${userData.businessName || 'Business Name'}</div>
+                            <div class="modal-item-rating">⭐ ${userData.rating || '0.0'}</div>
+                        </div>
+                        <button class="modal-unsave-btn" onclick="unsaveProfile(event, '${userId}')">Unsave</button>
+                    </div>
+                `;
+            }
+        }
+        
+        html += `</div>`;
+        modalContent.innerHTML = html;
+        
+        // Add modal to page
+        document.body.appendChild(modalContent);
+        
+    } catch (error) {
+        console.error('Error opening saved modal:', error);
+        alert('Failed to load saved profiles');
+    }
+};
+
+window.openSavesModal = async function() {
+    const currentUserId = firebase.auth().currentUser.uid;
+    
+    try {
+        // Get all profiles that have saved current user
+        const savesSnapshot = await firebase.firestore()
+            .collection('saves')
+            .where('savedUserId', '==', currentUserId)
+            .orderBy('timestamp', 'desc')
+            .get();
+        
+        if (savesSnapshot.empty) {
+            alert('No one has saved your profile yet');
+            return;
+        }
+        
+        // Get the saver user IDs
+        const saverUserIds = [];
+        savesSnapshot.forEach(doc => {
+            saverUserIds.push(doc.data().saverId);
+        });
+        
+        // Fetch all the user profiles
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-container';
+        
+        let html = `
+            <div class="modal-header">
+                <h2>People who saved you</h2>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-list">
+        `;
+        
+        for (const userId of saverUserIds) {
+            const userDoc = await firebase.firestore().collection('users').doc(userId).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                html += `
+                    <div class="modal-item" onclick="viewProfileFromModal('${userId}')">
+                        <img src="${userData.profileImage ? userData.profileImage + '?tr=w-50,h-50' : 'https://via.placeholder.com/50'}" class="modal-item-image">
+                        <div class="modal-item-info">
+                            <div class="modal-item-name">${userData.businessName || 'Business Name'}</div>
+                            <div class="modal-item-rating">⭐ ${userData.rating || '0.0'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        html += `</div>`;
+        modalContent.innerHTML = html;
+        
+        // Add modal to page
+        document.body.appendChild(modalContent);
+        
+    } catch (error) {
+        console.error('Error opening saves modal:', error);
+        alert('Failed to load saves');
+    }
+};
+
+// Helper functions for modals
+window.closeModal = function() {
+    const modal = document.querySelector('.modal-container');
+    if (modal) modal.remove();
+};
+
+window.viewProfileFromModal = function(userId) {
+    closeModal();
+    switchTab('profile');
+    loadProfileTab(userId);
+};
+
+window.unsaveProfile = async function(event, savedUserId) {
+    event.stopPropagation(); // Prevent triggering the parent click
+    
+    const currentUserId = firebase.auth().currentUser.uid;
+    
+    try {
+        // Find and delete the save document
+        const savesSnapshot = await firebase.firestore()
+            .collection('saves')
+            .where('saverId', '==', currentUserId)
+            .where('savedUserId', '==', savedUserId)
+            .get();
+        
+        savesSnapshot.forEach(doc => doc.ref.delete());
+        
+        // Refresh the modal
+        closeModal();
+        window.openSavedModal();
+        
+        // Update stats if on profile page
+        updateProfileStats(currentUserId);
+        
+    } catch (error) {
+        console.error('Error unsaving:', error);
+        alert('Failed to unsave profile');
+    }
+};
 
 // Setup functions
 function setupOwnProfileListeners(profile) {
