@@ -1454,7 +1454,70 @@ window.addService = function() {
 
 window.shareProfile = (id) => alert('Share coming soon');
 window.startChat = (id) => alert('Chat coming soon');
-window.toggleSaveProfile = (id) => alert('Save feature coming soon');
+window.toggleSaveProfile = async function(profileId) {
+    const currentUserId = firebase.auth().currentUser.uid;
+    if (currentUserId === profileId) {
+        alert('You cannot save your own profile');
+        return;
+    }
+    
+    const saveBtn = document.getElementById(`save-btn-${profileId}`);
+    const isSaved = saveBtn.textContent === 'Saved';
+    
+    try {
+        if (isSaved) {
+            // Unsave - delete the save document
+            const savesSnapshot = await firebase.firestore()
+                .collection('saves')
+                .where('saverId', '==', currentUserId)
+                .where('savedUserId', '==', profileId)
+                .get();
+            
+            const deletePromises = [];
+            savesSnapshot.forEach(doc => {
+                deletePromises.push(doc.ref.delete());
+            });
+            
+            await Promise.all(deletePromises);
+            
+            // Update button
+            saveBtn.textContent = 'Save';
+            saveBtn.classList.remove('saved');
+            
+        } else {
+            // Save - create new save document
+            await firebase.firestore().collection('saves').add({
+                saverId: currentUserId,
+                savedUserId: profileId,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Update button
+            saveBtn.textContent = 'Saved';
+            saveBtn.classList.add('saved');
+        }
+        
+        // Update the stats counts in the profile
+        updateProfileStats(profileId);
+        
+    } catch (error) {
+        console.error('Error toggling save:', error);
+        alert('Failed to save/unsave profile');
+    }
+};
+
+async function updateProfileStats(profileId) {
+    // Get updated counts
+    const savedCount = await getSavedCount(profileId);
+    const savesCount = await getSavesCount(profileId);
+    
+    // Update the displayed numbers
+    const savedStat = document.querySelector('.stat-item.clickable .stat-number');
+    const savesStat = document.querySelectorAll('.stat-item.clickable')[1]?.querySelector('.stat-number');
+    
+    if (savedStat) savedStat.textContent = savedCount;
+    if (savesStat) savesStat.textContent = savesCount;
+}
 window.openPhotoSwipe = (index) => alert('Photo gallery coming soon');
 window.openSavedModal = () => alert('Saved profiles modal coming soon');
 window.openSavesModal = () => alert('Saves modal coming soon');
@@ -1470,10 +1533,29 @@ function setupOtherProfileListeners(profile) {
 }
 
 async function checkIfSaved(profileId) {
-    // Will implement in save feature phase
+    const currentUserId = firebase.auth().currentUser.uid;
+    if (currentUserId === profileId) return;
+    
     const btn = document.getElementById(`save-btn-${profileId}`);
-    if (btn) {
-        btn.textContent = 'Saved';
+    if (!btn) return;
+    
+    try {
+        // Check if already saved
+        const savesSnapshot = await firebase.firestore()
+            .collection('saves')
+            .where('saverId', '==', currentUserId)
+            .where('savedUserId', '==', profileId)
+            .get();
+        
+        if (!savesSnapshot.empty) {
+            btn.textContent = 'Saved';
+            btn.classList.add('saved');
+        } else {
+            btn.textContent = 'Save';
+            btn.classList.remove('saved');
+        }
+    } catch (error) {
+        console.error('Error checking save status:', error);
     }
 }
 
