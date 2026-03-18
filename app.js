@@ -18,7 +18,8 @@ firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 // Initialize ImageKit for client-side upload
 var imagekit = new ImageKit({
     publicKey: "public_t2gpKmHQ/9binh9kNSsQBq0zsys=",
-    urlEndpoint: "https://ik.imagekit.io/GigsCourt"
+    urlEndpoint: "https://ik.imagekit.io/GigsCourt",
+    authenticationEndpoint: "https://your-project.vercel.app/api/imagekit-auth"
 });
 
 // Global state
