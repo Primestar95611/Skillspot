@@ -1541,7 +1541,7 @@ window.openPhotoSwipe = function(index) {
         
         images.push({
             src: imgUrl,
-            width: 1600,  // Default, actual size will be loaded
+            width: 1600,
             height: 1600,
             alt: `Portfolio image ${i + 1}`
         });
@@ -1549,13 +1549,15 @@ window.openPhotoSwipe = function(index) {
     
     if (images.length === 0) return;
     
-    // Create PhotoSwipe gallery
+    // Create PhotoSwipe gallery (v5 syntax)
     const pswpElement = document.createElement('div');
     pswpElement.className = 'pswp';
     document.body.appendChild(pswpElement);
     
-    const options = {
-        index: index, // Start at clicked image
+    const gallery = new PhotoSwipe({
+        dataSource: images,
+        index: index,
+        pswpModule: PhotoSwipe,
         bgOpacity: 0.95,
         showHideAnimationType: 'fade',
         loop: true,
@@ -1566,25 +1568,11 @@ window.openPhotoSwipe = function(index) {
         closeOnClick: true,
         tapToClose: true,
         tapToToggleControls: true,
-        
-        // UI options - minimalist grayscale
-        bgOpacity: 0.95,
         mainClass: 'pswp--minimal',
         barsSize: { top: 44, bottom: 'auto' },
-        timeToIdle: 4000,
-        
-        // Caption
-        addCaptionHTMLFn: function(item, captionEl, isFake) {
-            if (!item.title) {
-                captionEl.children[0].innerText = '';
-                return false;
-            }
-            captionEl.children[0].innerText = item.title;
-            return true;
-        }
-    };
+        timeToIdle: 4000
+    });
     
-    const gallery = new PhotoSwipe(pswpElement, PhotoSwipe, images, options);
     gallery.init();
     
     // Remove pswp element when gallery closes
