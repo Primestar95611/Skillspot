@@ -973,34 +973,7 @@ async function uploadPortfolioImages(event) {
                 });
             });
         }
-            // Compress image
-            const compressedFile = await compressImage(file);
             
-            // Read as base64
-            const base64 = await readFileAsBase64(compressedFile);
-            
-            // Upload to ImageKit with security parameters
-            await new Promise((resolve, reject) => {
-                imagekit.upload({
-                    file: base64,
-                    fileName: `portfolio_${Date.now()}_${Math.random()}.jpg`,
-                    folder: '/portfolios',
-                    signature: authData.signature,
-                    token: authData.token,
-                    expire: authData.expire,
-                    useUniqueFileName: true
-                }, function(err, result) {
-                    if (err) {
-                        reject(err);
-                        return;
-                    }
-                    
-                    uploadedUrls.push(result.url);
-                    resolve();
-                });
-            });
-        }
-        
         // After all uploads complete, update Firestore
         await updateFirestoreWithPortfolio(uploadedUrls);
         
