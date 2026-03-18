@@ -1817,3 +1817,111 @@ body {
     border-color: #ff0000 !important;
     color: #ff0000 !important;
 }
+
+/* ========== LOCATION PICKER STYLES ========== */
+.location-picker-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    position: relative;
+}
+
+.location-picker-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    z-index: 10;
+}
+
+.location-picker-header h1 {
+    flex: 1;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.location-map {
+    flex: 1;
+    width: 100%;
+    z-index: 1;
+}
+
+.location-search {
+    padding: 15px 20px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 5;
+}
+
+.location-search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.location-search-input:focus {
+    outline: none;
+    border-color: var(--text-secondary);
+}
+
+.location-details {
+    padding: 20px;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    z-index: 5;
+}
+
+.location-address {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: default;
+}
+
+.location-address:focus {
+    outline: none;
+}
+
+.location-pin {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.pin {
+    width: 30px;
+    height: 30px;
+    background: #FF0000;
+    border: 3px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    animation: bounce 0.5s;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Leaflet map customizations */
+.leaflet-control-attribution {
+    font-size: 8px;
+    background: rgba(255,255,255,0.7);
+    padding: 2px 5px;
+    border-radius: 3px;
+}
