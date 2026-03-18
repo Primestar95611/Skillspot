@@ -1519,7 +1519,84 @@ async function updateProfileStats(profileId) {
     if (savesStat) savesStat.textContent = savesCount;
 }
 
-window.openPhotoSwipe = (index) => alert('Photo gallery coming soon');
+// ========== PHOTOSWIPE GALLERY ==========
+window.openPhotoSwipe = function(index) {
+    const currentUserId = firebase.auth().currentUser.uid;
+    const isOwnProfile = currentUserId === currentUserData?.id;
+    
+    // Get portfolio images from the current profile being viewed
+    const profileContainer = document.querySelector('.profile-container');
+    if (!profileContainer) return;
+    
+    // Find all portfolio images on the page
+    const portfolioItems = document.querySelectorAll('.portfolio-item img');
+    const images = [];
+    
+    portfolioItems.forEach((img, i) => {
+        // Get high-quality image URL (remove transformation params)
+        let imgUrl = img.src;
+        if (imgUrl.includes('?tr=')) {
+            imgUrl = imgUrl.split('?tr=')[0];
+        }
+        
+        images.push({
+            src: imgUrl,
+            width: 1600,  // Default, actual size will be loaded
+            height: 1600,
+            alt: `Portfolio image ${i + 1}`
+        });
+    });
+    
+    if (images.length === 0) return;
+    
+    // Create PhotoSwipe gallery
+    const pswpElement = document.createElement('div');
+    pswpElement.className = 'pswp';
+    document.body.appendChild(pswpElement);
+    
+    const options = {
+        index: index, // Start at clicked image
+        bgOpacity: 0.95,
+        showHideAnimationType: 'fade',
+        loop: true,
+        closeOnScroll: false,
+        closeOnVerticalDrag: true,
+        verticalDragRange: 0.75,
+        pinchToClose: true,
+        closeOnClick: true,
+        tapToClose: true,
+        tapToToggleControls: true,
+        
+        // UI options - minimalist grayscale
+        bgOpacity: 0.95,
+        mainClass: 'pswp--minimal',
+        barsSize: { top: 44, bottom: 'auto' },
+        timeToIdle: 4000,
+        
+        // Caption
+        addCaptionHTMLFn: function(item, captionEl, isFake) {
+            if (!item.title) {
+                captionEl.children[0].innerText = '';
+                return false;
+            }
+            captionEl.children[0].innerText = item.title;
+            return true;
+        }
+    };
+    
+    const gallery = new PhotoSwipe(pswpElement, PhotoSwipeLightbox, images, options);
+    gallery.init();
+    
+    // Remove pswp element when gallery closes
+    gallery.on('destroy', () => {
+        setTimeout(() => {
+            if (pswpElement.parentNode) {
+                pswpElement.parentNode.removeChild(pswpElement);
+            }
+        }, 300);
+    });
+};
+
 // ========== SAVED/SAVES MODALS ==========
 window.openSavedModal = async function() {
     const currentUserId = firebase.auth().currentUser.uid;
