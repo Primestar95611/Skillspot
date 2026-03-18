@@ -871,16 +871,15 @@ async function uploadProfileImage(event) {
         // Compress image
         const compressedFile = await compressImage(file);
         
+        // Get authentication parameters from your backend FIRST
+        const authResponse = await fetch('https://gigscourt.vercel.app/api/imagekit-auth');
+        const authData = await authResponse.json();
+        
         // Read as base64
         const reader = new FileReader();
         reader.readAsDataURL(compressedFile);
-        reader.onload = async () => {
+        reader.onload = function() {
             const base64 = reader.result.split(',')[1];
-            
-            // Upload to ImageKit
-            // Get authentication parameters from your backend
-            const authResponse = await fetch('https://gigscourt.vercel.app/api/imagekit-auth');
-            const authData = await authResponse.json();
             
             // Upload to ImageKit with security parameters
             imagekit.upload({
