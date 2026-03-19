@@ -1459,7 +1459,7 @@ window.shareProfile = async function(profileId) {
     console.log('1. Share function started', profileId);
     
     // Get the profile data
-    const profileDoc = await firebase.firestore().collection('users').doc(profileId).get();
+    const profileDoc = await firebase.firestore().collection('users').doc(targetId).get();
     console.log('2. Profile fetched', profileDoc.exists);
     
     if (!profileDoc.exists) return;
