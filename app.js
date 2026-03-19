@@ -683,6 +683,94 @@ async function fixChatUserNames() {
 window.getDirections = (id) => alert('Directions coming soon');
 window.showOnMap = (id) => alert('Map view coming soon');
 
+window.getDirections = (id) => alert('Directions coming soon');
+window.showOnMap = (id) => alert('Map view coming soon');
+
+window.getDirectionsToProvider = async function(providerId) {
+    // Get provider's location from Firestore
+    const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
+    const provider = providerDoc.data();
+    
+    if (!provider.locationGeo) {
+        alert('This provider has not set their location');
+        return;
+    }
+    
+    // Store the target provider for directions
+    window.directionsTarget = {
+        id: providerId,
+        location: {
+            lat: provider.locationGeo.latitude,
+            lng: provider.locationGeo.longitude
+        },
+        name: provider.businessName
+    };
+    
+    // Switch to search tab
+    switchTab('search');
+    
+    // Wait for search tab to fully load
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const checkMapReady = setInterval(() => {
+        attempts++;
+        
+        if (map && userLocation) {
+            clearInterval(checkMapReady);
+            showDirectionsToTarget();
+        } else if (attempts >= maxAttempts) {
+            clearInterval(checkMapReady);
+            alert('Map not ready. Please try again.');
+        }
+    }, 500);
+};
+
+function showDirectionsToTarget() {
+    if (!window.directionsTarget) {
+        alert('No destination selected');
+        return;
+    }
+    
+    if (!userLocation) {
+        alert('Your location not found');
+        return;
+    }
+    
+    const target = window.directionsTarget;
+    
+    // Remove existing routing
+    if (routingControl) {
+        map.removeControl(routingControl);
+    }
+    
+    // Create routing control with directions
+    routingControl = L.Routing.control({
+        waypoints: [
+            L.latLng(userLocation.lat, userLocation.lng),
+            L.latLng(target.location.lat, target.location.lng)
+        ],
+        routeWhileDragging: false,
+        showAlternatives: false,
+        fitSelectedRoutes: true,
+        lineOptions: {
+            styles: [{ color: '#0000FF', opacity: 0.8, weight: 5 }] // Blue line
+        },
+        createMarker: function() { return null; } // Don't create duplicate markers
+    }).addTo(map);
+    
+    // Center map on the route
+    setTimeout(() => {
+        map.fitBounds([
+            [userLocation.lat, userLocation.lng],
+            [target.location.lat, target.location.lng]
+        ], { padding: [50, 50] });
+    }, 500);
+    
+    // Clear the target
+    window.directionsTarget = null;
+}
+
 // ========== MAIN APP LOADER ==========
 function loadMainApp() {
     document.getElementById('app').innerHTML = `
