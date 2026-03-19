@@ -2711,3 +2711,116 @@ body {
     padding: 40px 20px;
     color: var(--text-secondary);
 }
+
+.profile-actions-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+.register-job-btn {
+    background: var(--button-bg);
+    color: var(--button-text);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.register-job-btn:active {
+    opacity: 0.7;
+}
+
+.profile-meta {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+    padding-top: 5px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Register Job Modal */
+.register-job-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.register-job-modal-content {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.register-job-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.register-job-modal-header h3 {
+    font-size: 18px;
+    color: var(--text-primary);
+}
+
+.register-job-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.points-info {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+}
+
+.clients-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.client-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.client-item:active {
+    background: var(--bg-secondary);
+}
+
+.client-item-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.client-item-name {
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.no-clients {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-secondary);
+}
