@@ -4020,14 +4020,4 @@ window.viewUserProfile = function(userId) {
     switchTab('profile');
     loadProfileTab(userId);
 };
-    
-// Force load Eruda
-(function() {
-    var script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/eruda';
-    script.onload = function() {
-        eruda.init();
-        console.log('Eruda loaded');
-    };
-    document.head.appendChild(script);
-})();
+
