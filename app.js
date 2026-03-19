@@ -2793,8 +2793,15 @@ window.switchTab = (tab) => {
     // Update active tab
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
+        if (btn.textContent.toLowerCase().includes(tab) || 
+            (tab === 'home' && btn.textContent.includes('Home')) ||
+            (tab === 'search' && btn.textContent.includes('Search')) ||
+            (tab === 'messages' && btn.textContent.includes('Messages')) ||
+            (tab === 'profile' && btn.textContent.includes('Profile')) ||
+            (tab === 'admin' && btn.textContent.includes('Admin'))) {
+            btn.classList.add('active');
+        }
     });
-    event.currentTarget.classList.add('active');
     
     // Load tab content
     switch(tab) {
@@ -2810,9 +2817,11 @@ window.switchTab = (tab) => {
         case 'profile':
             loadProfileTab();
             break;
-            case 'admin':
+        case 'admin':
             loadAdminTab();
             break;
+        default:
+            loadHomeTab();
     }
 };
 
