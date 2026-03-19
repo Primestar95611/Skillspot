@@ -890,6 +890,96 @@ async function updateProviderAverageRating(providerId) {
     }
 }
 
+// Show register job modal
+window.showRegisterJobModal = async function() {
+    const providerId = firebase.auth().currentUser.uid;
+    
+    try {
+        // Get recent chats to show as potential clients
+        const chatsSnapshot = await firebase.firestore()
+            .collection('chats')
+            .where('participants', 'array-contains', providerId)
+            .orderBy('lastMessageTimestamp', 'desc')
+            .limit(20)
+            .get();
+        
+        let clientsHtml = '';
+        
+        chatsSnapshot.forEach(doc => {
+            const chat = doc.data();
+            const otherUserId = chat.participants.find(id => id !== providerId);
+            const otherUserName = chat.otherUserName || 'User';
+            const otherUserImage = chat.otherUserImage || 'https://via.placeholder.com/40';
+            
+            clientsHtml += `
+                <div class="client-item" onclick="selectClient('${otherUserId}', '${otherUserName}')">
+                    <img src="${otherUserImage}" class="client-item-image">
+                    <div class="client-item-name">${otherUserName}</div>
+                </div>
+            `;
+        });
+        
+        const modal = document.createElement('div');
+        modal.className = 'register-job-modal';
+        modal.innerHTML = `
+            <div class="register-job-modal-content">
+                <div class="register-job-modal-header">
+                    <h3>Register New Job</h3>
+                    <button class="close-btn" onclick="this.closest('.register-job-modal').remove()">✕</button>
+                </div>
+                <div class="register-job-modal-body">
+                    <p>Select a client to register a job with:</p>
+                    <p class="points-info">This will cost 3 points (You have ${currentUserData?.points || 0} points)</p>
+                    <div class="clients-list">
+                        ${clientsHtml || '<div class="no-clients">No recent chats. Start a conversation first.</div>'}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+    } catch (error) {
+        console.error('Error loading chats:', error);
+        alert('Failed to load clients');
+    }
+};
+
+// Select client and register job
+window.selectClient = async function(clientId, clientName) {
+    if (!confirm(`Register job with ${clientName} for 3 points?`)) return;
+    
+    const providerId = firebase.auth().currentUser.uid;
+    
+    try {
+        // Create job document
+        const jobRef = await firebase.firestore().collection('jobs').add({
+            providerId: providerId,
+            clientId: clientId,
+            status: 'pending',
+            pointsSpent: 3,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            completedAt: null
+        });
+        
+        // Deduct points from provider
+        await firebase.firestore().collection('users').doc(providerId).update({
+            points: firebase.firestore.FieldValue.increment(-3)
+        });
+        
+        // Close modal
+        document.querySelector('.register-job-modal').remove();
+        
+        alert('Job registered! Waiting for client confirmation.');
+        
+        // TODO: Send notification to client
+        
+    } catch (error) {
+        console.error('Error registering job:', error);
+        alert('Failed to register job');
+    }
+};
+
 // ========== REVIEWS DISPLAY ==========
 
 // Show all reviews for a provider (called when clicking rating)
@@ -1213,6 +1303,17 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
                     </div>
                 </div>
             </div>
+        </div>
+
+        ${isOwnProfile ? `
+            <div class="profile-actions-header">
+                <button class="register-job-btn" onclick="showRegisterJobModal()">Register Job (3 pts)</button>
+            </div>
+        ` : ''}
+        
+        <div class="profile-meta">
+            Joined ${profile.createdAt ? new Date(profile.createdAt.toDate()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown'} • 
+            ${profile.jobsThisMonth || 0} jobs this month
         </div>
         
         <!-- Bio -->
@@ -3369,6 +3470,8 @@ window.handleSignup = async function(event) {
     bio: '',
     location: null,
     locationGeo: null  // Add this line for geolocation
+    points: 15,
+    jobsThisMonth: 0,        
 });
         
         alert('Account created! Please check your email for verification.');
