@@ -804,7 +804,7 @@ body {
 
 .profile-stats-row {
     display: flex;
-    align-items: flex-start;  /* Changed from 'center' to 'flex-start' */
+    align-items: center;
     gap: 20px;
     margin-bottom: 20px;
 }
