@@ -1454,6 +1454,8 @@ window.addService = function() {
 
 // ========== SHARE PROFILE ==========
 window.shareProfile = async function(profileId) {
+    // If no profileId provided, use current user's ID
+    const targetId = profileId || firebase.auth().currentUser.uid;
     console.log('1. Share function started', profileId);
     
     // Get the profile data
@@ -1467,7 +1469,7 @@ window.shareProfile = async function(profileId) {
     const bio = profile.bio ? profile.bio.substring(0, 100) : 'Check out my profile on GigsCourt';
     
     // Create the profile URL using document ID
-    const profileUrl = `https://gigscourt.com/user/${profileId}`;
+    const profileUrl = `${window.location.origin}/user/${targetId}`;
     
     console.log('3. Share data prepared', { businessName, bio, profileUrl });
     
