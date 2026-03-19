@@ -2445,3 +2445,15 @@ body {
     justify-content: center;
     padding: 40px;
 }
+
+.stats-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+}
+
+.stat-item {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
