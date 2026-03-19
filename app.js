@@ -1973,7 +1973,6 @@ let routingControl = null;
 let searchProviders = [];
 let radiusCircle = null;
 let currentRadius = 10; // Default 10km
-let userLocation = null;
 
 function loadSearchTab() {
     const container = document.getElementById('tab-content');
