@@ -1454,8 +1454,12 @@ window.addService = function() {
 
 // ========== SHARE PROFILE ==========
 window.shareProfile = async function(profileId) {
+    console.log('1. Share function started', profileId);
+    
     // Get the profile data
     const profileDoc = await firebase.firestore().collection('users').doc(profileId).get();
+    console.log('2. Profile fetched', profileDoc.exists);
+    
     if (!profileDoc.exists) return;
     
     const profile = profileDoc.data();
@@ -1465,42 +1469,47 @@ window.shareProfile = async function(profileId) {
     // Create the profile URL using document ID
     const profileUrl = `https://gigscourt.com/user/${profileId}`;
     
-    const shareData = {
-        title: businessName,
-        text: bio,
-        url: profileUrl
-    };
+    console.log('3. Share data prepared', { businessName, bio, profileUrl });
     
     // Try native share first (mobile)
     if (navigator.share) {
+        console.log('4. Web Share API is supported');
         try {
-            await navigator.share(shareData);
+            await navigator.share({
+                title: businessName,
+                text: bio,
+                url: profileUrl
+            });
+            console.log('5. Share successful');
         } catch (err) {
-            // User cancelled share - do nothing
+            console.log('5. Share error:', err.name, err.message);
             if (err.name !== 'AbortError') {
-                // Other error - fallback to clipboard
+                console.log('6. Falling back to clipboard');
                 copyProfileLink(profileUrl);
             }
         }
     } else {
-        // Desktop fallback - copy to clipboard
+        console.log('4. Web Share API NOT supported, using clipboard');
         copyProfileLink(profileUrl);
     }
 };
 
 // Helper function to copy link and show toast
 async function copyProfileLink(url) {
+    console.log('7. Copying to clipboard:', url);
     try {
         await navigator.clipboard.writeText(url);
+        console.log('8. Copy successful');
         showToast('Link copied!');
     } catch (err) {
-        console.error('Failed to copy:', err);
+        console.error('8. Copy failed:', err);
         alert('Could not copy link. Please copy manually: ' + url);
     }
 }
 
 // Toast notification function
 function showToast(message) {
+    console.log('9. Showing toast:', message);
     // Remove any existing toast
     const existingToast = document.querySelector('.toast-notification');
     if (existingToast) existingToast.remove();
@@ -1522,6 +1531,7 @@ function showToast(message) {
         setTimeout(() => toast.remove(), 300);
     }, 2000);
 }
+
 window.startChat = (id) => alert('Chat coming soon');
 window.toggleSaveProfile = async function(profileId) {
     const currentUserId = firebase.auth().currentUser.uid;
