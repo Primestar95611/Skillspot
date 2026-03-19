@@ -339,7 +339,6 @@ function renderProviders() {
                 <div class="provider-services">${displayServices}${hasMoreServices}</div>
                 <div class="provider-distance" onclick="event.stopPropagation(); showOnMap('${provider.id}')">
     📍 ${provider.distance} km away
-</div>
                 </div>
             </div>
         `;
