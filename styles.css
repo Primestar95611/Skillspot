@@ -853,13 +853,6 @@ body {
     border: 2px solid var(--bg-primary);
 }
 
-.stats-grid {
-    display: flex;
-    flex: 1;
-    gap: 15px;
-    justify-content: space-around;
-}
-
 .stat-item {
     display: flex;
     flex-direction: column;
