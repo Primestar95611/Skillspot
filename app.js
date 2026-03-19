@@ -33,12 +33,31 @@ let providers = [];
 let lastDoc = null;
 let loading = false;
 let hasMore = true;
+let userLocation = null;  // Make it global for other tabs to use
 let pullToRefresh = {
     startY: 0,
     currentY: 0,
     refreshing: false,
     pulling: false
 };
+
+// Helper function to calculate distance between two coordinates (Haversine formula)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    const distance = R * c; // Distance in km
+    return distance;
+}
+
+function deg2rad(deg) {
+    return deg * (Math.PI/180);
+}
 
 // Listen for auth state
 firebase.auth().onAuthStateChanged(async (user) => {
@@ -126,22 +145,23 @@ window.saveProfile = async function() {
     
     try {
         await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).set({
-            businessName: businessName,
-            email: firebase.auth().currentUser.email,
-            services: window.selectedServices || [],
-            pendingServices: [],
-            bio: bio,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            emailVerified: true,
-            phoneVerified: false,
-            signupMethod: 'email',
-            rating: 0,
-            reviewCount: 0,
-            jobsDone: 0,
-            profileImage: '',
-            portfolioImages: [],
-            location: null
-        });
+    businessName: businessName,
+    email: firebase.auth().currentUser.email,
+    services: window.selectedServices || [],
+    pendingServices: [],
+    bio: bio,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    emailVerified: true,
+    phoneVerified: false,
+    signupMethod: 'email',
+    rating: 0,
+    reviewCount: 0,
+    jobsDone: 0,
+    profileImage: '',
+    portfolioImages: [],
+    location: null,
+    locationGeo: null  // Add this line
+});
         
         // Reload the app
         loadMainApp();
@@ -215,12 +235,28 @@ async function loadProviders(reset = true) {
     document.getElementById('loading-spinner')?.classList.remove('hidden');
     
     try {
-        // Get user's location (mock for now - will implement geolocation later)
-        const userLocation = new firebase.firestore.GeoPoint(6.5244, 3.3792); // Lagos example
+        // Get user's current location
+        let userLat = 6.5244; // Default Lagos
+        let userLng = 3.3792;
+        
+        // Try to get from global userLocation (set by search tab)
+        if (window.userLocation) {
+            userLat = window.userLocation.lat;
+            userLng = window.userLocation.lng;
+        } else {
+            // Try localStorage
+            const savedLocation = localStorage.getItem('userLocation');
+            if (savedLocation) {
+                const loc = JSON.parse(savedLocation);
+                userLat = loc.lat;
+                userLng = loc.lng;
+            }
+        }
         
         let query = firebase.firestore().collection('users')
             .where('emailVerified', '==', true)
-            .limit(6);
+            .where('locationGeo', '!=', null)  // Only get users with location
+            .limit(10);  // Increased limit for home tab
         
         if (lastDoc) {
             query = query.startAfter(lastDoc);
@@ -240,15 +276,26 @@ async function loadProviders(reset = true) {
             snapshot.docs.forEach(doc => {
                 const data = doc.data();
                 
-                // Calculate mock distance (replace with real geo calculation later)
-                const distance = (Math.random() * 10 + 0.5).toFixed(1);
+                // Calculate REAL distance
+                let distance = 999; // Default large number if no location
+                if (data.locationGeo) {
+                    distance = calculateDistance(
+                        userLat,
+                        userLng,
+                        data.locationGeo.latitude,
+                        data.locationGeo.longitude
+                    );
+                }
                 
                 providers.push({
                     id: doc.id,
                     ...data,
-                    distance: distance
+                    distance: distance.toFixed(1)
                 });
             });
+            
+            // Sort by distance (closest first)
+            providers.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
             
             renderProviders();
         }
@@ -291,7 +338,8 @@ function renderProviders() {
                 </div>
                 <div class="provider-services">${displayServices}${hasMoreServices}</div>
                 <div class="provider-distance" onclick="event.stopPropagation(); showOnMap('${provider.id}')">
-                    📍 ${provider.distance} km
+    📍 ${provider.distance} km away
+</div>
                 </div>
             </div>
         `;
@@ -1977,21 +2025,35 @@ function getUserLocation() {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 };
+                // Store in localStorage as backup
+                localStorage.setItem('userLocation', JSON.stringify(userLocation));
                 initializeMap();
                 loadNearbyProviders();
             },
             (error) => {
                 console.error('Geolocation error:', error);
-                // Default to Lagos if geolocation fails
-                userLocation = { lat: 6.5244, lng: 3.3792 };
+                // Try to get from localStorage first
+                const savedLocation = localStorage.getItem('userLocation');
+                if (savedLocation) {
+                    userLocation = JSON.parse(savedLocation);
+                } else {
+                    // Default to Lagos if no saved location
+                    userLocation = { lat: 6.5244, lng: 3.3792 };
+                }
                 initializeMap();
                 loadNearbyProviders();
             },
             { enableHighAccuracy: true, timeout: 10000 }
         );
     } else {
-        // Default to Lagos if geolocation not supported
-        userLocation = { lat: 6.5244, lng: 3.3792 };
+        // Try to get from localStorage
+        const savedLocation = localStorage.getItem('userLocation');
+        if (savedLocation) {
+            userLocation = JSON.parse(savedLocation);
+        } else {
+            // Default to Lagos
+            userLocation = { lat: 6.5244, lng: 3.3792 };
+        }
         initializeMap();
         loadNearbyProviders();
     }
@@ -2075,9 +2137,10 @@ async function loadNearbyProviders() {
     if (loadingEl) loadingEl.classList.remove('hidden');
     
     try {
-        // Get all providers
+        // Get all providers with locationGeo field
         const snapshot = await firebase.firestore().collection('users')
             .where('emailVerified', '==', true)
+            .where('locationGeo', '!=', null)  // Only get users with location
             .get();
         
         searchProviders = [];
@@ -2085,22 +2148,36 @@ async function loadNearbyProviders() {
         snapshot.forEach(doc => {
             const data = doc.data();
             
-            // Calculate distance (simplified - replace with proper geo calculation later)
-            const distance = (Math.random() * 200 + 1).toFixed(1);
+            // Skip if no locationGeo
+            if (!data.locationGeo) return;
+            
+            // Calculate REAL distance using our helper function
+            const distance = calculateDistance(
+                userLocation.lat,
+                userLocation.lng,
+                data.locationGeo.latitude,
+                data.locationGeo.longitude
+            );
             
             // Only include if within radius
-            if (parseFloat(distance) <= currentRadius) {
+            if (distance <= currentRadius) {
+                // Create location object for map marker
+                const providerLocation = {
+                    lat: data.locationGeo.latitude,
+                    lng: data.locationGeo.longitude
+                };
+                
                 searchProviders.push({
                     id: doc.id,
                     ...data,
-                    distance: distance,
-                    location: data.location || { lat: userLocation.lat + (Math.random() - 0.5) * 0.1, lng: userLocation.lng + (Math.random() - 0.5) * 0.1 }
+                    distance: distance.toFixed(1), // Round to 1 decimal
+                    location: providerLocation
                 });
             }
         });
         
-        // Sort by distance
-        searchProviders.sort((a, b) => a.distance - b.distance);
+        // Sort by distance (closest first)
+        searchProviders.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
         
         // Update map markers
         updateMapMarkers();
@@ -2820,22 +2897,23 @@ window.handleSignup = async function(event) {
         await user.sendEmailVerification();
         
         await firebase.firestore().collection('users').doc(user.uid).set({
-            businessName: businessName,
-            email: email,
-            services: services.filter(s => ['Barber', 'Tech', 'Design', 'Marketing'].includes(s)),
-            pendingServices: services.filter(s => !['Barber', 'Tech', 'Design', 'Marketing'].includes(s)),
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            emailVerified: false,
-            phoneVerified: false,
-            signupMethod: 'email',
-            rating: 0,
-            reviewCount: 0,
-            jobsDone: 0,
-            profileImage: '',
-            portfolioImages: [],
-            bio: '',
-            location: null
-        });
+    businessName: businessName,
+    email: email,
+    services: services.filter(s => ['Barber', 'Tech', 'Design', 'Marketing'].includes(s)),
+    pendingServices: services.filter(s => !['Barber', 'Tech', 'Design', 'Marketing'].includes(s)),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    emailVerified: false,
+    phoneVerified: false,
+    signupMethod: 'email',
+    rating: 0,
+    reviewCount: 0,
+    jobsDone: 0,
+    profileImage: '',
+    portfolioImages: [],
+    bio: '',
+    location: null,
+    locationGeo: null  // Add this line for geolocation
+});
         
         alert('Account created! Please check your email for verification.');
         
