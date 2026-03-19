@@ -2824,3 +2824,35 @@ body {
     padding: 30px;
     color: var(--text-secondary);
 }
+
+.gig-confirmation {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 15px;
+    margin: 10px 0;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.gig-message {
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.confirm-gig-btn {
+    background: var(--button-bg);
+    color: var(--button-text);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    width: auto;
+    display: inline-block;
+}
+
+.confirm-gig-btn:active {
+    opacity: 0.7;
+}
