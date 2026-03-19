@@ -684,46 +684,6 @@ window.showOnMap = (id) => alert('Map view coming soon');
 
 window.getDirectionsToProvider = async function(providerId) {
     alert('Function called! Provider ID: ' + providerId);
-    return; // Stop here for testing
-};
-    // Get provider's location from Firestore
-    const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
-    const provider = providerDoc.data();
-    
-    if (!provider.locationGeo) {
-        alert('This provider has not set their location');
-        return;
-    }
-    
-    // Store the target provider for directions
-    window.directionsTarget = {
-        id: providerId,
-        location: {
-            lat: provider.locationGeo.latitude,
-            lng: provider.locationGeo.longitude
-        },
-        name: provider.businessName
-    };
-    
-    // Switch to search tab
-    switchTab('search');
-    
-    // Wait for search tab to fully load
-    let attempts = 0;
-    const maxAttempts = 10;
-    
-    const checkMapReady = setInterval(() => {
-        attempts++;
-console.log('Attempt', attempts, 'map:', !!map, 'userLocation:', !!userLocation);
-        
-        if (map && userLocation) {
-            clearInterval(checkMapReady);
-            showDirectionsToTarget();
-        } else if (attempts >= maxAttempts) {
-            clearInterval(checkMapReady);
-            alert('Map not ready. Please try again.');
-        }
-    }, 500);
 };
 
 function showDirectionsToTarget() {
