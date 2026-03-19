@@ -34,6 +34,13 @@ let lastDoc = null;
 let loading = false;
 let hasMore = true;
 let userLocation = null;  // Make it global for other tabs to use
+// Search tab pagination and cache
+let searchLastDoc = null;
+let searchHasMore = true;
+let searchLoading = false;
+let searchCache = null;
+let searchCacheTime = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 let pullToRefresh = {
     startY: 0,
     currentY: 0,
@@ -2230,67 +2237,108 @@ function updateRadiusCircle() {
     map.fitBounds(radiusCircle.getBounds(), { padding: [20, 20] });
 }
 
-async function loadNearbyProviders() {
+async function loadNearbyProviders(reset = true) {
     if (!userLocation) return;
+    if (searchLoading) return;
     
     const listContainer = document.getElementById('provider-list');
     const loadingEl = document.getElementById('drawer-loading');
     
+    if (reset) {
+        searchProviders = [];
+        searchLastDoc = null;
+        searchHasMore = true;
+        document.getElementById('provider-list').innerHTML = '';
+    }
+    
+    if (!searchHasMore) {
+        if (loadingEl) loadingEl.classList.add('hidden');
+        return;
+    }
+    
+    searchLoading = true;
     if (loadingEl) loadingEl.classList.remove('hidden');
     
     try {
-        // Get all providers with locationGeo field
-        const snapshot = await firebase.firestore().collection('users')
-            .where('emailVerified', '==', true)
-            .where('locationGeo', '!=', null)  // Only get users with location
-            .get();
-        
-        searchProviders = [];
-        
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            
-            // Skip if no locationGeo
-            if (!data.locationGeo) return;
-            
-            // Calculate REAL distance using our helper function
-            const distance = calculateDistance(
-                userLocation.lat,
-                userLocation.lng,
-                data.locationGeo.latitude,
-                data.locationGeo.longitude
-            );
-            
-            // Only include if within radius
-            if (distance <= currentRadius) {
-                // Create location object for map marker
-                const providerLocation = {
-                    lat: data.locationGeo.latitude,
-                    lng: data.locationGeo.longitude
-                };
-                
-                searchProviders.push({
-                    id: doc.id,
-                    ...data,
-                    distance: distance.toFixed(1), // Round to 1 decimal
-                    location: providerLocation
-                });
+        // Check cache first (only on reset)
+        if (reset && searchCache && searchCacheTime) {
+            const now = new Date().getTime();
+            if (now - searchCacheTime < CACHE_DURATION) {
+                console.log('Using cached providers');
+                searchProviders = [...searchCache];
+                renderProviderList();
+                updateMapMarkers();
+                searchLoading = false;
+                if (loadingEl) loadingEl.classList.add('hidden');
+                return;
             }
-        });
+        }
         
-        // Sort by distance (closest first)
-        searchProviders.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+        // Build query with pagination
+        let query = firebase.firestore().collection('users')
+            .where('emailVerified', '==', true)
+            .where('locationGeo', '!=', null)
+            .limit(20); // Load 20 at a time
         
-        // Update map markers
-        updateMapMarkers();
+        if (searchLastDoc) {
+            query = query.startAfter(searchLastDoc);
+        }
         
-        // Update list
-        renderProviderList();
+        const snapshot = await query.get();
+        
+        if (snapshot.empty) {
+            searchHasMore = false;
+        } else {
+            searchLastDoc = snapshot.docs[snapshot.docs.length - 1];
+            
+            // Process each provider
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                
+                // Calculate REAL distance
+                const distance = calculateDistance(
+                    userLocation.lat,
+                    userLocation.lng,
+                    data.locationGeo.latitude,
+                    data.locationGeo.longitude
+                );
+                
+                // Only include if within radius
+                if (distance <= currentRadius) {
+                    // Create location object for map marker
+                    const providerLocation = {
+                        lat: data.locationGeo.latitude,
+                        lng: data.locationGeo.longitude
+                    };
+                    
+                    searchProviders.push({
+                        id: doc.id,
+                        ...data,
+                        distance: distance.toFixed(1),
+                        location: providerLocation
+                    });
+                }
+            });
+            
+            // Sort by distance (closest first)
+            searchProviders.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+            
+            // Update cache on first load
+            if (reset) {
+                searchCache = [...searchProviders];
+                searchCacheTime = new Date().getTime();
+            }
+            
+            // Update UI
+            renderProviderList();
+            updateMapMarkers();
+        }
         
     } catch (error) {
         console.error('Error loading providers:', error);
     }
     
+    searchLoading = false;
     if (loadingEl) loadingEl.classList.add('hidden');
 }
 
@@ -2383,9 +2431,21 @@ function setupSearchListeners() {
         
         radiusSlider.addEventListener('change', () => {
             updateRadiusCircle();
-            loadNearbyProviders();
+            loadNearbyProviders(true);
         });
     }
+}
+
+// Infinite scroll for provider list
+const providerDrawer = document.querySelector('.provider-drawer');
+if (providerDrawer) {
+    providerDrawer.addEventListener('scroll', () => {
+        if (providerDrawer.scrollTop + providerDrawer.clientHeight >= providerDrawer.scrollHeight - 100) {
+            if (!searchLoading && searchHasMore) {
+                loadNearbyProviders(false);
+            }
+        }
+    });
 }
 
 function filterProviders(searchTerm) {
@@ -3051,6 +3111,12 @@ window.resendVerification = function() {
 
 // Logout function
 window.logout = function() {
+    // Clear search cache on logout
+searchCache = null;
+searchCacheTime = null;
+searchProviders = [];
+searchLastDoc = null;
+searchHasMore = true;
     firebase.auth().signOut();
 };
 
