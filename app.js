@@ -3304,4 +3304,3 @@ window.viewUserProfile = function(userId) {
     loadProfileTab(userId);
 };
     
-};
