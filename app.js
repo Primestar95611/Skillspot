@@ -1519,15 +1519,8 @@ async function updateProfileStats(profileId) {
     if (savesStat) savesStat.textContent = savesCount;
 }
 
-// ========== PHOTOSWIPE GALLERY ==========
+// ========== GLIGHTBOX GALLERY ==========
 window.openPhotoSwipe = function(index) {
-    const currentUserId = firebase.auth().currentUser.uid;
-    const isOwnProfile = currentUserId === currentUserData?.id;
-    
-    // Get portfolio images from the current profile being viewed
-    const profileContainer = document.querySelector('.profile-container');
-    if (!profileContainer) return;
-    
     // Find all portfolio images on the page
     const portfolioItems = document.querySelectorAll('.portfolio-item img');
     const images = [];
@@ -1540,50 +1533,86 @@ window.openPhotoSwipe = function(index) {
         }
         
         images.push({
-            src: imgUrl,
-            width: 1600,
-            height: 1600,
-            alt: `Portfolio image ${i + 1}`
+            href: imgUrl,
+            title: `Portfolio image ${i + 1}`,
+            type: 'image'
         });
     });
     
     if (images.length === 0) return;
     
-    // Create PhotoSwipe gallery (v5 syntax)
-    const pswpElement = document.createElement('div');
-    pswpElement.className = 'pswp';
-    document.body.appendChild(pswpElement);
-    
-    const gallery = new photoswipe({
-        dataSource: images,
-        index: index,
-        pswpModule: photoswipe,
-        bgOpacity: 0.95,
-        showHideAnimationType: 'fade',
+    // Initialize GLightbox with the images starting at clicked index
+    const lightbox = GLightbox({
+        elements: images,
+        startAt: index,
         loop: true,
-        closeOnScroll: false,
-        closeOnVerticalDrag: true,
-        verticalDragRange: 0.75,
-        pinchToClose: true,
-        closeOnClick: true,
-        tapToClose: true,
-        tapToToggleControls: true,
-        mainClass: 'pswp--minimal',
-        barsSize: { top: 44, bottom: 'auto' },
-        timeToIdle: 4000
+        touchNavigation: true,
+        autoplayVideos: false,
+        plyr: {
+            css: false,
+            js: false
+        },
+        closeButton: true,
+        closeOnOutsideClick: true,
+        zoomable: true,
+        draggable: true,
+        slideEffect: 'fade',
+        moreText: 'See more',
+        moreLength: 60,
+        descPosition: 'bottom',
+        openEffect: 'fade',
+        closeEffect: 'fade',
+        cssEfects: {
+            fade: { in: 'fadeIn', out: 'fadeOut' },
+            zoom: { in: 'zoomIn', out: 'zoomOut' }
+        },
+        // Custom styles for minimalist grayscale
+        onOpen: function() {
+            document.body.style.overflow = 'hidden';
+        },
+        onClose: function() {
+            document.body.style.overflow = '';
+        }
     });
     
-    gallery.init();
-    
-    // Remove pswp element when gallery closes
-    gallery.on('destroy', () => {
-        setTimeout(() => {
-            if (pswpElement.parentNode) {
-                pswpElement.parentNode.removeChild(pswpElement);
-            }
-        }, 300);
-    });
+    lightbox.open();
 };
+
+// Add minimalist CSS for GLightbox (injected via JS to match your dark/light mode)
+const style = document.createElement('style');
+style.textContent = `
+    .glightbox-container .gclose,
+    .glightbox-container .gprev,
+    .glightbox-container .gnext,
+    .glightbox-container .gcounter {
+        background: rgba(0, 0, 0, 0.3) !important;
+        color: #999 !important;
+        border-radius: 50% !important;
+        filter: grayscale(100%);
+        transition: opacity 0.3s;
+    }
+    .glightbox-container .gclose:hover,
+    .glightbox-container .gprev:hover,
+    .glightbox-container .gnext:hover {
+        opacity: 0.8;
+    }
+    .glightbox-container .gslide-description {
+        background: linear-gradient(transparent, rgba(0,0,0,0.7)) !important;
+    }
+    .glightbox-container .gslide-title {
+        color: #999 !important;
+        font-size: 14px !important;
+        font-weight: normal !important;
+        text-align: center !important;
+    }
+    .glightbox-container .gslide-inner-content {
+        background: transparent !important;
+    }
+    .glightbox-mobile .glightbox-container .gslide-media {
+        margin-top: 0 !important;
+    }
+`;
+document.head.appendChild(style);
 
 // ========== SAVED/SAVES MODALS ==========
 window.openSavedModal = async function() {
