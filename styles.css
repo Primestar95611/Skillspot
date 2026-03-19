@@ -2497,3 +2497,90 @@ body {
 .profile-contact.clickable-location:hover {
     text-decoration: underline;
 }
+
+/* Review Modal */
+.review-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.review-modal-content {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.review-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.review-modal-header h3 {
+    font-size: 18px;
+    color: var(--text-primary);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.review-modal-body {
+    padding: 20px;
+}
+
+.star-rating {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+    font-size: 30px;
+}
+
+.star {
+    cursor: pointer;
+    color: #999;
+    transition: color 0.2s;
+}
+
+.star:hover {
+    color: #FFD700;
+}
+
+.review-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    margin-bottom: 20px;
+    resize: vertical;
+}
+
+.review-textarea:focus {
+    outline: none;
+    border-color: var(--text-secondary);
+}
+
+.submit-review-btn {
+    width: 100%;
+}
