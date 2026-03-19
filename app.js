@@ -689,6 +689,207 @@ async function fixChatUserNames() {
 window.getDirections = (id) => alert('Directions coming soon');
 window.showOnMap = (id) => alert('Map view coming soon');
 
+// ========== JOB & REVIEW FUNCTIONS ==========
+
+// Register a new job (provider spends points)
+window.registerJob = async function(clientId) {
+    const providerId = firebase.auth().currentUser.uid;
+    const providerData = currentUserData;
+    
+    // Check if provider has enough points (assuming 3 points per job)
+    const JOB_COST = 3;
+    
+    if (!providerData.points || providerData.points < JOB_COST) {
+        alert('Not enough points. You need 3 points to register a job.');
+        return;
+    }
+    
+    try {
+        // Create job document
+        const jobRef = await firebase.firestore().collection('jobs').add({
+            providerId: providerId,
+            clientId: clientId,
+            status: 'pending',
+            pointsSpent: JOB_COST,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            completedAt: null
+        });
+        
+        // Deduct points from provider
+        await firebase.firestore().collection('users').doc(providerId).update({
+            points: firebase.firestore.FieldValue.increment(-JOB_COST)
+        });
+        
+        alert('Job registered successfully! Waiting for client confirmation.');
+        
+        // TODO: Send notification to client
+        
+    } catch (error) {
+        console.error('Error registering job:', error);
+        alert('Failed to register job');
+    }
+};
+
+// Client confirms job completion
+window.confirmJobCompletion = async function(jobId, providerId) {
+    try {
+        // Update job status
+        await firebase.firestore().collection('jobs').doc(jobId).update({
+            status: 'completed',
+            completedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Show review modal immediately
+        showReviewModal(providerId, jobId);
+        
+    } catch (error) {
+        console.error('Error confirming job:', error);
+        alert('Failed to confirm job');
+    }
+};
+
+// Show review modal
+function showReviewModal(providerId, jobId) {
+    const modal = document.createElement('div');
+    modal.className = 'review-modal';
+    modal.innerHTML = `
+        <div class="review-modal-content">
+            <div class="review-modal-header">
+                <h3>Rate this provider</h3>
+                <button class="close-btn" onclick="this.closest('.review-modal').remove()">✕</button>
+            </div>
+            <div class="review-modal-body">
+                <p>How was your experience?</p>
+                
+                <div class="star-rating">
+                    <span class="star" data-rating="1">★</span>
+                    <span class="star" data-rating="2">★</span>
+                    <span class="star" data-rating="3">★</span>
+                    <span class="star" data-rating="4">★</span>
+                    <span class="star" data-rating="5">★</span>
+                </div>
+                
+                <textarea id="review-text" class="review-textarea" placeholder="Write your review (required)" rows="4"></textarea>
+                
+                <button class="btn submit-review-btn" onclick="submitReview('${providerId}', '${jobId}')">Submit Review</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add star rating functionality
+    const stars = modal.querySelectorAll('.star');
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = this.dataset.rating;
+            
+            // Highlight selected stars
+            stars.forEach((s, index) => {
+                if (index < rating) {
+                    s.style.color = '#FFD700';
+                } else {
+                    s.style.color = '#999';
+                }
+            });
+            
+            // Store selected rating
+            modal.dataset.selectedRating = rating;
+        });
+    });
+}
+
+// Submit review
+window.submitReview = async function(providerId, jobId) {
+    const modal = document.querySelector('.review-modal');
+    const rating = modal.dataset.selectedRating;
+    const reviewText = document.getElementById('review-text').value.trim();
+    const clientId = firebase.auth().currentUser.uid;
+    const clientData = currentUserData;
+    
+    if (!rating) {
+        alert('Please select a rating');
+        return;
+    }
+    
+    if (!reviewText) {
+        alert('Please write a review');
+        return;
+    }
+    
+    try {
+        // Check if review already exists for this client-provider pair
+        const existingReviewQuery = await firebase.firestore()
+            .collection('reviews')
+            .where('providerId', '==', providerId)
+            .where('clientId', '==', clientId)
+            .get();
+        
+        if (existingReviewQuery.empty) {
+            // Create new review
+            await firebase.firestore().collection('reviews').add({
+                providerId: providerId,
+                clientId: clientId,
+                clientBusinessName: clientData.businessName,
+                clientProfileImage: clientData.profileImage || '',
+                rating: parseInt(rating),
+                reviewText: reviewText,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                jobsTogether: 1,
+                lastJobId: jobId
+            });
+        } else {
+            // Update existing review
+            const reviewDoc = existingReviewQuery.docs[0];
+            await reviewDoc.ref.update({
+                rating: parseInt(rating),
+                reviewText: reviewText,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                jobsTogether: firebase.firestore.FieldValue.increment(1),
+                lastJobId: jobId
+            });
+        }
+        
+        // Update provider's average rating
+        await updateProviderAverageRating(providerId);
+        
+        modal.remove();
+        alert('Review submitted! Thank you.');
+        
+    } catch (error) {
+        console.error('Error submitting review:', error);
+        alert('Failed to submit review');
+    }
+};
+
+// Update provider's average rating
+async function updateProviderAverageRating(providerId) {
+    try {
+        const reviewsSnapshot = await firebase.firestore()
+            .collection('reviews')
+            .where('providerId', '==', providerId)
+            .get();
+        
+        let totalRating = 0;
+        reviewsSnapshot.forEach(doc => {
+            totalRating += doc.data().rating;
+        });
+        
+        const averageRating = reviewsSnapshot.size > 0 
+            ? (totalRating / reviewsSnapshot.size).toFixed(1)
+            : 0;
+        
+        await firebase.firestore().collection('users').doc(providerId).update({
+            rating: parseFloat(averageRating),
+            reviewCount: reviewsSnapshot.size
+        });
+        
+    } catch (error) {
+        console.error('Error updating average rating:', error);
+    }
+}
+
 window.getDirectionsToProvider = async function(providerId) {
     alert('Step 1: Function started');
     
