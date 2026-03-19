@@ -2864,6 +2864,7 @@ window.deleteAccount = function() {
             alert('Error: ' + error.message);
         });
     }
+}
 
 // ========== ADMIN TAB ==========
 let adminCurrentTab = 'dashboard';
