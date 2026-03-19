@@ -21,6 +21,11 @@ var imagekit = new ImageKit({
     urlEndpoint: "https://ik.imagekit.io/GigsCourt"
 });
 
+// Initialize GeoFirestore
+const firestore = firebase.firestore();
+const GeoFirestore = window.GeoFirestore;
+const geofirestore = new GeoFirestore(firestore);
+
 // Global state
 let currentUser = null;
 let currentUserData = null;
@@ -1360,12 +1365,16 @@ window.saveLocation = function() {
     const address = document.getElementById('location-address').value;
     const description = document.getElementById('location-description').value;
     
-    // Format location as string "lat,lng"
+    // Create GeoPoint for Firestore
+    const geopoint = new firebase.firestore.GeoPoint(selectedLocation.lat, selectedLocation.lng);
+    
+    // Format location as string "lat,lng" for backward compatibility
     const locationString = `${selectedLocation.lat},${selectedLocation.lng}`;
     
-    // Update Firestore
+    // Update Firestore with both formats
     firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
         location: locationString,
+        locationGeo: geopoint,  // New field for geo queries
         locationDescription: description
     }).then(() => {
         alert('Location saved!');
