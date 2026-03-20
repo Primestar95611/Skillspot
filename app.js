@@ -757,12 +757,16 @@ window.confirmJobCompletion = async function(jobId, providerId) {
 function showReviewModal(providerId, jobId) {
     const modal = document.createElement('div');
     modal.className = 'review-modal';
-    document.body.style.overflow = 'hidden';
+    // Lock background scrolling
+let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
+if (scrollableContainer) {
+    scrollableContainer.style.overflow = 'hidden';
+}
     modal.innerHTML = `
         <div class="review-modal-content">
             <div class="review-modal-header">
                 <h3>Rate this provider</h3>
-                <button class="close-btn" onclick="(function(b){b.closest('.review-modal').remove(); document.body.style.overflow = '';})(this)">✕</button>
+              <button class="close-btn" onclick="(function(b){let c=b.closest('.review-modal'); if(c)c.remove(); let s=document.querySelector('.home-container, .profile-container, .search-container, .chat-messages'); if(s)s.style.overflow='';})(this)">✕</button>
             </div>
             <div class="review-modal-body">
                 <p>How was your experience?</p>
@@ -867,7 +871,10 @@ window.submitReview = async function(providerId, jobId) {
         });
         
         modal.remove();
-        document.body.style.overflow = '';
+        let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
+if (scrollableContainer) {
+    scrollableContainer.style.overflow = '';
+}
         alert('Review submitted! Thank you.');
         
     } catch (error) {
@@ -1013,7 +1020,11 @@ window.showProviderReviews = async function(providerId) {
         // Create modal
         const modal = document.createElement('div');
         modal.className = 'reviews-modal';
-        document.body.style.overflow = 'hidden';
+        // Lock background scrolling
+let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
+if (scrollableContainer) {
+    scrollableContainer.style.overflow = 'hidden';
+}
         
         let reviewsHtml = '';
         
@@ -1068,7 +1079,10 @@ window.showProviderReviews = async function(providerId) {
 modal.addEventListener('click', function(e) {
     if (e.target === modal) {
         modal.remove();
-        document.body.style.overflow = '';
+        let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
+        if (scrollableContainer) {
+            scrollableContainer.style.overflow = '';
+        }
     }
 });
         
