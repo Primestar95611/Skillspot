@@ -13,6 +13,11 @@ const firebaseConfig = {
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
+// Fix Firestore WebChannel error
+firebase.firestore().settings({
+    experimentalForceLongPolling: true,
+    useFetchStreams: false
+});
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 // Initialize ImageKit for client-side upload
