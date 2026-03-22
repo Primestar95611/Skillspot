@@ -1,6 +1,7 @@
 {
     "name": "GigsCourt",
     "short_name": "GigsCourt",
+    "id": "gigscourt",
     "description": "Find local services instantly",
     "start_url": "/",
     "display": "standalone",
