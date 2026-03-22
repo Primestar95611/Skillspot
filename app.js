@@ -187,7 +187,7 @@ function loadHomeTab() {
         <div class="home-header">
             <h1 class="logo">GigsCourt</h1>
             <div class="header-actions">
-                <button id="notify-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px;">🔔 Enable</button>
+                <button id="notify-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px;" onclick="event.stopPropagation();">🔔 Enable</button>
                 <div class="notification-bell" onclick="openNotifications()">
                     <span class="bell-icon">🔔</span>
                     <span class="notification-badge" id="notification-count">0</span>
@@ -233,7 +233,9 @@ function loadHomeTab() {
 function setupSubscribeButton() {
     const btn = document.getElementById('notify-btn');
     if (btn) {
-        btn.onclick = async function() {
+        btn.onclick = async function(e) {
+            e.stopPropagation();
+            e.preventDefault();
             if (window.OneSignalDeferred) {
                 window.OneSignalDeferred.push(async function(OneSignal) {
                     const result = await OneSignal.showNativePrompt();
