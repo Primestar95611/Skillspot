@@ -43,28 +43,31 @@ async function setupNotifications(userId) {
             });
             
             if (token) {
-    // Visual confirmation
-    const toast = document.createElement('div');
-    toast.textContent = '✅ Notifications enabled!';
-    toast.style.cssText = 'position:fixed;bottom:100px;left:20px;right:20px;background:#4CAF50;color:white;padding:12px;text-align:center;border-radius:8px;z-index:9999;';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-    
-    await firebase.firestore().collection('users').doc(userId).update({
-        fcmToken: token
-    });
-    console.log('FCM token saved:', token);
-} else {
-    // Visual error
-    const toast = document.createElement('div');
-    toast.textContent = '❌ Could not get notification token';
-    toast.style.cssText = 'position:fixed;bottom:100px;left:20px;right:20px;background:#FF0000;color:white;padding:12px;text-align:center;border-radius:8px;z-index:9999;';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
+                alert('✅ Token received! Check Firestore.');
+                // Visual confirmation
+                const toast = document.createElement('div');
+                toast.textContent = '✅ Notifications enabled!';
+                toast.style.cssText = 'position:fixed;bottom:100px;left:20px;right:20px;background:#4CAF50;color:white;padding:12px;text-align:center;border-radius:8px;z-index:9999;';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+                
+                await firebase.firestore().collection('users').doc(userId).update({
+                    fcmToken: token
+                });
+                console.log('FCM token saved:', token);
+            } else {
+                alert('❌ No token received');
+                // Visual error
+                const toast = document.createElement('div');
+                toast.textContent = '❌ Could not get notification token';
+                toast.style.cssText = 'position:fixed;bottom:100px;left:20px;right:20px;background:#FF0000;color:white;padding:12px;text-align:center;border-radius:8px;z-index:9999;';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
         }
     } catch (error) {
         console.log('Notification setup failed:', error);
+        alert('Error: ' + error.message);
     }
 }
 
