@@ -30,6 +30,30 @@ const firestore = firebase.firestore();
 const GeoFirestore = window.GeoFirestore;
 const geofirestore = new GeoFirestore(firestore);
 
+// Setup push notifications with FCM
+async function setupNotifications(userId) {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            
+            const token = await messaging.getToken({
+                vapidKey: "BJRlkPoQeveLqWzxp3CxzpkO4__sXqaCaA8loG9KCpN0z7rlh8aYr3d_tav7LB0Ra3LG50m0EUyVokh66p_9TO4",
+                serviceWorkerRegistration: registration
+            });
+            
+            if (token) {
+                await firebase.firestore().collection('users').doc(userId).update({
+                    fcmToken: token
+                });
+                console.log('FCM token saved:', token);
+            }
+        }
+    } catch (error) {
+        console.log('Notification setup failed:', error);
+    }
+}
+
 // Global state
 let currentUser = null;
 let currentUserData = null;
@@ -85,6 +109,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 
                 if (userDoc.exists) {
                     currentUserData = userDoc.data();
+                    setupNotifications(user.uid);
                     loadMainApp();
                 } else {
                     window.location.hash = 'complete-profile';
