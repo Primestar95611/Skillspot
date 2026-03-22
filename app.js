@@ -226,6 +226,7 @@ function loadHomeTab() {
         <div class="home-header">
             <h1 class="logo">GigsCourt</h1>
             <div class="header-actions">
+                <button id="test-notify-btn" style="background:#8B0000; color:white; border:none; padding:5px 10px; border-radius:20px; font-size:12px;">Test Notify</button>
                 <div class="notification-bell" onclick="openNotifications()">
                     <span class="bell-icon">🔔</span>
                     <span class="notification-badge" id="notification-count">0</span>
@@ -265,6 +266,16 @@ function loadHomeTab() {
     loadProviders(true);
     setupPullToRefresh();
 
+    // Test button
+    document.getElementById('test-notify-btn').onclick = async function() {
+        console.log('Test button clicked');
+        const userId = firebase.auth().currentUser?.uid;
+        if (userId) {
+            await setupNotifications(userId);
+        } else {
+            alert('User not logged in');
+        }
+    };
 }
 
 // Call it after home tab loads
