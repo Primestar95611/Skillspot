@@ -11,25 +11,42 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
+    <!-- Apple Touch Icons (required for iOS home screen) -->
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png">
+    
     <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
 
+    <!-- OneSignal Push Notifications -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "ddcf011a-e32a-4d72-ab2e-815032447f61",
-    });
-  });
-</script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "ddcf011a-e32a-4d72-ab2e-815032447f61",
+        });
+        
+        // iOS requires user interaction before notification prompt
+        // Show prompt on first tap anywhere on the page
+        const hasShownPrompt = sessionStorage.getItem('onesignalPromptShown');
+        if (!hasShownPrompt) {
+          document.body.addEventListener('click', function showPrompt() {
+            OneSignal.showNativePrompt();
+            sessionStorage.setItem('onesignalPromptShown', 'true');
+            document.body.removeEventListener('click', showPrompt);
+          }, { once: true });
+        }
+      });
+    </script>
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
     
     <!-- GeoFirestore -->
     <script src="https://cdn.jsdelivr.net/npm/geofirestore@5.1.0/dist/geofirestore.min.js"></script>
@@ -59,11 +76,37 @@
     <!-- Main JavaScript -->
     <script src="app.js"></script>
 
-   <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
-  }
-</script> 
+    <!-- Service Worker Registration (PWA) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+      }
+    </script>
+    
+    <!-- iOS Install Banner -->
+    <script>
+      (function() {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isStandalone = window.navigator.standalone === true;
+        const hasPrompted = localStorage.getItem('iosInstallPromptShown');
+        
+        if (isIOS && !isStandalone && !hasPrompted) {
+          const banner = document.createElement('div');
+          banner.id = 'ios-install-banner';
+          banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#8B0000;color:white;padding:15px;text-align:center;z-index:9999;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;';
+          banner.innerHTML = `
+            <strong>📱 Install GigsCourt</strong><br>
+            Tap Share <span style="font-size:18px;">⎙</span> → "Add to Home Screen"<br>
+            <button id="closeInstallBanner" style="margin-top:10px;background:white;color:#8B0000;border:none;padding:6px 16px;border-radius:25px;font-weight:bold;">Got it</button>
+          `;
+          document.body.appendChild(banner);
+          document.getElementById('closeInstallBanner').onclick = function() {
+            banner.remove();
+            localStorage.setItem('iosInstallPromptShown', 'true');
+          };
+        }
+      })();
+    </script>
     
 </body>
 </html>
