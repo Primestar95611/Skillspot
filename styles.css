@@ -760,6 +760,8 @@ body {
 .tab-content {
     min-height: 100vh;
     padding-bottom: 70px;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Profile Completion Screen */
