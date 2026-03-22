@@ -25,6 +25,9 @@ var imagekit = new ImageKit({
     urlEndpoint: "https://ik.imagekit.io/GigsCourt"
 });
 
+// Initialize Firebase Messaging
+const messaging = firebase.messaging();
+
 // Initialize GeoFirestore
 const firestore = firebase.firestore();
 const GeoFirestore = window.GeoFirestore;
