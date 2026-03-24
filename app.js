@@ -3045,6 +3045,32 @@ window.sendMessage = async function() {
             lastMessageRead: false
         });
         
+        // Send push notification to recipient
+        try {
+            // Get recipient's FCM token
+            const chatData = (await chatRef.get()).data();
+            const recipientId = chatData.participants.find(id => id !== currentUserId);
+            const recipientDoc = await firebase.firestore().collection('users').doc(recipientId).get();
+            const recipientToken = recipientDoc.data()?.fcmToken;
+            
+            if (recipientToken) {
+                const workerUrl = 'https://gigscourtnotification.agboghidiaugust.workers.dev';
+                await fetch(workerUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        recipientToken: recipientToken,
+                        title: 'New Message',
+                        body: text.substring(0, 100),
+                        chatId: currentChatId
+                    })
+                });
+                console.log('Notification sent to recipient');
+            }
+        } catch (notifyError) {
+            console.log('Failed to send notification:', notifyError);
+        }
+        
     } catch (error) {
         console.error('Error sending message:', error);
         alert('Failed to send message');
