@@ -2925,16 +2925,17 @@ function loadMessages(chatId) {
 }
 
 function renderConversationItem(chat, currentUserId) {
+    // Find the other participant (the one who is NOT the current user)
     const otherUserId = chat.participants.find(id => id !== currentUserId);
     const lastMessage = chat.lastMessage || '';
     const lastMessageTime = chat.lastMessageTimestamp ? formatMessageTime(chat.lastMessageTimestamp.toDate()) : '';
     const unread = chat.lastMessageSender !== currentUserId && !chat.lastMessageRead;
     
-    // Get the other user's name (the one who is NOT current user)
+    // Get the other user's name - fetch from chat or fallback
     let otherUserName = 'User';
     let otherUserImage = 'https://via.placeholder.com/40';
     
-    // Use chat's stored other user info
+    // Use stored other user info if available
     if (chat.otherUserName) {
         otherUserName = chat.otherUserName;
     }
@@ -2993,6 +2994,12 @@ function openChat(chatId, otherUserId, chatData) {
                 if (headerName) headerName.textContent = otherUserName;
             }
         });
+    }
+    
+    // Hide tab bar when chat opens
+    const tabBar = document.querySelector('.tab-bar');
+    if (tabBar) {
+        tabBar.style.display = 'none';
     }
     
     const container = document.getElementById('tab-content');
@@ -3209,6 +3216,12 @@ async function markMessageAsRead(chatId, messageId) {
 }
 
 function loadMessagesTab() {
+    // Show tab bar when returning to messages list
+    const tabBar = document.querySelector('.tab-bar');
+    if (tabBar) {
+        tabBar.style.display = 'flex';
+    }
+    
     const container = document.getElementById('tab-content');
     if (!container) return;
     
