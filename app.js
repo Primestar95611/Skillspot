@@ -647,7 +647,7 @@ window.markAllRead = function() {
 
 window.viewProfile = (id) => {
     switchTab('profile');
-    loadProfileTab(id);
+    loadProfileTab(id, true); // Hide tab bar when viewing another user
 };
 
 window.messageUser = (id) => {
@@ -1307,7 +1307,20 @@ function loadMainApp() {
 }
 
 // ========== PROFILE TAB ==========
-async function loadProfileTab(profileUserId = null) {
+async function loadProfileTab(profileUserId = null, hideTabBar = true) {
+    // Handle tab bar visibility
+    if (hideTabBar) {
+        const tabBar = document.querySelector('.tab-bar');
+        if (tabBar) {
+            tabBar.style.display = 'none';
+        }
+    } else {
+        const tabBar = document.querySelector('.tab-bar');
+        if (tabBar) {
+            tabBar.style.display = 'flex';
+        }
+    }
+    
     const container = document.getElementById('tab-content');
     if (!container) return;
     
@@ -1530,7 +1543,7 @@ window.toggleSaveProfile = async function(profileId) {
         }
         
         // Refresh profile stats
-        loadProfileTab(profileId);
+        loadProfileTab(profileId, true); // Hide tab bar when viewing profile after save
         
     } catch (error) {
         console.error('Error toggling save:', error);
@@ -1696,7 +1709,7 @@ window.closeModal = function() {
 window.viewProfileFromModal = function(userId) {
     closeModal();
     switchTab('profile');
-    loadProfileTab(userId);
+    loadProfileTab(userId, true); // Hide tab bar when viewing from modal
 };
 
 async function getSavedCount(userId) {
@@ -1945,12 +1958,18 @@ window.deleteImage = async (event, imageUrl) => {
 
 // ========== EDIT PROFILE FUNCTIONS ==========
 window.openEditProfile = function() {
+    // Hide tab bar
+    const tabBar = document.querySelector('.tab-bar');
+    if (tabBar) {
+        tabBar.style.display = 'none';
+    }
+    
     const container = document.getElementById('tab-content');
     
     container.innerHTML = `
         <div class="edit-profile-container">
             <div class="edit-profile-header">
-                <button class="back-btn" onclick="loadProfileTab()">←</button>
+                <button class="back-btn" onclick="loadProfileTab(null, false)">←</button>
                 <h1>Edit Profile</h1>
                 <button class="save-btn" onclick="saveEditProfile()">Save</button>
             </div>
@@ -2033,19 +2052,25 @@ window.saveEditProfile = async function() {
             phoneNumber: phone
         });
         
-        loadProfileTab();
+        loadProfileTab(null, false); // Show tab bar when returning to own profile
     } catch (error) {
         alert('Error saving profile: ' + error.message);
     }
 };
 
 window.openLocationPicker = function() {
+    // Hide tab bar
+    const tabBar = document.querySelector('.tab-bar');
+    if (tabBar) {
+        tabBar.style.display = 'none';
+    }
+    
     const container = document.getElementById('tab-content');
     
     container.innerHTML = `
         <div class="location-picker-container">
             <div class="location-picker-header">
-                <button class="back-btn" onclick="openEditProfile()">←</button>
+                <button class="back-btn" onclick="loadProfileTab(null, false)">←</button>
                 <h1>Set Location</h1>
                 <button class="save-btn" onclick="saveLocation()">Done</button>
             </div>
@@ -2187,7 +2212,7 @@ window.saveLocation = function() {
         alert('Location saved!');
         firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get().then(doc => {
             currentUserData = doc.data();
-            openEditProfile();
+            loadProfileTab(null, false); // Show tab bar when returning to own profile
         });
     }).catch(error => {
         console.error('Error saving location:', error);
