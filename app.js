@@ -681,11 +681,19 @@ async function createNewChat(otherUserId) {
         } else {
             const otherUserDoc = await firebase.firestore().collection('users').doc(otherUserId).get();
             const otherUserData = otherUserDoc.data();
+            const currentUserDoc = await firebase.firestore().collection('users').doc(currentUserId).get();
+            const currentUserData = currentUserDoc.data();
 
             const newChatRef = await firebase.firestore().collection('chats').add({
                 participants: [currentUserId, otherUserId],
-                otherUserName: otherUserData.businessName || 'User',
-                otherUserImage: otherUserData.profileImage || 'https://via.placeholder.com/40',
+                userNames: {
+                    [currentUserId]: currentUserData.businessName || 'User',
+                    [otherUserId]: otherUserData.businessName || 'User'
+                },
+                userImages: {
+                    [currentUserId]: currentUserData.profileImage || 'https://via.placeholder.com/40',
+                    [otherUserId]: otherUserData.profileImage || 'https://via.placeholder.com/40'
+                },
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 lastMessage: '',
                 lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -695,7 +703,14 @@ async function createNewChat(otherUserId) {
             
             openChat(newChatRef.id, otherUserId, {
                 ...otherUserData,
-                otherUserName: otherUserData.businessName
+                userNames: {
+                    [currentUserId]: currentUserData.businessName,
+                    [otherUserId]: otherUserData.businessName
+                },
+                userImages: {
+                    [currentUserId]: currentUserData.profileImage,
+                    [otherUserId]: otherUserData.profileImage
+                }
             });
         }
     } catch (error) {
@@ -2931,14 +2946,15 @@ function renderConversationItem(chat, currentUserId) {
     const lastMessageTime = chat.lastMessageTimestamp ? formatMessageTime(chat.lastMessageTimestamp.toDate()) : '';
     const unread = chat.lastMessageSender !== currentUserId && !chat.lastMessageRead;
     
-    // Get the other user's name - dynamic from Firestore
+    // Get the other user's name from the stored map
     let otherUserName = 'User';
     let otherUserImage = 'https://via.placeholder.com/40';
     
-    // Use stored other user info if available
-    if (chat.otherUserName && chat.otherUserImage) {
-        otherUserName = chat.otherUserName;
-        otherUserImage = chat.otherUserImage;
+    if (chat.userNames && chat.userNames[otherUserId]) {
+        otherUserName = chat.userNames[otherUserId];
+    }
+    if (chat.userImages && chat.userImages[otherUserId]) {
+        otherUserImage = chat.userImages[otherUserId];
     }
     
     let statusIcon = '';
@@ -2980,18 +2996,15 @@ function formatMessageTime(date) {
 function openChat(chatId, otherUserId, chatData) {
     currentChatId = chatId;
     
+    // Get the other user's name from the stored map
     let otherUserName = 'Loading...';
-    if (chatData.businessName) {
-        otherUserName = chatData.businessName;
-    } else {
-        firebase.firestore().collection('users').doc(otherUserId).get().then(doc => {
-            if (doc.exists) {
-                const userData = doc.data();
-                otherUserName = userData.businessName || 'User';
-                const headerName = document.querySelector('.chat-header-name');
-                if (headerName) headerName.textContent = otherUserName;
-            }
-        });
+    let otherUserImage = 'https://via.placeholder.com/32';
+    
+    if (chatData.userNames && chatData.userNames[otherUserId]) {
+        otherUserName = chatData.userNames[otherUserId];
+    }
+    if (chatData.userImages && chatData.userImages[otherUserId]) {
+        otherUserImage = chatData.userImages[otherUserId];
     }
     
     // Hide tab bar when chat opens
@@ -3006,7 +3019,7 @@ function openChat(chatId, otherUserId, chatData) {
         <div class="chat-container">
             <div class="chat-header">
                 <button class="chat-back-btn" onclick="loadMessagesTab()">←</button>
-                <img src="https://via.placeholder.com/32" class="chat-header-image">
+                <img src="${otherUserImage}" class="chat-header-image">
                 <span class="chat-header-name">${otherUserName}</span>
             </div>
             
