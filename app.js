@@ -1328,7 +1328,6 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
         }
         window.currentTab = 'profile';
     }
-    }
     
     const container = document.getElementById('tab-content');
     if (!container) return;
