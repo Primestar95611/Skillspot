@@ -969,7 +969,11 @@ window.submitReview = async function(providerId, jobId) {
             scrollableContainer.style.overflow = '';
         }
         alert('Review submitted! Thank you.');
+    } catch (error) {
+        console.error('Error submitting review:', error);
+        alert('Failed to submit review');
     }
+};
 
 window.showRegisterJobModal = async function() {
     const providerId = firebase.auth().currentUser.uid;
