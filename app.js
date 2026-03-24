@@ -1307,7 +1307,7 @@ function loadMainApp() {
 }
 
 // ========== PROFILE TAB ==========
-async function loadProfileTab(profileUserId = null, hideTabBar = true) {
+async function loadProfileTab(profileUserId = null, hideTabBar = false) {
     // Handle tab bar visibility
     if (hideTabBar) {
         const tabBar = document.querySelector('.tab-bar');
@@ -1360,7 +1360,7 @@ async function loadProfileTab(profileUserId = null, hideTabBar = true) {
             savedCount = savesSnapshot.size;
         }
         
-        container.innerHTML = renderProfile(profile, savedCount, savesCount, isOwnProfile);
+        container.innerHTML = renderProfile(profile, savedCount, savesCount, isOwnProfile, hideTabBar);
         
         if (isOwnProfile) {
             setupOwnProfileListeners(profile);
@@ -1374,12 +1374,13 @@ async function loadProfileTab(profileUserId = null, hideTabBar = true) {
     }
 }
 
-function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
+function renderProfile(profile, savedCount, savesCount, isOwnProfile, hideTabBar = false) {
     const jobsCount = profile.jobsDone || 0;
     const rating = profile.rating || 0;
     
     return `
-    <div class="profile-container">
+    <div class="profile-container" style="position:relative;">
+        ${hideTabBar ? '<button class="back-btn" onclick="goBack()" style="position:absolute; top:20px; left:20px; font-size:24px; background:none; border:none; z-index:10; cursor:pointer;">←</button>' : ''}
         <div class="profile-stats-row">
             <div class="profile-picture">
                 <img src="${profile.profileImage ? profile.profileImage + '?tr=w-80,h-80' : 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
@@ -3044,8 +3045,8 @@ function openChat(chatId, otherUserId, chatData) {
         <div class="chat-container">
             <div class="chat-header">
                 <button class="chat-back-btn" onclick="loadMessagesTab()">←</button>
-                <img src="${otherUserImage}" class="chat-header-image">
-                <span class="chat-header-name">${otherUserName}</span>
+                <img src="${otherUserImage}" class="chat-header-image" onclick="viewProfileFromChat('${otherUserId}')" style="cursor:pointer;">
+                <span class="chat-header-name" onclick="viewProfileFromChat('${otherUserId}')" style="cursor:pointer;">${otherUserName}</span>
             </div>
             
             <div id="chat-messages" class="chat-messages"></div>
@@ -4054,4 +4055,29 @@ async function sendAdminNotification(userId, message) {
 window.viewUserProfile = function(userId) {
     switchTab('profile');
     loadProfileTab(userId);
+};
+
+window.goBack = function() {
+    // Show tab bar
+    const tabBar = document.querySelector('.tab-bar');
+    if (tabBar) {
+        tabBar.style.display = 'flex';
+    }
+    // Go back to previous screen
+    window.history.back();
+    // If history doesn't work, fallback to home
+    setTimeout(() => {
+        if (document.querySelector('.profile-container') && !document.querySelector('.home-container')) {
+            switchTab('home');
+        }
+    }, 100);
+};
+
+window.viewProfileFromChat = function(userId) {
+    // Hide tab bar for profile view
+    const tabBar = document.querySelector('.tab-bar');
+    if (tabBar) {
+        tabBar.style.display = 'none';
+    }
+    loadProfileTab(userId, true);
 };
