@@ -2930,8 +2930,17 @@ function renderConversationItem(chat, currentUserId) {
     const lastMessageTime = chat.lastMessageTimestamp ? formatMessageTime(chat.lastMessageTimestamp.toDate()) : '';
     const unread = chat.lastMessageSender !== currentUserId && !chat.lastMessageRead;
     
-    let otherUserName = chat.otherUserName || 'Loading...';
-    let otherUserImage = chat.otherUserImage || 'https://via.placeholder.com/40';
+    // Get the other user's name (the one who is NOT current user)
+    let otherUserName = 'User';
+    let otherUserImage = 'https://via.placeholder.com/40';
+    
+    // Use chat's stored other user info
+    if (chat.otherUserName) {
+        otherUserName = chat.otherUserName;
+    }
+    if (chat.otherUserImage) {
+        otherUserImage = chat.otherUserImage;
+    }
     
     let statusIcon = '';
     if (chat.lastMessageSender === currentUserId) {
@@ -3163,6 +3172,14 @@ window.sendMessage = async function() {
         } catch (notifyError) {
             console.log('Failed to send notification:', notifyError);
         }
+        
+        // Scroll to bottom after sending message
+        setTimeout(() => {
+            const messagesContainer = document.getElementById('chat-messages');
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }, 100);
         
     } catch (error) {
         console.error('Error sending message:', error);
