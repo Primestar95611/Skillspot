@@ -1050,3 +1050,54 @@ body {
     color: var(--text-secondary);
     font-size: 14px;
 }
+
+/* Make headers fixed at top */
+.home-header,
+.search-header,
+.messages-header,
+.profile-fixed-header,
+.edit-profile-header,
+.location-picker-header,
+.chat-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 100 !important;
+    background: var(--bg-primary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding-top: max(12px, env(safe-area-inset-top)) !important;
+}
+
+/* Add top margin to scrollable areas so content doesn't hide under header */
+.home-scrollable,
+.search-scrollable,
+.messages-scrollable,
+.profile-scrollable,
+.edit-profile-form,
+.location-details,
+.chat-messages {
+    margin-top: 70px !important;
+}
+
+/* Adjust for different screen sizes */
+@media (max-width: 600px) {
+    .home-scrollable,
+    .search-scrollable,
+    .messages-scrollable,
+    .profile-scrollable,
+    .edit-profile-form,
+    .location-details,
+    .chat-messages {
+        margin-top: 65px !important;
+    }
+}
+
+/* Tab bar stays fixed at bottom */
+.tab-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 100 !important;
+}
