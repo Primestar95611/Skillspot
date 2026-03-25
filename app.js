@@ -311,15 +311,28 @@ async function loadProviders(reset = true) {
     loading = true;
     
     if (reset) {
-        providers = [];
-        lastDoc = null;
-        hasMore = true;
-        homeTotalLoaded = 0;
-        const grid = document.getElementById('providers-grid');
-        if (grid) grid.innerHTML = '';
-        const loadMoreBtn = document.getElementById('load-more-btn');
-        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+    providers = [];
+    lastDoc = null;
+    hasMore = true;
+    homeTotalLoaded = 0;
+    const grid = document.getElementById('providers-grid');
+    if (grid) {
+        // Show skeleton loaders
+        grid.innerHTML = '';
+        for (let i = 0; i < HOME_PAGE_SIZE; i++) {
+            grid.innerHTML += `
+                <div class="skeleton-card">
+                    <div class="skeleton-image"></div>
+                    <div class="skeleton-text"></div>
+                    <div class="skeleton-text-sm"></div>
+                    <div class="skeleton-text-xs"></div>
+                </div>
+            `;
+        }
     }
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+}
     
     if (!hasMore) {
         loading = false;
