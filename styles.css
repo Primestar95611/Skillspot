@@ -2896,3 +2896,52 @@ body {
 .chat-header {
     padding-top: max(15px, env(safe-area-inset-top));
 }
+
+/* Skeleton Loader */
+.skeleton {
+    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--border-color) 50%, var(--bg-secondary) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-card {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.skeleton-image {
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--bg-secondary);
+}
+
+.skeleton-text {
+    height: 16px;
+    margin: 8px 10px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.skeleton-text-sm {
+    height: 12px;
+    width: 60%;
+    margin: 8px 10px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.skeleton-text-xs {
+    height: 10px;
+    width: 40%;
+    margin: 8px 10px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
