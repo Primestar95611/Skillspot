@@ -421,6 +421,11 @@ if (!reset) {
             }
             const loadMoreBtn = document.getElementById('load-more-btn');
             if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+            const endMsg = document.getElementById('load-more-end');
+            if (endMsg) endMsg.classList.remove('hidden');
+            const moreSpinner = document.getElementById('load-more-spinner');
+            if (moreSpinner) moreSpinner.classList.add('hidden');
+            
         } else {
             lastDoc = snapshot.docs[snapshot.docs.length - 1];
             
@@ -450,20 +455,6 @@ if (!reset) {
             
             renderProviders();
             homeTotalLoaded += snapshot.docs.length;
-            
-            const loadMoreBtn = document.getElementById('load-more-btn');
-            if (snapshot.empty) {
-    hasMore = false;
-    if (providers.length === 0) {
-        const emptyState = document.getElementById('empty-state');
-        if (emptyState) emptyState.classList.remove('hidden');
-    }
-    // Show end message
-    const endMsg = document.getElementById('load-more-end');
-    if (endMsg) endMsg.classList.remove('hidden');
-    const spinner = document.getElementById('load-more-spinner');
-    if (spinner) spinner.classList.add('hidden');
-}
         }
         
         if (providers.length > 0) {
