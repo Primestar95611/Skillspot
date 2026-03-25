@@ -1101,3 +1101,42 @@ body {
     right: 0 !important;
     z-index: 100 !important;
 }
+
+/* FIX 1: Profile page - ensure scrollable starts below header */
+.profile-scrollable {
+    margin-top: 70px !important;
+    padding-top: 10px !important;
+}
+
+/* FIX 2: Search tab - map and controls fixed, only provider list scrolls */
+.search-container {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+}
+
+.search-controls {
+    flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 5 !important;
+}
+
+.search-map {
+    flex-shrink: 0 !important;
+    height: 40vh !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.provider-drawer {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+/* Remove any existing search-scrollable class if present */
+.search-scrollable {
+    display: none !important;
+}
