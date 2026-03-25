@@ -300,19 +300,6 @@ body {
     cursor: pointer;
 }
 
-.search-map {
-    flex-shrink: 0;
-    height: 40vh;
-    width: 100%;
-}
-
-.provider-drawer {
-    flex: 1;
-    overflow-y: auto;
-    background: var(--bg-primary);
-    border-top: 1px solid var(--border-color);
-}
-
 .drawer-handle {
     width: 32px;
     height: 3px;
@@ -1125,18 +1112,37 @@ body {
 .search-map {
     flex-shrink: 0 !important;
     height: 40vh !important;
+    width: 100% !important;
     position: relative !important;
-    z-index: 1 !important;
 }
 
 .provider-drawer {
     flex: 1 !important;
     overflow-y: auto !important;
-    position: relative !important;
-    z-index: 2 !important;
+    background: var(--bg-primary) !important;
+    border-top: 1px solid var(--border-color) !important;
 }
 
 /* Remove any existing search-scrollable class if present */
 .search-scrollable {
     display: none !important;
+}
+
+/* Fix: Profile page content not hidden behind header */
+.profile-container {
+    padding-top: 0 !important;
+}
+
+.profile-scrollable {
+    padding-top: 10px !important;
+    margin-top: 0 !important;
+}
+
+.profile-fixed-header {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 10 !important;
+    background: var(--bg-primary) !important;
 }
