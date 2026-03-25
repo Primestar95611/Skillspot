@@ -1422,7 +1422,38 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
     if (!container) return;
     
     // FORCE DOM REFRESH
-    container.innerHTML = '';
+    container.innerHTML = `
+<div class="profile-container">
+    <div class="profile-fixed-header">
+        ${hideTabBar ? '<button class="back-btn" onclick="goBack()" style="position:absolute; top:20px; left:20px; font-size:24px; background:none; border:none; z-index:10; cursor:pointer;">←</button>' : ''}
+        <div class="profile-stats-row">
+            <div class="profile-picture">
+                <img src="${profile.profileImage ? profile.profileImage + '?tr=w-80,h-80,format-webp' : 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
+                ${isOwnProfile ? '<div class="camera-icon" onclick="openImageUpload()">📷</div>' : ''}
+            </div>
+            <div class="profile-info-right">
+                <h1 class="profile-business-name">${profile.businessName || 'Business Name'}</h1>
+                <div class="stats-grid">
+                    <div class="stat-item"><span class="stat-number">${profile.jobsDone || 0}</span><span class="stat-label">Gigs</span></div>
+                    <div class="stat-item clickable" onclick="showProviderReviews('${profile.id}')"><span class="stat-number">${profile.rating || 0}</span><span class="stat-label">★ Rating</span></div>
+                    ${isOwnProfile ? `<div class="stat-item clickable" onclick="openSavedModal()"><span class="stat-number">${savedCount}</span><span class="stat-label">Saved</span></div>` : ''}
+                    <div class="stat-item ${isOwnProfile ? 'clickable' : ''}" onclick="${isOwnProfile ? 'openSavesModal()' : ''}"><span class="stat-number">${savesCount}</span><span class="stat-label">Saves</span></div>
+                </div>
+            </div>
+        </div>
+        ${isOwnProfile ? `<div class="profile-actions-header"><button class="register-job-btn" onclick="showRegisterJobModal()">Register Gig (3 pts)</button></div>` : ''}
+        <div class="profile-meta">Joined ${profile.createdAt ? new Date(profile.createdAt.toDate()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown'} • ${profile.jobsThisMonth || 0} gigs this month</div>
+    </div>
+    <div class="profile-scrollable">
+        <div class="profile-bio">${profile.bio || 'No bio yet.'}</div>
+        ${profile.phoneNumber ? `<div class="profile-contact"><span class="contact-icon">📞</span><span class="contact-text">${profile.phoneNumber}</span></div>` : ''}
+        ${profile.locationGeo ? `<div class="profile-contact ${!isOwnProfile ? 'clickable-location' : ''}" ${!isOwnProfile ? `onclick="getDirectionsToProvider('${profile.id}')"` : ''}><span class="contact-icon">📍</span><span class="contact-text">${profile.locationDescription || `${profile.locationGeo.latitude}, ${profile.locationGeo.longitude}`}</span></div>` : ''}
+        <div class="profile-section"><h3 class="section-title">Services</h3><div class="services-horizontal">${(profile.services || []).map(service => `<span class="service-pill-static">${service}</span>`).join('')}${(profile.pendingServices || []).map(service => `<span class="service-pill-static pending">${service} (pending)</span>`).join('')}</div></div>
+        <div class="profile-actions">${isOwnProfile ? `<button class="btn" onclick="openEditProfile()">Edit Profile</button><button class="btn btn-outline" onclick="shareProfile()">Share</button>` : `<button class="btn" onclick="messageUser('${profile.id}', 'profile')">Message</button><button class="btn" onclick="toggleSaveProfile('${profile.id}')" id="save-btn-${profile.id}">Save</button><button class="btn btn-outline" onclick="shareProfile('${profile.id}')">Share</button>`}</div>
+        <div class="profile-section"><div class="section-header"><h3 class="section-title">Portfolio ${profile.portfolioImages?.length ? `(${profile.portfolioImages.length})` : ''}</h3>${isOwnProfile ? '<button class="btn-small" onclick="addPortfolioImages()">+ Add</button>' : ''}</div><div class="portfolio-grid">${(profile.portfolioImages || []).map((img, index) => `<div class="portfolio-item" onclick="openPhotoSwipe(${index})"><img src="${img}?tr=w-150,h-150,format-webp" loading="lazy">${isOwnProfile ? '<div class="delete-overlay" onclick="deleteImage(event, \'' + img + '\')">✕</div>' : ''}</div>`).join('')}${!profile.portfolioImages?.length ? '<p class="empty-portfolio">No portfolio images yet</p>' : ''}</div></div>
+    </div>
+</div>
+`;
     
     const targetUserId = profileUserId || firebase.auth().currentUser.uid;
     const isOwnProfile = targetUserId === firebase.auth().currentUser.uid;
