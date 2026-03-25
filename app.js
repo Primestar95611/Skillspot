@@ -243,43 +243,45 @@ function loadHomeTab() {
     if (!container) return;
     
     container.innerHTML = `
-    <div class="home-container">
-        <div class="home-header">
-    <h1 class="logo">GigsCourt</h1>
-    <div class="header-actions">
-        <button id="enable-notify-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px; margin-right:8px;">🔔 Enable</button>
-        <div class="notification-bell" onclick="openNotifications()">
-            <span class="bell-icon">🔔</span>
-            <span class="notification-badge" id="notification-count">0</span>
+<div class="home-container">
+    <div class="home-header">
+        <h1 class="logo">GigsCourt</h1>
+        <div class="header-actions">
+            <button id="enable-notify-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px; margin-right:8px;">🔔 Enable</button>
+            <div class="notification-bell" onclick="openNotifications()">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notification-count">0</span>
+            </div>
         </div>
     </div>
-</div>
-            
-            <div id="pull-to-refresh-indicator" class="ptr-indicator">
-                <span class="ptr-spinner"></span>
-                <span class="ptr-text">Pull to refresh</span>
-            </div>
-            
-            <div id="providers-grid" class="providers-grid">
-                <!-- Providers will load here -->
-            </div>
-            
-            <div id="load-more-trigger" style="height: 20px; margin: 20px; text-align: center;">
-    <div id="load-more-spinner" class="loading-spinner hidden" style="padding: 10px;">
-        <div class="spinner"></div>
-    </div>
-    <div id="load-more-end" class="hidden" style="color: var(--text-secondary); font-size: 12px;">You've seen all providers</div>
-</div>
-            
-            <div id="loading-spinner" class="loading-spinner hidden">
+    
+    <div class="home-scrollable">
+        <div id="pull-to-refresh-indicator" class="ptr-indicator">
+            <span class="ptr-spinner"></span>
+            <span class="ptr-text">Pull to refresh</span>
+        </div>
+        
+        <div id="providers-grid" class="providers-grid">
+            <!-- Providers will load here -->
+        </div>
+        
+        <div id="load-more-trigger" style="height: 20px; margin: 20px; text-align: center;">
+            <div id="load-more-spinner" class="loading-spinner hidden" style="padding: 10px;">
                 <div class="spinner"></div>
             </div>
-            
-            <div id="empty-state" class="empty-state hidden">
-                <p>No providers found nearby</p>
-            </div>
+            <div id="load-more-end" class="hidden" style="color: var(--text-secondary); font-size: 12px;">You've seen all providers</div>
         </div>
-    `;
+        
+        <div id="loading-spinner" class="loading-spinner hidden">
+            <div class="spinner"></div>
+        </div>
+        
+        <div id="empty-state" class="empty-state hidden">
+            <p>No providers found nearby</p>
+        </div>
+    </div>
+</div>
+`;
 
     window.currentTab = 'home';
     
@@ -2550,30 +2552,30 @@ function loadSearchTab() {
     if (!container) return;
     
     container.innerHTML = `
-        <div class="search-container">
-            <div id="search-map" class="search-map"></div>
-            
-            <div class="search-controls">
-                <div class="search-input-container">
-                    <input type="text" id="search-input" class="search-input" placeholder="Search by service...">
-                </div>
-                
-                <div class="radius-control">
-                    <span class="radius-icon">📍</span>
-                    <span class="radius-value" id="radius-value">${currentRadius} km</span>
-                    <input type="range" id="radius-slider" class="radius-slider" min="1" max="200" value="${currentRadius}" step="1">
-                </div>
-            </div>
-            
-            <div class="provider-drawer">
-                <div class="drawer-handle"></div>
-                <div id="provider-list" class="provider-list"></div>
-                <div id="drawer-loading" class="drawer-loading hidden">
-                    <div class="spinner-small"></div>
-                </div>
-            </div>
+<div class="search-container">
+    <div class="search-controls">
+        <div class="search-input-container">
+            <input type="text" id="search-input" class="search-input" placeholder="Search by service...">
         </div>
-    `;
+        
+        <div class="radius-control">
+            <span class="radius-icon">📍</span>
+            <span class="radius-value" id="radius-value">${currentRadius} km</span>
+            <input type="range" id="radius-slider" class="radius-slider" min="1" max="200" value="${currentRadius}" step="1">
+        </div>
+    </div>
+    
+    <div id="search-map" class="search-map"></div>
+    
+    <div class="provider-drawer">
+        <div class="drawer-handle"></div>
+        <div id="provider-list" class="provider-list"></div>
+        <div id="drawer-loading" class="drawer-loading hidden">
+            <div class="spinner-small"></div>
+        </div>
+    </div>
+</div>
+`;
     window.currentTab = 'search';
     
     getUserLocation();
@@ -3416,18 +3418,19 @@ function loadMessagesTab() {
     if (!container) return;
     
     container.innerHTML = `
-        <div class="messages-container">
-            <div class="messages-header">
-                <h1 class="messages-title">Messages</h1>
-            </div>
-            
-            <div id="conversations-list" class="conversations-list"></div>
-            
-            <div id="conversations-loading" class="conversations-loading">
-                <div class="spinner"></div>
-            </div>
+<div class="messages-container">
+    <div class="messages-header">
+        <h1 class="messages-title">Messages</h1>
+    </div>
+    
+    <div class="messages-scrollable">
+        <div id="conversations-list" class="conversations-list"></div>
+        <div id="conversations-loading" class="conversations-loading">
+            <div class="spinner"></div>
         </div>
-    `;
+    </div>
+</div>
+`;
     
     loadConversations();
 }
