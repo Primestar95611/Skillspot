@@ -1,4 +1,4 @@
-// app.js - Complete with all 10 cost-saving fixes
+// app.js - Complete with all triggers and job flow fixes
 
 // Firebase config
 const firebaseConfig = {
@@ -57,8 +57,6 @@ async function setupNotifications(userId) {
             });
             
             if (token) {
-                alert('✅ Token received! Check Firestore.');
-                // Visual confirmation
                 const toast = document.createElement('div');
                 toast.textContent = '✅ Notifications enabled!';
                 toast.style.cssText = 'position:fixed;bottom:100px;left:20px;right:20px;background:#4CAF50;color:white;padding:12px;text-align:center;border-radius:8px;z-index:9999;';
@@ -69,19 +67,10 @@ async function setupNotifications(userId) {
                     fcmToken: token
                 });
                 console.log('FCM token saved:', token);
-            } else {
-                alert('❌ No token received');
-                // Visual error
-                const toast = document.createElement('div');
-                toast.textContent = '❌ Could not get notification token';
-                toast.style.cssText = 'position:fixed;bottom:100px;left:20px;right:20px;background:#FF0000;color:white;padding:12px;text-align:center;border-radius:8px;z-index:9999;';
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 3000);
             }
         }
     } catch (error) {
         console.log('Notification setup failed:', error);
-        alert('Error: ' + error.message);
     }
 }
 
@@ -98,7 +87,7 @@ let searchHasMore = true;
 let searchLoading = false;
 let searchCache = null;
 let searchCacheTime = null;
-const CACHE_DURATION = 30 * 60 * 1000; // FIX #9: Increased to 30 minutes
+const CACHE_DURATION = 30 * 60 * 1000;
 let pullToRefresh = {
     startY: 0,
     currentY: 0,
@@ -111,7 +100,11 @@ let chatPreviousScreen = null;
 let lastProfileViewedId = null;
 let profilePreviousScreen = null;
 
-// Home pagination - FIX #2: Load More button instead of infinite scroll
+// Reminder tracking
+let reminderInterval = null;
+let lastMessageCount = 0;
+
+// Home pagination
 let homeCurrentPage = 1;
 let homeTotalLoaded = 0;
 const HOME_PAGE_SIZE = 10;
@@ -131,6 +124,23 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 function deg2rad(deg) {
     return deg * (Math.PI/180);
+}
+
+// Toast notification helper
+function showToast(message, duration = 3000) {
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) existingToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
 }
 
 // Auth state listener
@@ -228,7 +238,8 @@ window.saveProfile = async function() {
             portfolioImages: [],
             location: null,
             locationGeo: null,
-            savedProfiles: {} // FIX #7: Store saved profiles as map on user document
+            savedProfiles: {},
+            points: 15
         });
         
         loadMainApp();
@@ -294,7 +305,6 @@ function loadHomeTab() {
     loadProviders(true);
     setupPullToRefresh();
     
-    // Enable notifications button
     const enableBtn = document.getElementById('enable-notify-btn');
     if (enableBtn) {
         enableBtn.onclick = async function() {
@@ -306,20 +316,17 @@ function loadHomeTab() {
             }
         };
     }
-    // Setup infinite scroll
     setTimeout(() => {
         setupInfiniteScroll();
     }, 500);
 }
 
-// Infinite scroll setup
 let observer = null;
 
 function setupInfiniteScroll() {
     const trigger = document.getElementById('load-more-trigger');
     if (!trigger) return;
     
-    // Remove existing observer if any
     if (observer) observer.disconnect();
     
     observer = new IntersectionObserver((entries) => {
@@ -333,7 +340,6 @@ function setupInfiniteScroll() {
     observer.observe(trigger);
 }
 
-// Clean up observer when leaving home tab
 function cleanupInfiniteScroll() {
     if (observer) {
         observer.disconnect();
@@ -341,52 +347,43 @@ function cleanupInfiniteScroll() {
     }
 }
 
-// Call it after home tab loads
-
-// FIX #2: Load providers with explicit Load More button
 async function loadProviders(reset = true) {
     if (loading) return;
     loading = true;
     
     if (reset) {
-    providers = [];
-    lastDoc = null;
-    hasMore = true;
-    homeTotalLoaded = 0;
-    const grid = document.getElementById('providers-grid');
-    if (grid) {
-        // Show skeleton loaders
-        grid.innerHTML = '';
-        for (let i = 0; i < HOME_PAGE_SIZE; i++) {
-            grid.innerHTML += `
-                <div class="skeleton-card">
-                    <div class="skeleton-image"></div>
-                    <div class="skeleton-text"></div>
-                    <div class="skeleton-text-sm"></div>
-                    <div class="skeleton-text-xs"></div>
-                </div>
-            `;
+        providers = [];
+        lastDoc = null;
+        hasMore = true;
+        homeTotalLoaded = 0;
+        const grid = document.getElementById('providers-grid');
+        if (grid) {
+            grid.innerHTML = '';
+            for (let i = 0; i < HOME_PAGE_SIZE; i++) {
+                grid.innerHTML += `
+                    <div class="skeleton-card">
+                        <div class="skeleton-image"></div>
+                        <div class="skeleton-text"></div>
+                        <div class="skeleton-text-sm"></div>
+                        <div class="skeleton-text-xs"></div>
+                    </div>
+                `;
+            }
         }
     }
-    const loadMoreBtn = document.getElementById('load-more-btn');
-    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
-}
     
     if (!hasMore) {
         loading = false;
-        const loadMoreBtn = document.getElementById('load-more-btn');
-        if (loadMoreBtn && homeTotalLoaded > 0) loadMoreBtn.style.display = 'none';
         return;
     }
     
     const spinner = document.getElementById('loading-spinner');
     if (spinner) spinner.classList.remove('hidden');
 
-    // Show infinite scroll spinner when loading more
-if (!reset) {
-    const moreSpinner = document.getElementById('load-more-spinner');
-    if (moreSpinner) moreSpinner.classList.remove('hidden');
-}
+    if (!reset) {
+        const moreSpinner = document.getElementById('load-more-spinner');
+        if (moreSpinner) moreSpinner.classList.remove('hidden');
+    }
     
     try {
         let userLat = 6.5244;
@@ -420,8 +417,6 @@ if (!reset) {
                 const emptyState = document.getElementById('empty-state');
                 if (emptyState) emptyState.classList.remove('hidden');
             }
-            const loadMoreBtn = document.getElementById('load-more-btn');
-            if (loadMoreBtn) loadMoreBtn.style.display = 'none';
             const endMsg = document.getElementById('load-more-end');
             if (endMsg) endMsg.classList.remove('hidden');
             const moreSpinner = document.getElementById('load-more-spinner');
@@ -471,21 +466,14 @@ if (!reset) {
         }
     }
 
-    // Hide infinite scroll spinner
-if (!reset) {
-    const moreSpinner = document.getElementById('load-more-spinner');
-    if (moreSpinner) moreSpinner.classList.add('hidden');
-}
+    if (!reset) {
+        const moreSpinner = document.getElementById('load-more-spinner');
+        if (moreSpinner) moreSpinner.classList.add('hidden');
+    }
     
     if (spinner) spinner.classList.add('hidden');
     loading = false;
 }
-
-window.loadMoreProviders = function() {
-    if (!loading && hasMore) {
-        loadProviders(false);
-    }
-};
 
 function renderProviders() {
     const grid = document.getElementById('providers-grid');
@@ -616,9 +604,6 @@ async function refreshProviders() {
     
     const grid = document.getElementById('providers-grid');
     if (grid) grid.innerHTML = '';
-    
-    const loadMoreBtn = document.getElementById('load-more-btn');
-    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
     
     await loadProviders(true);
     
@@ -779,7 +764,7 @@ window.viewProfile = (id, fromScreen = 'home') => {
 };
 
 window.messageUser = (id, fromScreen = 'messages') => {
-    lastProfileViewedId = id; // Store for back navigation
+    lastProfileViewedId = id;
     switchTab('messages');
     setTimeout(() => {
         createNewChat(id, fromScreen);
@@ -852,15 +837,31 @@ window.getDirections = (id) => alert('Directions coming soon');
 window.showOnMap = (id) => alert('Map view coming soon');
 
 // ========== JOB & REVIEW FUNCTIONS ==========
-// FIX #6: Incremental rating update instead of reading all reviews
+
+async function checkPendingJobLimit(providerId, clientId) {
+    const pendingJobsSnapshot = await firebase.firestore()
+        .collection('jobs')
+        .where('providerId', '==', providerId)
+        .where('clientId', '==', clientId)
+        .where('status', 'in', ['pending_client_review', 'pending'])
+        .get();
+    
+    return !pendingJobsSnapshot.empty;
+}
 
 window.registerJob = async function(clientId) {
     const providerId = firebase.auth().currentUser.uid;
     const providerData = currentUserData;
     const JOB_COST = 3;
     
+    const hasPending = await checkPendingJobLimit(providerId, clientId);
+    if (hasPending) {
+        showToast('⚠️ You already have a pending job with this client. Complete it first.');
+        return;
+    }
+    
     if (!providerData.points || providerData.points < JOB_COST) {
-        alert('Not enough points. You need 3 points to register a job.');
+        showToast('⚠️ Not enough credits. Buy more to register jobs.');
         return;
     }
     
@@ -868,17 +869,14 @@ window.registerJob = async function(clientId) {
         const jobRef = await firebase.firestore().collection('jobs').add({
             providerId: providerId,
             clientId: clientId,
-            status: 'pending',
+            status: 'pending_client_review',
             pointsSpent: JOB_COST,
+            pointsDeducted: false,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            completedAt: null
+            completedAt: null,
+            cancelledAt: null
         });
         
-        await firebase.firestore().collection('users').doc(providerId).update({
-            points: firebase.firestore.FieldValue.increment(-JOB_COST)
-        });
-        
-        // Send notification to client
         try {
             const clientDoc = await firebase.firestore().collection('users').doc(clientId).get();
             const clientToken = clientDoc.data()?.fcmToken;
@@ -890,37 +888,65 @@ window.registerJob = async function(clientId) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         recipientToken: clientToken,
-                        title: 'New Gig Request',
-                        body: `${providerData.businessName} wants to work with you`,
-                        chatId: ''
+                        title: 'New Job Request',
+                        body: `${providerData.businessName} wants to work with you. Please review.`,
+                        chatId: currentChatId || ''
                     })
                 });
-                console.log('Gig request notification sent');
             }
         } catch (notifyError) {
-            console.log('Failed to send gig notification:', notifyError);
+            console.log('Failed to send notification:', notifyError);
         }
         
-        alert('Job registered successfully! Waiting for client confirmation.');
+        showToast('✅ Job registered! Waiting for client to review.');
+        
+        if (currentChatId) {
+            loadMessages(currentChatId);
+            checkAndShowReviewButton(currentChatId, clientId);
+        }
         
     } catch (error) {
         console.error('Error registering job:', error);
-        alert('Failed to register job');
+        showToast('Failed to register job');
     }
 };
 
-window.confirmJobCompletion = async function(jobId, providerId) {
+// Cancel old jobs after 7 days
+async function checkAndCancelOldJobs() {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const oldJobs = await firebase.firestore()
+        .collection('jobs')
+        .where('status', '==', 'pending_client_review')
+        .where('createdAt', '<', sevenDaysAgo)
+        .get();
+    
+    oldJobs.forEach(async (doc) => {
+        await doc.ref.update({
+            status: 'cancelled',
+            cancelledAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        console.log('Cancelled old job:', doc.id);
+    });
+}
+
+setInterval(checkAndCancelOldJobs, 60 * 60 * 1000);
+
+window.confirmGig = async function(gigId, providerId) {
     try {
-        await firebase.firestore().collection('jobs').doc(jobId).update({
+        await firebase.firestore().collection('jobs').doc(gigId).update({
             status: 'completed',
             completedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        showReviewModal(providerId, jobId);
+        showReviewModal(providerId, gigId);
+        
+        document.querySelectorAll('.gig-confirmation').forEach(el => el.remove());
         
     } catch (error) {
-        console.error('Error confirming job:', error);
-        alert('Failed to confirm job');
+        console.error('Error confirming gig:', error);
+        showToast('Failed to confirm gig');
     }
 };
 
@@ -975,25 +1001,50 @@ function showReviewModal(providerId, jobId) {
     });
 }
 
-// FIX #6: Incremental rating update
 window.submitReview = async function(providerId, jobId) {
     const modal = document.querySelector('.review-modal');
     const rating = modal.dataset.selectedRating;
     const reviewText = document.getElementById('review-text').value.trim();
     const clientId = firebase.auth().currentUser.uid;
     const clientData = currentUserData;
+    const JOB_COST = 3;
     
     if (!rating) {
-        alert('Please select a rating');
+        showToast('Please select a rating');
         return;
     }
     
     if (!reviewText) {
-        alert('Please write a review');
+        showToast('Please write a review');
         return;
     }
     
     try {
+        const jobRef = firebase.firestore().collection('jobs').doc(jobId);
+        const jobDoc = await jobRef.get();
+        const jobData = jobDoc.data();
+        
+        if (!jobData.pointsDeducted) {
+            const providerRef = firebase.firestore().collection('users').doc(providerId);
+            const providerDoc = await providerRef.get();
+            const providerPoints = providerDoc.data()?.points || 0;
+            
+            if (providerPoints < JOB_COST) {
+                showToast('⚠️ Provider has insufficient credits. Job cannot be completed.');
+                modal.remove();
+                return;
+            }
+            
+            await providerRef.update({
+                points: firebase.firestore.FieldValue.increment(-JOB_COST)
+            });
+            
+            await jobRef.update({
+                pointsDeducted: true,
+                pointsDeductedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        
         const existingReviewQuery = await firebase.firestore()
             .collection('reviews')
             .where('providerId', '==', providerId)
@@ -1024,7 +1075,6 @@ window.submitReview = async function(providerId, jobId) {
             });
         }
         
-        // FIX #6: Incremental rating update without reading all reviews
         const providerRef = firebase.firestore().collection('users').doc(providerId);
         const providerDoc = await providerRef.get();
         const provider = providerDoc.data();
@@ -1033,13 +1083,11 @@ window.submitReview = async function(providerId, jobId) {
         let newReviewCount;
         
         if (existingReviewQuery.empty) {
-            // New review - incremental calculation
             const oldTotal = (provider.rating || 0) * (provider.reviewCount || 0);
             const newTotal = oldTotal + parseInt(rating);
             newReviewCount = (provider.reviewCount || 0) + 1;
             newRating = newTotal / newReviewCount;
         } else {
-            // Updating existing review - need to adjust
             const oldReview = existingReviewQuery.docs[0].data();
             const oldRatingValue = oldReview.rating;
             const oldTotal = (provider.rating || 0) * (provider.reviewCount || 0);
@@ -1055,7 +1103,11 @@ window.submitReview = async function(providerId, jobId) {
             jobsThisMonth: firebase.firestore.FieldValue.increment(1)
         });
         
-        // Send notification to provider
+        await jobRef.update({
+            status: 'reviewed',
+            reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
         try {
             const providerToken = providerDoc.data()?.fcmToken;
             const clientName = clientData.businessName || 'A client';
@@ -1067,26 +1119,31 @@ window.submitReview = async function(providerId, jobId) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         recipientToken: providerToken,
-                        title: 'New Review',
-                        body: `${clientName} left you a ${rating}★ review`,
-                        chatId: ''
+                        title: 'Job Completed & Reviewed',
+                        body: `${clientName} completed your job and left a ${rating}★ review!`,
+                        chatId: currentChatId || ''
                     })
                 });
-                console.log('New review notification sent');
             }
         } catch (notifyError) {
             console.log('Failed to send review notification:', notifyError);
         }
+        
+        showToast('✅ Review submitted! This will boost your profile if you do it often.');
         
         modal.remove();
         let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
         if (scrollableContainer) {
             scrollableContainer.style.overflow = '';
         }
-        alert('Review submitted! Thank you.');
+        
+        if (currentChatId) {
+            loadMessages(currentChatId);
+        }
+        
     } catch (error) {
         console.error('Error submitting review:', error);
-        alert('Failed to submit review');
+        showToast('Failed to submit review');
     }
 };
 
@@ -1106,8 +1163,8 @@ window.showRegisterJobModal = async function() {
         chatsSnapshot.forEach(doc => {
             const chat = doc.data();
             const otherUserId = chat.participants.find(id => id !== providerId);
-            const otherUserName = chat.otherUserName || 'User';
-            const otherUserImage = chat.otherUserImage || 'https://via.placeholder.com/40';
+            const otherUserName = chat.userNames?.[otherUserId] || 'User';
+            const otherUserImage = chat.userImages?.[otherUserId] || 'https://via.placeholder.com/40';
             
             clientsHtml += `
                 <div class="client-item" onclick="selectClient('${otherUserId}', '${otherUserName}')">
@@ -1145,33 +1202,8 @@ window.showRegisterJobModal = async function() {
 
 window.selectClient = async function(clientId, clientName) {
     if (!confirm(`Register gig with ${clientName} for 3 points?`)) return;
-    
-    const providerId = firebase.auth().currentUser.uid;
-    const providerData = currentUserData;
-    
-    try {
-        const gigRef = await firebase.firestore().collection('jobs').add({
-            providerId: providerId,
-            providerName: providerData.businessName,
-            clientId: clientId,
-            status: 'pending',
-            pointsSpent: 3,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            completedAt: null,
-            notifiedClient: false
-        });
-        
-        await firebase.firestore().collection('users').doc(providerId).update({
-            points: firebase.firestore.FieldValue.increment(-3)
-        });
-        
-        document.querySelector('.register-job-modal').remove();
-        alert('Gig registered! Waiting for client confirmation.');
-        
-    } catch (error) {
-        console.error('Error registering gig:', error);
-        alert('Failed to register gig');
-    }
+    window.registerJob(clientId);
+    document.querySelector('.register-job-modal')?.remove();
 };
 
 // ========== REVIEWS DISPLAY ==========
@@ -1408,7 +1440,6 @@ function loadMainApp() {
 
 // ========== PROFILE TAB ==========
 async function loadProfileTab(profileUserId = null, hideTabBar = false) {
-    // Handle tab bar visibility
     if (hideTabBar) {
         const tabBar = document.querySelector('.tab-bar');
         if (tabBar) tabBar.style.display = 'none';
@@ -1454,7 +1485,6 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
             savedCount = savesSnapshot.size;
         }
         
-        // Render the profile with the new fixed + scrollable layout
         container.innerHTML = `
 <div class="profile-container">
     <div class="profile-fixed-header">
@@ -1465,12 +1495,16 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
                 ${isOwnProfile ? '<div class="camera-icon" onclick="openImageUpload()">📷</div>' : ''}
             </div>
             <div class="profile-info-right">
-                <h1 class="profile-business-name">${profile.businessName || 'Business Name'}</h1>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h1 class="profile-business-name">${profile.businessName || 'Business Name'}</h1>
+                    ${!isOwnProfile ? `<button id="contact-now-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px;">📞 Contact Now</button>` : ''}
+                </div>
                 <div class="stats-grid">
                     <div class="stat-item"><span class="stat-number">${profile.jobsDone || 0}</span><span class="stat-label">Gigs</span></div>
                     <div class="stat-item clickable" onclick="showProviderReviews('${profile.id}')"><span class="stat-number">${profile.rating || 0}</span><span class="stat-label">★ Rating</span></div>
                     ${isOwnProfile ? `<div class="stat-item clickable" onclick="openSavedModal()"><span class="stat-number">${savedCount}</span><span class="stat-label">Saved</span></div>` : ''}
                     <div class="stat-item ${isOwnProfile ? 'clickable' : ''}" onclick="${isOwnProfile ? 'openSavesModal()' : ''}"><span class="stat-number">${savesCount}</span><span class="stat-label">Saves</span></div>
+                    ${isOwnProfile ? `<div class="stat-item clickable" onclick="openJobHistory()"><span class="stat-number">⏱️</span><span class="stat-label">History</span></div>` : ''}
                 </div>
             </div>
         </div>
@@ -1479,24 +1513,28 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
     </div>
     <div class="profile-scrollable">
         <div class="profile-bio">${profile.bio || 'No bio yet.'}</div>
-        ${profile.phoneNumber ? `<div class="profile-contact"><span class="contact-icon">📞</span><span class="contact-text">${profile.phoneNumber}</span></div>` : ''}
+        <div id="phone-contact-section" style="display:none;">
+            ${profile.phoneNumber ? `<div class="profile-contact"><span class="contact-icon">📞</span><span class="contact-text" id="phone-number-display">${profile.phoneNumber}</span><button id="call-now-btn" class="btn-small" style="margin-left:10px; background:#8B0000; color:white;">Call Now</button></div>` : ''}
+        </div>
         ${profile.locationGeo ? `<div class="profile-contact ${!isOwnProfile ? 'clickable-location' : ''}" ${!isOwnProfile ? `onclick="getDirectionsToProvider('${profile.id}')"` : ''}><span class="contact-icon">📍</span><span class="contact-text">${profile.locationDescription || `${profile.locationGeo.latitude}, ${profile.locationGeo.longitude}`}</span></div>` : ''}
         <div class="profile-section"><h3 class="section-title">Services</h3><div class="services-horizontal">${(profile.services || []).map(service => `<span class="service-pill-static">${service}</span>`).join('')}${(profile.pendingServices || []).map(service => `<span class="service-pill-static pending">${service} (pending)</span>`).join('')}</div></div>
+        ${!isOwnProfile ? `<div class="profile-section"><div class="section-header"><h3 class="section-title">Contact</h3></div><div class="profile-contact"><span class="contact-icon">✉️</span><span class="contact-text">Message in app</span></div></div>` : ''}
         <div class="profile-actions">${isOwnProfile ? `<button class="btn" onclick="openEditProfile()">Edit Profile</button><button class="btn btn-outline" onclick="shareProfile()">Share</button>` : `<button class="btn" onclick="messageUser('${profile.id}', 'profile')">Message</button><button class="btn" onclick="toggleSaveProfile('${profile.id}')" id="save-btn-${profile.id}">Save</button><button class="btn btn-outline" onclick="shareProfile('${profile.id}')">Share</button>`}</div>
-        <div class="profile-section"><div class="section-header"><h3 class="section-title">Portfolio ${profile.portfolioImages?.length ? `(${profile.portfolioImages.length})` : ''}</h3>${isOwnProfile ? '<button class="btn-small" onclick="addPortfolioImages()">+ Add</button>' : ''}</div><div class="portfolio-grid">${(profile.portfolioImages || []).map((img, index) => `<div class="portfolio-item" onclick="openPhotoSwipe(${index})"><img src="${img}?tr=w-150,h-150,format-webp" loading="lazy">${isOwnProfile ? '<div class="delete-overlay" onclick="deleteImage(event, \'' + img + '\')">✕</div>' : ''}</div>`).join('')}${!profile.portfolioImages?.length ? '<p class="empty-portfolio">No portfolio images yet</p>' : ''}</div></div>
+        <div class="profile-section"><div class="section-header"><h3 class="section-title">Portfolio ${profile.portfolioImages?.length ? `(${profile.portfolioImages.length})` : ''}</h3>${isOwnProfile ? '<button class="btn-small" onclick="addPortfolioImages()">+ Add</button>' : ''}</div><div class="portfolio-grid">${(profile.portfolioImages || []).map((img, index) => `<div class="portfolio-item" onclick="openPhotoSwipe(${index})"><img src="${img}?tr=w-150,h-150,format-webp" loading="lazy">${isOwnProfile ? '<div class="delete-overlay" onclick="deleteImage(event, \'' + img + '\')">✕</div>' : ''}</div>`).join('')}${!profile.portfolioImages?.length ? '<p class="empty-portfolio">📸 Post pictures so people can see what you are capable of.</p>' : ''}</div></div>
+        ${isOwnProfile && (!profile.portfolioImages?.length) ? '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">⭐ More completed jobs equals more clients</p></div>' : ''}
+        ${isOwnProfile && (profile.points || 0) < 3 ? '<div class="profile-section"><p class="hint" style="text-align:center; color:#ff9800;">⚠️ Low on credits. Buy more to register jobs.</p></div>' : ''}
+        ${isOwnProfile && (profile.jobsDone || 0) === 0 ? '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">🚀 Complete your first job to build your reputation</p></div>' : ''}
     </div>
 </div>
 `;
         
-        // Force reflow
         container.style.display = 'none';
         container.offsetHeight;
         container.style.display = '';
         
-        if (isOwnProfile) {
-            setupOwnProfileListeners(profile);
-        } else {
-            setupOtherProfileListeners(profile);
+        if (!isOwnProfile) {
+            checkIfSaved(profile.id);
+            setupContactNowButton(profile.id, profile.phoneNumber);
         }
         
     } catch (error) {
@@ -1504,6 +1542,136 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
         container.innerHTML = '<div class="error-state">Error loading profile</div>';
     }
 }
+
+function setupContactNowButton(providerId, phoneNumber) {
+    const contactBtn = document.getElementById('contact-now-btn');
+    if (!contactBtn) return;
+    
+    contactBtn.onclick = async () => {
+        const phoneSection = document.getElementById('phone-contact-section');
+        if (phoneSection) {
+            phoneSection.style.display = 'block';
+            
+            const callBtn = document.getElementById('call-now-btn');
+            if (callBtn && phoneNumber) {
+                callBtn.onclick = () => {
+                    window.location.href = `tel:${phoneNumber}`;
+                };
+            }
+            
+            contactBtn.style.display = 'none';
+        }
+        
+        const currentUserId = firebase.auth().currentUser.uid;
+        
+        const hasPending = await checkPendingJobLimit(providerId, currentUserId);
+        if (hasPending) return;
+        
+        const completedJobs = await firebase.firestore()
+            .collection('jobs')
+            .where('providerId', '==', providerId)
+            .where('clientId', '==', currentUserId)
+            .where('status', '==', 'reviewed')
+            .get();
+        
+        if (completedJobs.empty) {
+            await sendProviderReminder(providerId, currentUserId);
+        }
+    };
+}
+
+async function sendProviderReminder(providerId, clientId) {
+    try {
+        const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
+        const providerToken = providerDoc.data()?.fcmToken;
+        const clientName = currentUserData?.businessName || 'Someone';
+        
+        if (providerToken) {
+            const workerUrl = 'https://gigscourtnotification.agboghidiaugust.workers.dev';
+            await fetch(workerUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    recipientToken: providerToken,
+                    title: 'Contact View',
+                    body: `${clientName} viewed your contact. Reminder to register job if you worked together.`,
+                    chatId: ''
+                })
+            });
+        }
+        
+        showToast('Contact revealed. Provider has been notified.');
+    } catch (error) {
+        console.log('Failed to send provider reminder:', error);
+    }
+}
+
+window.openJobHistory = async function() {
+    const userId = firebase.auth().currentUser.uid;
+    
+    const completedJobs = await firebase.firestore()
+        .collection('jobs')
+        .where('providerId', '==', userId)
+        .where('status', '==', 'reviewed')
+        .get();
+    
+    const jobsAsClient = await firebase.firestore()
+        .collection('jobs')
+        .where('clientId', '==', userId)
+        .where('status', '==', 'reviewed')
+        .get();
+    
+    const modal = document.createElement('div');
+    modal.className = 'reviews-modal';
+    
+    let jobsHtml = '';
+    
+    completedJobs.forEach(doc => {
+        const job = doc.data();
+        const date = job.reviewedAt?.toDate().toLocaleDateString() || 'Unknown';
+        jobsHtml += `
+            <div class="review-item">
+                <div class="review-header">
+                    <div class="review-business-name">Client: ${job.clientId}</div>
+                    <div class="review-meta">Completed: ${date}</div>
+                </div>
+            </div>
+            <div class="review-divider"></div>
+        `;
+    });
+    
+    jobsAsClient.forEach(doc => {
+        const job = doc.data();
+        const date = job.reviewedAt?.toDate().toLocaleDateString() || 'Unknown';
+        jobsHtml += `
+            <div class="review-item">
+                <div class="review-header">
+                    <div class="review-business-name">Provider: ${job.providerId}</div>
+                    <div class="review-meta">Completed: ${date}</div>
+                </div>
+            </div>
+            <div class="review-divider"></div>
+        `;
+    });
+    
+    if (!jobsHtml) {
+        jobsHtml = '<div class="no-reviews">No completed jobs yet</div>';
+    }
+    
+    modal.innerHTML = `
+        <div class="reviews-modal-content">
+            <div class="reviews-modal-header">
+                <h2>Job History</h2>
+                <button class="close-btn" onclick="this.closest('.reviews-modal').remove()">✕</button>
+            </div>
+            <div class="reviews-list">
+                ${jobsHtml}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+};
 
 function renderProfile(profile, savedCount, savesCount, isOwnProfile, hideTabBar = false) {
     const jobsCount = profile.jobsDone || 0;
@@ -1610,14 +1778,16 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile, hideTabBar
                         ${isOwnProfile ? '<div class="delete-overlay" onclick="deleteImage(event, \'' + img + '\')">✕</div>' : ''}
                     </div>
                 `).join('')}
-                ${!profile.portfolioImages?.length ? '<p class="empty-portfolio">No portfolio images yet</p>' : ''}
+                ${!profile.portfolioImages?.length ? '<p class="empty-portfolio">📸 Post pictures so people can see what you are capable of.</p>' : ''}
             </div>
         </div>
+        ${isOwnProfile && (!profile.portfolioImages?.length) ? '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">⭐ More completed jobs equals more clients</p></div>' : ''}
+        ${isOwnProfile && (profile.points || 0) < 3 ? '<div class="profile-section"><p class="hint" style="text-align:center; color:#ff9800;">⚠️ Low on credits. Buy more to register jobs.</p></div>' : ''}
+        ${isOwnProfile && (profile.jobsDone || 0) === 0 ? '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">🚀 Complete your first job to build your reputation</p></div>' : ''}
     </div>
     `;
 }
 
-// FIX #7: Use savedProfiles map
 window.toggleSaveProfile = async function(profileId) {
     const currentUserId = firebase.auth().currentUser.uid;
     if (currentUserId === profileId) {
@@ -1635,7 +1805,6 @@ window.toggleSaveProfile = async function(profileId) {
         const currentSaved = userDoc.data()?.savedProfiles || {};
         
         if (isSaved) {
-            // Unsave
             delete currentSaved[profileId];
             await userRef.update({
                 savedProfiles: currentSaved
@@ -1643,7 +1812,6 @@ window.toggleSaveProfile = async function(profileId) {
             saveBtn.textContent = 'Save';
             saveBtn.classList.remove('saved');
         } else {
-            // Save
             currentSaved[profileId] = true;
             await userRef.update({
                 savedProfiles: currentSaved
@@ -1651,7 +1819,6 @@ window.toggleSaveProfile = async function(profileId) {
             saveBtn.textContent = 'Saved';
             saveBtn.classList.add('saved');
             
-            // Send notification to the person whose profile was saved
             try {
                 const targetUserDoc = await firebase.firestore().collection('users').doc(profileId).get();
                 const targetToken = targetUserDoc.data()?.fcmToken;
@@ -1668,15 +1835,13 @@ window.toggleSaveProfile = async function(profileId) {
                             chatId: ''
                         })
                     });
-                    console.log('Profile saved notification sent');
                 }
             } catch (notifyError) {
                 console.log('Failed to send profile save notification:', notifyError);
             }
         }
         
-        // Refresh profile stats
-        loadProfileTab(profileId, true); // Hide tab bar when viewing profile after save
+        loadProfileTab(profileId, true);
         
     } catch (error) {
         console.error('Error toggling save:', error);
@@ -1684,7 +1849,6 @@ window.toggleSaveProfile = async function(profileId) {
     }
 };
 
-// FIX #7: Check saved status from user document
 async function checkIfSaved(profileId) {
     const currentUserId = firebase.auth().currentUser.uid;
     if (currentUserId === profileId) return;
@@ -1708,7 +1872,6 @@ async function checkIfSaved(profileId) {
     }
 }
 
-// FIX #7: Saved modal using map
 window.openSavedModal = async function() {
     const currentUserId = firebase.auth().currentUser.uid;
     
@@ -1846,37 +2009,6 @@ window.viewProfileFromModal = function(userId) {
     loadProfileTab(userId, true);
 };
 
-async function getSavedCount(userId) {
-    try {
-        const userDoc = await firebase.firestore().collection('users').doc(userId).get();
-        return Object.keys(userDoc.data()?.savedProfiles || {}).length;
-    } catch (error) {
-        console.error('Error getting saved count:', error);
-        return 0;
-    }
-}
-
-async function getSavesCount(userId) {
-    try {
-        const snapshot = await firebase.firestore()
-            .collection('users')
-            .where(`savedProfiles.${userId}`, '==', true)
-            .get();
-        return snapshot.size;
-    } catch (error) {
-        console.error('Error getting saves count:', error);
-        return 0;
-    }
-}
-
-function setupOwnProfileListeners(profile) {
-    // Placeholder
-}
-
-function setupOtherProfileListeners(profile) {
-    checkIfSaved(profile.id);
-}
-
 // ========== IMAGE UPLOAD FUNCTIONS ==========
 window.openImageUpload = function() {
     const input = document.createElement('input');
@@ -1890,7 +2022,7 @@ async function uploadProfileImage(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    alert('Uploading image...');
+    showToast('Uploading image...');
     
     try {
         const compressedFile = await compressImage(file);
@@ -1914,14 +2046,14 @@ async function uploadProfileImage(event) {
             }, function(err, result) {
                 if (err) {
                     console.error('ImageKit error:', err);
-                    alert('Upload failed: ' + err.message);
+                    showToast('Upload failed: ' + err.message);
                     return;
                 }
                 
                 firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
                     profileImage: result.url
                 }).then(() => {
-                    alert('Profile picture updated!');
+                    showToast('Profile picture updated!');
                     
                     if (document.querySelector('.profile-container')) {
                         loadProfileTab();
@@ -1930,13 +2062,13 @@ async function uploadProfileImage(event) {
                     }
                 }).catch(error => {
                     console.error('Firestore error:', error);
-                    alert('Failed to save image URL');
+                    showToast('Failed to save image URL');
                 });
             });
         };
     } catch (error) {
         console.error('Upload error:', error);
-        alert('Failed to upload image: ' + error.message);
+        showToast('Failed to upload image: ' + error.message);
     }
 }
 
@@ -1953,7 +2085,7 @@ async function uploadPortfolioImages(event) {
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
     
-    alert(`Uploading ${files.length} images...`);
+    showToast(`Uploading ${files.length} images...`);
     
     try {
         const uploadedUrls = [];
@@ -1989,7 +2121,7 @@ async function uploadPortfolioImages(event) {
         
     } catch (error) {
         console.error('Upload error:', error);
-        alert('Failed to upload images: ' + error.message);
+        showToast('Failed to upload images: ' + error.message);
     }
 }
 
@@ -2003,11 +2135,11 @@ async function updateFirestoreWithPortfolio(uploadedUrls) {
             portfolioImages: [...existingImages, ...uploadedUrls]
         });
         
-        alert(`${uploadedUrls.length} images uploaded successfully!`);
+        showToast(`${uploadedUrls.length} images uploaded successfully!`);
         loadProfileTab();
     } catch (error) {
         console.error('Firestore error:', error);
-        alert('Failed to save image URLs');
+        showToast('Failed to save image URLs');
     }
 }
 
@@ -2082,17 +2214,16 @@ window.deleteImage = async (event, imageUrl) => {
             portfolioImages: updatedImages
         });
         
-        alert('Image deleted');
+        showToast('Image deleted');
         loadProfileTab();
     } catch (error) {
         console.error('Delete error:', error);
-        alert('Failed to delete image');
+        showToast('Failed to delete image');
     }
 };
 
 // ========== EDIT PROFILE FUNCTIONS ==========
 window.openEditProfile = function() {
-    // Hide tab bar
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) {
         tabBar.style.display = 'none';
@@ -2186,17 +2317,15 @@ window.saveEditProfile = async function() {
             phoneNumber: phone
         });
 
-         // Clear cache for this profile
         sessionStorage.removeItem(`profile_${firebase.auth().currentUser.uid}`);
         
-        loadProfileTab(null, false); // Show tab bar when returning to own profile
+        loadProfileTab(null, false);
     } catch (error) {
         alert('Error saving profile: ' + error.message);
     }
 };
 
 window.openLocationPicker = function() {
-    // Hide tab bar
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) {
         tabBar.style.display = 'none';
@@ -2346,14 +2475,14 @@ window.saveLocation = function() {
         locationGeo: geopoint,
         locationDescription: description
     }).then(() => {
-        alert('Location saved!');
+        showToast('Location saved!');
         firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get().then(doc => {
             currentUserData = doc.data();
-            loadProfileTab(null, false); // Show tab bar when returning to own profile
+            loadProfileTab(null, false);
         });
     }).catch(error => {
         console.error('Error saving location:', error);
-        alert('Failed to save location');
+        showToast('Failed to save location');
     });
 };
 
@@ -2472,22 +2601,6 @@ async function copyProfileLink(url) {
     }
 }
 
-function showToast(message) {
-    const existingToast = document.querySelector('.toast-notification');
-    if (existingToast) existingToast.remove();
-    
-    const toast = document.createElement('div');
-    toast.className = 'toast-notification';
-    toast.textContent = message;
-    
-    document.body.appendChild(toast);
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 2000);
-}
-
 window.startChat = (id) => {
     messageUser(id, 'profile');
 };
@@ -2592,6 +2705,7 @@ function loadSearchTab() {
             <span class="radius-value" id="radius-value">${currentRadius} km</span>
             <input type="range" id="radius-slider" class="radius-slider" min="1" max="200" value="${currentRadius}" step="1">
         </div>
+        <div id="search-hint" style="font-size:12px; color:var(--text-secondary); text-align:center; margin-top:5px;">⭐ Top providers have completed jobs and reviews</div>
     </div>
     
     <div id="search-map" class="search-map"></div>
@@ -2756,6 +2870,9 @@ async function loadNearbyProviders(reset = true) {
         
         if (snapshot.empty) {
             searchHasMore = false;
+            if (searchProviders.length === 0) {
+                listContainer.innerHTML = '<div class="empty-list">🔍 Be the first to offer this service in this location</div>';
+            }
         } else {
             searchLastDoc = snapshot.docs[snapshot.docs.length - 1];
             
@@ -2846,7 +2963,7 @@ function renderProviderList() {
     if (!listContainer) return;
     
     if (searchProviders.length === 0) {
-        listContainer.innerHTML = '<div class="empty-list">No providers found within radius</div>';
+        listContainer.innerHTML = '<div class="empty-list">🔍 Be the first to offer this service in this location</div>';
         return;
     }
     
@@ -2878,7 +2995,6 @@ function setupSearchListeners() {
     const radiusValue = document.getElementById('radius-value');
     
     if (radiusSlider && radiusValue) {
-        // FIX #3: Only load on release (change event), not on input
         radiusSlider.addEventListener('input', (e) => {
             currentRadius = parseInt(e.target.value);
             radiusValue.textContent = `${currentRadius} km`;
@@ -2977,9 +3093,7 @@ window.openQuickViewFromSearch = function(providerId) {
     }
 };
 
-function onMapMoved() {
-    // Placeholder
-}
+function onMapMoved() {}
 
 // ========== MESSAGES TAB ==========
 let conversationsListener = null;
@@ -2988,7 +3102,99 @@ let messagesListener = null;
 let conversationsInterval = null;
 let messagesInterval = null;
 
-// FIX #1: Manual refresh for conversations
+// Reminder tracking for chat
+let reminderIntervalChat = null;
+let lastMessageCountChat = 0;
+
+function startReminderTracking(chatId, otherUserId) {
+    if (reminderIntervalChat) {
+        clearInterval(reminderIntervalChat);
+    }
+    
+    reminderIntervalChat = setInterval(async () => {
+        const currentUserId = firebase.auth().currentUser.uid;
+        
+        const hasPending = await checkPendingJobLimit(currentUserId, otherUserId);
+        if (hasPending) return;
+        
+        const completedJobs = await firebase.firestore()
+            .collection('jobs')
+            .where('providerId', '==', currentUserId)
+            .where('clientId', '==', otherUserId)
+            .where('status', '==', 'reviewed')
+            .get();
+        
+        const messagesSnapshot = await firebase.firestore()
+            .collection('chats').doc(chatId)
+            .collection('messages')
+            .orderBy('timestamp', 'desc')
+            .limit(1)
+            .get();
+        
+        let currentCount = messagesSnapshot.size;
+        
+        if (currentCount >= 10 && currentCount !== lastMessageCountChat) {
+            lastMessageCountChat = currentCount;
+            showReminderBanner(chatId, otherUserId);
+        }
+        
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        const lastMessage = messagesSnapshot.docs[0]?.data();
+        if (lastMessage && lastMessage.timestamp?.toDate() < twoDaysAgo) {
+            clearInterval(reminderIntervalChat);
+        }
+        
+    }, 180000);
+}
+
+function showReminderBanner(chatId, otherUserId) {
+    const bannerContainer = document.getElementById('reminder-banner-container');
+    const reminderText = document.getElementById('reminder-text');
+    
+    if (bannerContainer && reminderText) {
+        reminderText.innerHTML = `✏️ Did you offer services to this person? <button onclick="window.registerJob('${otherUserId}')" style="background:#8B0000; color:white; border:none; padding:2px 8px; border-radius:12px; margin-left:8px;">Register Now</button>`;
+        bannerContainer.style.display = 'block';
+        
+        setTimeout(() => {
+            if (bannerContainer && bannerContainer.style.display !== 'none') {
+                bannerContainer.style.display = 'none';
+            }
+        }, 10000);
+    }
+}
+
+async function checkAndShowReviewButton(chatId, otherUserId) {
+    const currentUserId = firebase.auth().currentUser.uid;
+    
+    const pendingJobs = await firebase.firestore()
+        .collection('jobs')
+        .where('providerId', '==', otherUserId)
+        .where('clientId', '==', currentUserId)
+        .where('status', '==', 'pending_client_review')
+        .get();
+    
+    if (!pendingJobs.empty) {
+        const job = pendingJobs.docs[0];
+        const jobId = job.id;
+        
+        const messagesContainer = document.getElementById('chat-messages');
+        if (messagesContainer && !document.getElementById('review-button-container')) {
+            const reviewDiv = document.createElement('div');
+            reviewDiv.id = 'review-button-container';
+            reviewDiv.className = 'gig-confirmation';
+            reviewDiv.innerHTML = `
+                <div class="gig-message">
+                    <strong>📋 Pending Job Review</strong><br>
+                    This provider registered a job with you. Please review to complete.
+                </div>
+                <button class="btn confirm-gig-btn" onclick="confirmGig('${jobId}', '${otherUserId}')">Accept & Review</button>
+            `;
+            messagesContainer.insertBefore(reviewDiv, messagesContainer.firstChild);
+        }
+    }
+}
+
 function loadConversations() {
     const userId = firebase.auth().currentUser.uid;
     const conversationsList = document.getElementById('conversations-list');
@@ -3064,7 +3270,6 @@ function loadConversations() {
     }, 60000);
 }
 
-// FIX #1: Manual refresh for messages
 function loadMessages(chatId) {
     const messagesContainer = document.getElementById('chat-messages');
     const currentUserId = firebase.auth().currentUser.uid;
@@ -3094,7 +3299,7 @@ function loadMessages(chatId) {
                         <p class="empty-hint">Send a message to start the conversation</p>
                     </div>
                 `;
-                  window.currentTab = 'messages';
+                window.currentTab = 'messages';
                 return;
             }
             
@@ -3137,13 +3342,11 @@ function loadMessages(chatId) {
 }
 
 function renderConversationItem(chat, currentUserId) {
-    // Find the other participant (the one who is NOT the current user)
     const otherUserId = chat.participants.find(id => id !== currentUserId);
     const lastMessage = chat.lastMessage || '';
     const lastMessageTime = chat.lastMessageTimestamp ? formatMessageTime(chat.lastMessageTimestamp.toDate()) : '';
     const unread = chat.lastMessageSender !== currentUserId && !chat.lastMessageRead;
     
-    // Get the other user's name from the stored map
     let otherUserName = 'User';
     let otherUserImage = 'https://via.placeholder.com/40';
     
@@ -3192,9 +3395,14 @@ function formatMessageTime(date) {
 
 function openChat(chatId, otherUserId, chatData, previousScreen = null) {
     currentChatId = chatId;
-    chatPreviousScreen = previousScreen; // Store where we came from
+    chatPreviousScreen = previousScreen;
     
-    // Get the other user's name from the stored map
+    if (reminderIntervalChat) {
+        clearInterval(reminderIntervalChat);
+        reminderIntervalChat = null;
+    }
+    lastMessageCountChat = 0;
+    
     let otherUserName = 'Loading...';
     let otherUserImage = 'https://via.placeholder.com/32';
     
@@ -3205,7 +3413,6 @@ function openChat(chatId, otherUserId, chatData, previousScreen = null) {
         otherUserImage = chatData.userImages[otherUserId];
     }
     
-    // Hide tab bar when chat opens
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) {
         tabBar.style.display = 'none';
@@ -3213,8 +3420,7 @@ function openChat(chatId, otherUserId, chatData, previousScreen = null) {
     
     const container = document.getElementById('tab-content');
     
-    // Determine back button action
-    let backAction = 'loadMessagesTab()'; // default
+    let backAction = 'loadMessagesTab()';
     if (previousScreen === 'profile') {
         backAction = 'goBackFromChat()';
     } else if (previousScreen === 'home' || previousScreen === 'search') {
@@ -3227,6 +3433,12 @@ function openChat(chatId, otherUserId, chatData, previousScreen = null) {
                 <button class="chat-back-btn" onclick="${backAction}">←</button>
                 <img src="${otherUserImage}" class="chat-header-image" onclick="viewProfileFromChat('${otherUserId}')" style="cursor:pointer;">
                 <span class="chat-header-name" onclick="viewProfileFromChat('${otherUserId}')" style="cursor:pointer;">${otherUserName}</span>
+                <button id="register-job-chat-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px; margin-left:auto;">📋 Register Job</button>
+            </div>
+            
+            <div id="reminder-banner-container" style="background:#f0f0f0; padding:8px; text-align:center; font-size:13px; border-bottom:1px solid #ddd; display:none;">
+                <span id="reminder-text"></span>
+                <button id="dismiss-reminder" style="margin-left:10px; background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
             </div>
             
             <div id="chat-messages" class="chat-messages"></div>
@@ -3241,91 +3453,46 @@ function openChat(chatId, otherUserId, chatData, previousScreen = null) {
     loadMessages(chatId);
     
     setTimeout(() => {
-        const chatMessages = document.getElementById('chat-messages');
-        if (chatMessages) {
-            checkPendingGigs(otherUserId, chatMessages);
+        const registerBtn = document.getElementById('register-job-chat-btn');
+        if (registerBtn) {
+            registerBtn.onclick = () => {
+                window.registerJob(otherUserId);
+            };
         }
+        
+        const dismissBtn = document.getElementById('dismiss-reminder');
+        if (dismissBtn) {
+            dismissBtn.onclick = () => {
+                const banner = document.getElementById('reminder-banner-container');
+                if (banner) banner.style.display = 'none';
+            };
+        }
+        
+        checkPendingJobStatus(chatId, otherUserId);
+        startReminderTracking(chatId, otherUserId);
+        checkAndShowReviewButton(chatId, otherUserId);
+        
     }, 500);
 }
 
-
-async function checkPendingGigs(otherUserId, chatContainer) {
+async function checkPendingJobStatus(chatId, otherUserId) {
     const currentUserId = firebase.auth().currentUser.uid;
     
-    try {
-        const pendingGigsSnapshot = await firebase.firestore()
-            .collection('jobs')
-            .where('providerId', '==', otherUserId)
-            .where('clientId', '==', currentUserId)
-            .where('status', '==', 'pending')
-            .where('notifiedClient', '==', false)
-            .limit(1)
-            .get();
-        
-        if (!pendingGigsSnapshot.empty) {
-            const gig = pendingGigsSnapshot.docs[0].data();
-            const gigId = pendingGigsSnapshot.docs[0].id;
-            
-            const confirmDiv = document.createElement('div');
-            confirmDiv.className = 'gig-confirmation';
-            confirmDiv.innerHTML = `
-                <div class="gig-message">
-                    <strong>${gig.providerName || 'Provider'}</strong> registered a gig with you.
-                </div>
-                <button class="btn confirm-gig-btn" onclick="confirmGig('${gigId}', '${otherUserId}')">Confirm Gig</button>
-            `;
-            
-            chatContainer.appendChild(confirmDiv);
-            
-            await pendingGigsSnapshot.docs[0].ref.update({
-                notifiedClient: true
-            });
+    const pendingJobs = await firebase.firestore()
+        .collection('jobs')
+        .where('providerId', '==', currentUserId)
+        .where('clientId', '==', otherUserId)
+        .where('status', '==', 'pending_client_review')
+        .get();
+    
+    if (!pendingJobs.empty) {
+        const registerBtn = document.getElementById('register-job-chat-btn');
+        if (registerBtn) {
+            registerBtn.style.opacity = '0.5';
+            registerBtn.title = 'Waiting for client review';
         }
-    } catch (error) {
-        console.error('Error checking pending gigs:', error);
     }
 }
-
-window.confirmGig = async function(gigId, providerId) {
-    try {
-        await firebase.firestore().collection('jobs').doc(gigId).update({
-            status: 'completed',
-            completedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        // Send notification to provider
-        try {
-            const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
-            const providerToken = providerDoc.data()?.fcmToken;
-            const clientName = currentUserData?.businessName || 'A client';
-            
-            if (providerToken) {
-                const workerUrl = 'https://gigscourtnotification.agboghidiaugust.workers.dev';
-                await fetch(workerUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        recipientToken: providerToken,
-                        title: 'Gig Completed',
-                        body: `${clientName} confirmed your gig. Rate them!`,
-                        chatId: ''
-                    })
-                });
-                console.log('Gig confirmed notification sent');
-            }
-        } catch (notifyError) {
-            console.log('Failed to send gig confirmation notification:', notifyError);
-        }
-        
-        showReviewModal(providerId, gigId);
-        
-        document.querySelector('.gig-confirmation')?.remove();
-        
-    } catch (error) {
-        console.error('Error confirming gig:', error);
-        alert('Failed to confirm gig');
-    }
-};
 
 function renderMessage(msg, currentUserId) {
     const isMine = msg.senderId === currentUserId;
@@ -3372,12 +3539,9 @@ window.sendMessage = async function() {
             lastMessageRead: false
         });
         
-        // Refresh messages immediately
         loadMessages(currentChatId);
         
-        // Send push notification to recipient
         try {
-            // Get recipient's FCM token
             const chatData = (await chatRef.get()).data();
             const recipientId = chatData.participants.find(id => id !== currentUserId);
             const recipientDoc = await firebase.firestore().collection('users').doc(recipientId).get();
@@ -3395,13 +3559,11 @@ window.sendMessage = async function() {
                         chatId: currentChatId
                     })
                 });
-                console.log('Notification sent to recipient');
             }
         } catch (notifyError) {
             console.log('Failed to send notification:', notifyError);
         }
         
-        // Scroll to bottom after sending message
         setTimeout(() => {
             const messagesContainer = document.getElementById('chat-messages');
             if (messagesContainer) {
@@ -3411,7 +3573,7 @@ window.sendMessage = async function() {
         
     } catch (error) {
         console.error('Error sending message:', error);
-        alert('Failed to send message');
+        showToast('Failed to send message');
     }
 };
 
@@ -3437,7 +3599,6 @@ async function markMessageAsRead(chatId, messageId) {
 }
 
 function loadMessagesTab() {
-    // Show tab bar when returning to messages list
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) {
         tabBar.style.display = 'flex';
@@ -3464,7 +3625,6 @@ function loadMessagesTab() {
     loadConversations();
 }
 
-// Clean up intervals on tab change
 window.addEventListener('tabChange', () => {
     if (window.conversationsInterval) {
         clearInterval(window.conversationsInterval);
@@ -3485,7 +3645,6 @@ window.addEventListener('tabChange', () => {
 });
 
 window.switchTab = (tab) => {
-    // Clear intervals when leaving tabs
     if (window.conversationsInterval) {
         clearInterval(window.conversationsInterval);
         window.conversationsInterval = null;
@@ -3495,10 +3654,9 @@ window.switchTab = (tab) => {
         window.messagesInterval = null;
     }
 
-    // Cleanup infinite scroll when leaving home
-if (window.currentTab === 'home') {
-    cleanupInfiniteScroll();
-}
+    if (window.currentTab === 'home') {
+        cleanupInfiniteScroll();
+    }
     
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
@@ -3845,7 +4003,6 @@ window.switchAdminTab = function(tab) {
     }
 };
 
-// FIX #4: Aggregated stats for admin dashboard
 async function loadAdminDashboard() {
     const container = document.getElementById('admin-content');
     if (!container) return;
@@ -3856,7 +4013,6 @@ async function loadAdminDashboard() {
         let statsDoc = await firebase.firestore().collection('stats').doc('dashboard').get();
         
         if (!statsDoc.exists) {
-            // Calculate stats once and store
             const usersSnapshot = await firebase.firestore().collection('users').get();
             const totalUsers = usersSnapshot.size;
             
@@ -4085,7 +4241,6 @@ window.approveService = async function(userId, service) {
             services: updatedServices
         });
         
-        // Send push notification to user
         try {
             const userToken = userData?.fcmToken;
             
@@ -4101,7 +4256,6 @@ window.approveService = async function(userId, service) {
                         chatId: ''
                     })
                 });
-                console.log('Service approved notification sent');
             }
         } catch (notifyError) {
             console.log('Failed to send service approval notification:', notifyError);
@@ -4126,7 +4280,6 @@ window.approveService = async function(userId, service) {
         
         showToast('Service approved!');
         
-        // Update stats document
         const statsDoc = await firebase.firestore().collection('stats').doc('dashboard').get();
         if (statsDoc.exists) {
             await statsDoc.ref.update({
@@ -4217,8 +4370,14 @@ async function sendAdminNotification(userId, message) {
         } else {
             const newChatRef = await firebase.firestore().collection('chats').add({
                 participants: [adminId, userId],
-                otherUserName: 'Admin',
-                otherUserImage: 'https://via.placeholder.com/40',
+                userNames: {
+                    [adminId]: 'Admin',
+                    [userId]: 'User'
+                },
+                userImages: {
+                    [adminId]: 'https://via.placeholder.com/40',
+                    [userId]: 'https://via.placeholder.com/40'
+                },
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 lastMessage: message,
                 lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -4244,15 +4403,12 @@ window.viewUserProfile = function(userId) {
 };
 
 window.goBack = function() {
-    // Show tab bar
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) {
         tabBar.style.display = 'flex';
     }
     
-    // Go back to previous screen based on where profile was opened from
     if (profilePreviousScreen === 'chat') {
-        // Go back to chat
         const tabBar = document.querySelector('.tab-bar');
         if (tabBar) {
             tabBar.style.display = 'flex';
@@ -4270,35 +4426,28 @@ window.goBack = function() {
     } else if (profilePreviousScreen === 'search') {
         switchTab('search');
     } else {
-        // Default fallback
         window.history.back();
     }
     
-    // Clear stored screen
     profilePreviousScreen = null;
 };
     
 window.goBackFromChat = function() {
-    // Show tab bar
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) {
         tabBar.style.display = 'flex';
     }
     
-    // Go back to previous screen based on where we came from
     if (chatPreviousScreen === 'profile' && lastProfileViewedId) {
-        // Go back to the profile we were viewing
         loadProfileTab(lastProfileViewedId, true);
     } else if (chatPreviousScreen === 'home') {
         switchTab('home');
     } else if (chatPreviousScreen === 'search') {
         switchTab('search');
     } else {
-        // Default to messages list
         loadMessagesTab();
     }
     
-    // Clear the stored screen
     chatPreviousScreen = null;
 };
 
