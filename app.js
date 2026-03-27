@@ -256,15 +256,17 @@ function loadHomeTab() {
     container.innerHTML = `
 <div class="home-container">
     <div class="home-header">
-        <h1 class="logo">GigsCourt</h1>
-        <div class="discover-text">Discover providers near you</div>
-        <div class="header-actions">
-            <button id="enable-notify-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px; margin-right:8px;">🔔 Enable</button>
-            <div class="notification-bell" onclick="openNotifications()">
-                <span class="bell-icon">🔔</span>
-                <span class="notification-badge" id="notification-count">0</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <h1 class="logo">GigsCourt</h1>
+            <div class="header-actions">
+                <button id="enable-notify-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px; margin-right:8px;">🔔 Enable</button>
+                <div class="notification-bell" onclick="openNotifications()">
+                    <span class="bell-icon">🔔</span>
+                    <span class="notification-badge" id="notification-count">0</span>
+                </div>
             </div>
         </div>
+        <div class="discover-text">Discover providers near you</div>
     </div>
     
     <div class="home-scrollable">
@@ -1503,7 +1505,6 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
             <div class="profile-info-right">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h1 class="profile-business-name">${profile.businessName || 'Business Name'}</h1>
-                    ${!isOwnProfile ? `<button id="contact-now-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px;">📞 Contact Now</button>` : ''}
                 </div>
                 <div class="stats-grid">
                     <div class="stat-item"><span class="stat-number">${profile.jobsDone || 0}</span><span class="stat-label">Gigs</span></div>
@@ -1514,9 +1515,9 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
                 </div>
             </div>
         </div>
-        ${isOwnProfile ? `<div class="profile-actions-header"><div class="points-display" style="text-align:center; margin-bottom:8px; font-size:14px; color:var(--text-secondary);">You have ${profile.points || 0} credits remaining</div><button class="register-job-btn" onclick="showRegisterJobModal()">Register Gig (3 pts)</button></div>` : ''}
+        ${isOwnProfile ? `<div class="profile-actions-header"><div class="points-display" style="text-align:center; margin-bottom:8px; font-size:12px; color:#FFD700; font-weight:500;">💰 You have ${profile.points || 0} credits remaining</div><button class="register-job-btn" onclick="showRegisterJobModal()">Register Gig (3 pts)</button></div>` : ''}
         <div class="profile-meta">Joined ${profile.createdAt ? new Date(profile.createdAt.toDate()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown'} • ${profile.jobsThisMonth || 0} gigs this month</div>
-        ${isOwnProfile ? renderMoreJobsMessage(profile) : ''}
+        ${isOwnProfile ? renderProfileMessages(profile) : ''}
     </div>
     <div class="profile-scrollable">
         <div class="profile-bio">${profile.bio || 'No bio yet.'}</div>
@@ -1537,9 +1538,8 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
         ${!isOwnProfile ? `<div class="profile-section"><div class="section-header"><h3 class="section-title">Contact</h3></div><div class="profile-contact"><span class="contact-icon">✉️</span><span class="contact-text">Message in app</span></div></div>` : ''}
         <div class="profile-actions">${isOwnProfile ? `<button class="btn" onclick="openEditProfile()">Edit Profile</button><button class="btn btn-outline" onclick="shareProfile()">Share</button>` : `<button class="btn" onclick="messageUser('${profile.id}', 'profile')">Message</button><button class="btn" onclick="toggleSaveProfile('${profile.id}')" id="save-btn-${profile.id}">Save</button><button class="btn btn-outline" onclick="shareProfile('${profile.id}')">Share</button>`}</div>
         <div class="profile-section"><div class="section-header"><h3 class="section-title">Portfolio ${profile.portfolioImages?.length ? `(${profile.portfolioImages.length})` : ''}</h3>${isOwnProfile ? '<button class="btn-small" onclick="addPortfolioImages()">+ Add</button>' : ''}</div><div class="portfolio-grid">${(profile.portfolioImages || []).map((img, index) => `<div class="portfolio-item" onclick="openPhotoSwipe(${index})"><img src="${img}?tr=w-150,h-150,format-webp" loading="lazy">${isOwnProfile ? '<div class="delete-overlay" onclick="deleteImage(event, \'' + img + '\')">✕</div>' : ''}</div>`).join('')}${!profile.portfolioImages?.length ? '<p class="empty-portfolio">📸 Post pictures so people can see what you are capable of.</p>' : ''}</div></div>
-        ${isOwnProfile && (!profile.portfolioImages?.length) ? '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">⭐ More completed jobs equals more clients</p></div>' : ''}
+        ${isOwnProfile && (!profile.portfolioImages?.length) ? '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">📸 Add portfolio images to attract more clients</p></div>' : ''}
         ${isOwnProfile && (profile.points || 0) <= 3 ? '<div class="profile-section"><p class="hint" style="text-align:center; color:#ff9800;">⚠️ Low on credits. Buy more to register jobs.</p></div>' : ''}
-        ${isOwnProfile && (profile.jobsDone || 0) === 0 ? '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">🚀 Complete your first job to build your reputation</p></div>' : ''}
     </div>
 </div>
 `;
@@ -3458,9 +3458,9 @@ function openChat(chatId, otherUserId, chatData, previousScreen = null) {
                 <button id="register-job-chat-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px; margin-left:auto;">📋 Register Job</button>
             </div>
             
-            <div id="reminder-banner-container" style="background:#f0f0f0; padding:8px; text-align:center; font-size:13px; border-bottom:1px solid #ddd; display:none;">
+            <div id="reminder-banner-container">
                 <span id="reminder-text"></span>
-                <button id="dismiss-reminder" style="margin-left:10px; background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
+                <button id="dismiss-reminder" style="margin-left:10px; background:none; border:none; font-size:16px; cursor:pointer; color:white;">✕</button>
             </div>
             
             <div id="chat-messages" class="chat-messages"></div>
@@ -4482,13 +4482,23 @@ window.viewProfileFromChat = function(userId) {
     loadProfileTab(userId, true);
 };
 
-function renderMoreJobsMessage(profile) {
-    const lastJobDate = profile.lastJobDate?.toDate();
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+function renderProfileMessages(profile) {
+    let html = '';
     
-    if (!lastJobDate || lastJobDate < sevenDaysAgo) {
-        return '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">⭐ More completed jobs equals more clients</p></div>';
+    // Message for users who have never done a job
+    if (profile.jobsDone === 0) {
+        html += '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">🚀 Complete your first job to build your reputation</p></div>';
     }
-    return '';
+    // Message for users who have done at least one job but last job was >7 days ago
+    else {
+        const lastJobDate = profile.lastJobDate?.toDate();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        if (!lastJobDate || lastJobDate < sevenDaysAgo) {
+            html += '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">⭐ More completed jobs equals more clients</p></div>';
+        }
+    }
+    
+    return html;
 }
