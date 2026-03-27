@@ -257,6 +257,7 @@ function loadHomeTab() {
 <div class="home-container">
     <div class="home-header">
         <h1 class="logo">GigsCourt</h1>
+        <div class="discover-text">Discover providers near you</div>
         <div class="header-actions">
             <button id="enable-notify-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px; margin-right:8px;">🔔 Enable</button>
             <div class="notification-bell" onclick="openNotifications()">
@@ -1108,6 +1109,7 @@ window.submitReview = async function(providerId, jobId) {
             reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
+        // Send notification to provider with boost message
         try {
             const providerToken = providerDoc.data()?.fcmToken;
             const clientName = clientData.businessName || 'A client';
@@ -1120,7 +1122,7 @@ window.submitReview = async function(providerId, jobId) {
                     body: JSON.stringify({
                         recipientToken: providerToken,
                         title: 'Job Completed & Reviewed',
-                        body: `${clientName} completed your job and left a ${rating}★ review!`,
+                        body: `${clientName} left you a ${rating}★ review! This will boost your profile.`,
                         chatId: currentChatId || ''
                     })
                 });
@@ -1129,7 +1131,11 @@ window.submitReview = async function(providerId, jobId) {
             console.log('Failed to send review notification:', notifyError);
         }
         
-        showToast('✅ Review submitted! This will boost your profile if you do it often.');
+        // Show toast to provider (via push, no client toast)
+        
+        // Toast for provider (will be sent via push, not client)
+        // The toast below is for client - removing it
+        // showToast removed for client
         
         modal.remove();
         let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
@@ -1508,21 +1514,31 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
                 </div>
             </div>
         </div>
-        ${isOwnProfile ? `<div class="profile-actions-header"><button class="register-job-btn" onclick="showRegisterJobModal()">Register Gig (3 pts)</button></div>` : ''}
+        ${isOwnProfile ? `<div class="profile-actions-header"><div class="points-display" style="text-align:center; margin-bottom:8px; font-size:14px; color:var(--text-secondary);">You have ${profile.points || 0} credits remaining</div><button class="register-job-btn" onclick="showRegisterJobModal()">Register Gig (3 pts)</button></div>` : ''}
         <div class="profile-meta">Joined ${profile.createdAt ? new Date(profile.createdAt.toDate()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown'} • ${profile.jobsThisMonth || 0} gigs this month</div>
+        ${isOwnProfile ? renderMoreJobsMessage(profile) : ''}
     </div>
     <div class="profile-scrollable">
         <div class="profile-bio">${profile.bio || 'No bio yet.'}</div>
-        <div id="phone-contact-section" style="display:none;">
-            ${profile.phoneNumber ? `<div class="profile-contact"><span class="contact-icon">📞</span><span class="contact-text" id="phone-number-display">${profile.phoneNumber}</span><button id="call-now-btn" class="btn-small" style="margin-left:10px; background:#8B0000; color:white;">Call Now</button></div>` : ''}
+        
+        <div class="contact-now-section" id="contact-now-section-${profile.id}">
+            ${!isOwnProfile && profile.phoneNumber ? `
+                <button class="contact-now-btn" id="contact-now-btn-${profile.id}">📞 Contact Now</button>
+                <div id="phone-reveal-${profile.id}" style="display:none;" class="contact-phone-section">
+                    <span class="contact-icon">📞</span>
+                    <span class="contact-text">${profile.phoneNumber}</span>
+                    <button class="call-now-btn" onclick="window.location.href='tel:${profile.phoneNumber}'">Call Now</button>
+                </div>
+            ` : ''}
         </div>
+        
         ${profile.locationGeo ? `<div class="profile-contact ${!isOwnProfile ? 'clickable-location' : ''}" ${!isOwnProfile ? `onclick="getDirectionsToProvider('${profile.id}')"` : ''}><span class="contact-icon">📍</span><span class="contact-text">${profile.locationDescription || `${profile.locationGeo.latitude}, ${profile.locationGeo.longitude}`}</span></div>` : ''}
         <div class="profile-section"><h3 class="section-title">Services</h3><div class="services-horizontal">${(profile.services || []).map(service => `<span class="service-pill-static">${service}</span>`).join('')}${(profile.pendingServices || []).map(service => `<span class="service-pill-static pending">${service} (pending)</span>`).join('')}</div></div>
         ${!isOwnProfile ? `<div class="profile-section"><div class="section-header"><h3 class="section-title">Contact</h3></div><div class="profile-contact"><span class="contact-icon">✉️</span><span class="contact-text">Message in app</span></div></div>` : ''}
         <div class="profile-actions">${isOwnProfile ? `<button class="btn" onclick="openEditProfile()">Edit Profile</button><button class="btn btn-outline" onclick="shareProfile()">Share</button>` : `<button class="btn" onclick="messageUser('${profile.id}', 'profile')">Message</button><button class="btn" onclick="toggleSaveProfile('${profile.id}')" id="save-btn-${profile.id}">Save</button><button class="btn btn-outline" onclick="shareProfile('${profile.id}')">Share</button>`}</div>
         <div class="profile-section"><div class="section-header"><h3 class="section-title">Portfolio ${profile.portfolioImages?.length ? `(${profile.portfolioImages.length})` : ''}</h3>${isOwnProfile ? '<button class="btn-small" onclick="addPortfolioImages()">+ Add</button>' : ''}</div><div class="portfolio-grid">${(profile.portfolioImages || []).map((img, index) => `<div class="portfolio-item" onclick="openPhotoSwipe(${index})"><img src="${img}?tr=w-150,h-150,format-webp" loading="lazy">${isOwnProfile ? '<div class="delete-overlay" onclick="deleteImage(event, \'' + img + '\')">✕</div>' : ''}</div>`).join('')}${!profile.portfolioImages?.length ? '<p class="empty-portfolio">📸 Post pictures so people can see what you are capable of.</p>' : ''}</div></div>
         ${isOwnProfile && (!profile.portfolioImages?.length) ? '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">⭐ More completed jobs equals more clients</p></div>' : ''}
-        ${isOwnProfile && (profile.points || 0) < 3 ? '<div class="profile-section"><p class="hint" style="text-align:center; color:#ff9800;">⚠️ Low on credits. Buy more to register jobs.</p></div>' : ''}
+        ${isOwnProfile && (profile.points || 0) <= 3 ? '<div class="profile-section"><p class="hint" style="text-align:center; color:#ff9800;">⚠️ Low on credits. Buy more to register jobs.</p></div>' : ''}
         ${isOwnProfile && (profile.jobsDone || 0) === 0 ? '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">🚀 Complete your first job to build your reputation</p></div>' : ''}
     </div>
 </div>
@@ -1532,9 +1548,9 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
         container.offsetHeight;
         container.style.display = '';
         
-        if (!isOwnProfile) {
+        if (!isOwnProfile && profile.phoneNumber) {
             checkIfSaved(profile.id);
-            setupContactNowButton(profile.id, profile.phoneNumber);
+            setupContactNowButtonV2(profile.id, profile.phoneNumber);
         }
         
     } catch (error) {
@@ -1543,39 +1559,45 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
     }
 }
 
-function setupContactNowButton(providerId, phoneNumber) {
-    const contactBtn = document.getElementById('contact-now-btn');
-    if (!contactBtn) return;
+function setupContactNowButtonV2(providerId, phoneNumber) {
+    const contactBtn = document.getElementById(`contact-now-btn-${providerId}`);
+    const phoneReveal = document.getElementById(`phone-reveal-${providerId}`);
+    const contactSection = document.getElementById(`contact-now-section-${providerId}`);
+    
+    if (!contactBtn || !phoneReveal) return;
+    
+    let reminderSent = false;
+    
+    function hidePhone() {
+        contactBtn.style.display = 'inline-block';
+        phoneReveal.style.display = 'none';
+    }
+    
+    function showPhone() {
+        contactBtn.style.display = 'none';
+        phoneReveal.style.display = 'flex';
+    }
+    
+    function handleOutsideClick(event) {
+        if (!contactSection.contains(event.target)) {
+            hidePhone();
+            document.removeEventListener('click', handleOutsideClick);
+        }
+    }
     
     contactBtn.onclick = async () => {
-        const phoneSection = document.getElementById('phone-contact-section');
-        if (phoneSection) {
-            phoneSection.style.display = 'block';
+        showPhone();
+        
+        document.addEventListener('click', handleOutsideClick);
+        
+        if (!reminderSent) {
+            reminderSent = true;
             
-            const callBtn = document.getElementById('call-now-btn');
-            if (callBtn && phoneNumber) {
-                callBtn.onclick = () => {
-                    window.location.href = `tel:${phoneNumber}`;
-                };
+            const currentUserId = firebase.auth().currentUser.uid;
+            const hasPending = await checkPendingJobLimit(providerId, currentUserId);
+            if (!hasPending) {
+                await sendProviderReminder(providerId, currentUserId);
             }
-            
-            contactBtn.style.display = 'none';
-        }
-        
-        const currentUserId = firebase.auth().currentUser.uid;
-        
-        const hasPending = await checkPendingJobLimit(providerId, currentUserId);
-        if (hasPending) return;
-        
-        const completedJobs = await firebase.firestore()
-            .collection('jobs')
-            .where('providerId', '==', providerId)
-            .where('clientId', '==', currentUserId)
-            .where('status', '==', 'reviewed')
-            .get();
-        
-        if (completedJobs.empty) {
-            await sendProviderReminder(providerId, currentUserId);
         }
     };
 }
@@ -4459,3 +4481,14 @@ window.viewProfileFromChat = function(userId) {
     }
     loadProfileTab(userId, true);
 };
+
+function renderMoreJobsMessage(profile) {
+    const lastJobDate = profile.lastJobDate?.toDate();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    if (!lastJobDate || lastJobDate < sevenDaysAgo) {
+        return '<div class="profile-section"><p class="hint" style="text-align:center; color:var(--text-secondary);">⭐ More completed jobs equals more clients</p></div>';
+    }
+    return '';
+}
