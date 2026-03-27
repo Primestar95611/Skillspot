@@ -316,10 +316,10 @@ body {
     background: var(--bg-primary);
 }
 
-.home-header {
+..home-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     padding: 15px 20px;
     background: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
@@ -332,6 +332,13 @@ body {
     font-size: 20px;
     font-weight: 600;
     color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.discover-text {
+    font-size: 13px;
+    font-style: italic;
+    color: var(--text-secondary);
 }
 
 .header-actions {
@@ -920,13 +927,40 @@ body {
     text-align: left;
 }
 
-.profile-contact {
+/* Contact Now Section */
+.contact-now-section {
+    margin-bottom: 10px;
+}
+
+.contact-now-btn {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    width: auto;
+    display: inline-block;
+}
+
+.contact-phone-section {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 10px;
-    font-size: 14px;
-    color: var(--text-secondary);
+    flex-wrap: wrap;
+}
+
+.call-now-btn {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+}
 }
 
 .contact-icon {
@@ -2827,6 +2861,20 @@ body {
     text-align: center;
     padding: 30px;
     color: var(--text-secondary);
+}
+
+/* Reminder Banner in Chat */
+#reminder-banner-container {
+    background: #8B0000 !important;
+    padding: 8px;
+    text-align: center;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-color);
+    display: none;
+}
+
+#reminder-banner-container span {
+    color: var(--text-primary);
 }
 
 .gig-confirmation {
