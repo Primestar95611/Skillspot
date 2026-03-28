@@ -3247,7 +3247,7 @@ function showReminderBanner(chatId, otherUserId) {
             if (bannerContainer && bannerContainer.style.display !== 'none') {
                 bannerContainer.style.display = 'none';
             }
-        }, 10000);
+        }, 30000);
     }
 }
 
@@ -3638,6 +3638,17 @@ window.sendMessage = async function() {
         });
         
         loadMessages(currentChatId);
+
+        // Check if message count just reached 10
+        const updatedChatDoc = await chatRef.get();
+        const newCount = updatedChatDoc.data()?.messageCount || 0;
+        if (newCount === 10 && currentChatId) {
+            const chatData = await chatRef.get();
+            const otherUserId = chatData.data()?.participants.find(id => id !== currentUserId);
+            if (otherUserId) {
+                showReminderBanner(currentChatId, otherUserId);
+            }
+        }
         
         try {
             const chatData = (await chatRef.get()).data();
