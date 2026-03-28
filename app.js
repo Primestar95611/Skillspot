@@ -1079,6 +1079,17 @@ window.submitReview = async function(providerId, jobId) {
             .get();
         
         let reviewId;
+
+        console.log('=== REVIEW DATA ===');
+        console.log('providerId:', providerId);
+        console.log('clientId:', clientId);
+        console.log('clientBusinessName:', clientData.businessName);
+        console.log('clientProfileImage:', clientData.profileImage || '');
+        console.log('rating:', parseInt(rating));
+        console.log('reviewText:', reviewText);
+        console.log('lastJobId:', jobId);
+        console.log('jobsTogether:', 1);
+        console.log('===================');
         
         if (existingReviewQuery.empty) {
             const newReviewRef = await firebase.firestore().collection('reviews').add({
