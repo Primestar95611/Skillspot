@@ -64,6 +64,10 @@ window.onunhandledrejection = function(event) {
     }
 };
 
+// Test error logger - remove after testing
+setTimeout(() => {
+    throw new Error('Test error - logger working');
+}, 3000);
 
 // Initialize ImageKit
 var imagekit = new ImageKit({
