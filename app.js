@@ -64,11 +64,6 @@ window.onunhandledrejection = function(event) {
     }
 };
 
-// Test error logger - remove after testing
-setTimeout(() => {
-    throw new Error('Test error - logger working');
-}, 3000);
-
 // Initialize ImageKit
 var imagekit = new ImageKit({
     publicKey: "public_t2gpKmHQ/9binh9kNSsQBq0zsys=",
@@ -1142,7 +1137,7 @@ window.submitReview = async function(providerId, jobId) {
             rating: parseFloat(newRating.toFixed(1)),
             reviewCount: newReviewCount,
             jobsDone: firebase.firestore.FieldValue.increment(1),
-            jobsThisMonth: firebase.firestore.FieldValue.increment(1)
+            jobsThisMonth: firebase.firestore.FieldValue.increment(1),
             lastReviewId: reviewDoc.id
         });
         
