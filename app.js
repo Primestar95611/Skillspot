@@ -849,8 +849,9 @@ async function createNewChat(otherUserId, fromScreen = 'messages') {
                 lastMessage: '',
                 lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 lastMessageSender: '',
-                lastMessageRead: true
-            });  
+                lastMessageRead: true,
+                messageCount: 0
+            });
             
             openChat(newChatRef.id, otherUserId, {
                 ...otherUserData,
@@ -1062,9 +1063,9 @@ window.submitReview = async function(providerId, jobId) {
         const jobData = jobDoc.data();
         
         if (!jobData.pointsDeducted) {
-            const providerRef = firebase.firestore().collection('users').doc(providerId);
-            const providerDoc = await providerRef.get();
-            const providerPoints = providerDoc.data()?.points || 0;
+            const providerRefTemp = firebase.firestore().collection('users').doc(providerId);
+            const providerDocTemp = await providerRefTemp.get();
+            const providerPoints = providerDocTemp.data()?.points || 0;
             
             if (providerPoints < JOB_COST) {
                 showToast('⚠️ Provider has insufficient credits. Job cannot be completed.');
@@ -1072,7 +1073,7 @@ window.submitReview = async function(providerId, jobId) {
                 return;
             }
             
-            await providerRef.update({
+            await providerRefTemp.update({
                 points: firebase.firestore.FieldValue.increment(-JOB_COST)
             });
             
@@ -1082,48 +1083,75 @@ window.submitReview = async function(providerId, jobId) {
             });
         }
         
+        // Define providerRef for later use in rating update
+        const providerRef = firebase.firestore().collection('users').doc(providerId);
+        const providerDoc = await providerRef.get();
+        
         const existingReviewQuery = await firebase.firestore()
-    .collection('reviews')
-    .where('providerId', '==', providerId)
-    .where('clientId', '==', clientId)
-    .get();
-
-let reviewId;  // ← ADD THIS LINE
-
-if (existingReviewQuery.empty) {
-    const newReviewRef = await firebase.firestore().collection('reviews').add({  // ← ADD const newReviewRef
-        providerId: providerId,
-        clientId: clientId,
-        clientBusinessName: clientData.businessName,
-        clientProfileImage: clientData.profileImage || '',
-        rating: parseInt(rating),
-        reviewText: reviewText,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        jobsTogether: 1,
-        lastJobId: jobId
-    });
-    reviewId = newReviewRef.id;  // ← ADD THIS LINE
-} else {
-    const reviewDoc = existingReviewQuery.docs[0];
-    await reviewDoc.ref.update({
-        rating: parseInt(rating),
-        reviewText: reviewText,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        jobsTogether: firebase.firestore.FieldValue.increment(1),
-        lastJobId: jobId
-    });
-    reviewId = reviewDoc.id;  // ← ADD THIS LINE
-}
-
-// ... later in the code (the provider update section) ...
-await providerRef.update({
-    rating: parseFloat(newRating.toFixed(1)),
-    reviewCount: newReviewCount,
-    jobsDone: firebase.firestore.FieldValue.increment(1),
-    jobsThisMonth: firebase.firestore.FieldValue.increment(1),
-    lastReviewId: reviewId  // ← CHANGE reviewDoc.id to reviewId
-});
+            .collection('reviews')
+            .where('providerId', '==', providerId)
+            .where('clientId', '==', clientId)
+            .get();
+        
+        let reviewId;
+        
+        if (existingReviewQuery.empty) {
+            const newReviewRef = await firebase.firestore().collection('reviews').add({
+                providerId: providerId,
+                clientId: clientId,
+                clientBusinessName: clientData.businessName,
+                clientProfileImage: clientData.profileImage || '',
+                rating: parseInt(rating),
+                reviewText: reviewText,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                jobsTogether: 1,
+                lastJobId: jobId
+            });
+            reviewId = newReviewRef.id;
+        } else {
+            const reviewDoc = existingReviewQuery.docs[0];
+            await reviewDoc.ref.update({
+                rating: parseInt(rating),
+                reviewText: reviewText,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                jobsTogether: firebase.firestore.FieldValue.increment(1),
+                lastJobId: jobId
+            });
+            reviewId = reviewDoc.id;
+        }
+        
+        const provider = providerDoc.data();
+        
+        let newRating;
+        let newReviewCount;
+        
+        if (existingReviewQuery.empty) {
+            const oldTotal = (provider.rating || 0) * (provider.reviewCount || 0);
+            const newTotal = oldTotal + parseInt(rating);
+            newReviewCount = (provider.reviewCount || 0) + 1;
+            newRating = newTotal / newReviewCount;
+        } else {
+            const oldReview = existingReviewQuery.docs[0].data();
+            const oldRatingValue = oldReview.rating;
+            const oldTotal = (provider.rating || 0) * (provider.reviewCount || 0);
+            const newTotal = oldTotal - oldRatingValue + parseInt(rating);
+            newRating = newTotal / (provider.reviewCount || 0);
+            newReviewCount = provider.reviewCount;
+        }
+        
+        await providerRef.update({
+            rating: parseFloat(newRating.toFixed(1)),
+            reviewCount: newReviewCount,
+            jobsDone: firebase.firestore.FieldValue.increment(1),
+            jobsThisMonth: firebase.firestore.FieldValue.increment(1),
+            lastReviewId: reviewId
+        });
+        
+        await jobRef.update({
+            status: 'reviewed',
+            reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
         
         await jobRef.update({
             status: 'reviewed',
@@ -1170,7 +1198,23 @@ await providerRef.update({
         
     } catch (error) {
         console.error('Error submitting review:', error);
-        showToast('Failed to submit review');
+        showToast('Failed to submit review: ' + error.message);
+        
+        // Send detailed error to Firestore for debugging
+        try {
+            await firebase.firestore().collection('errors').add({
+                message: error.message,
+                stack: error.stack,
+                userId: firebase.auth().currentUser?.uid,
+                function: 'submitReview',
+                providerId: providerId,
+                jobId: jobId,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                userAgent: navigator.userAgent
+            });
+        } catch(e) {
+            console.error('Failed to log error:', e);
+        }
     }
 };
 
@@ -3165,14 +3209,10 @@ function startReminderTracking(chatId, otherUserId) {
             .where('status', '==', 'reviewed')
             .get();
         
-        // Get total message count for this chat
-        const messagesCountSnapshot = await firebase.firestore()
-            .collection('chats').doc(chatId)
-            .collection('messages')
-            .count()
-            .get();
-        
-        let currentCount = messagesCountSnapshot.data().count;
+        // Get message count from chat document
+        const chatDoc = await firebase.firestore().collection('chats').doc(chatId).get();
+        const chatData = chatDoc.data();
+        let currentCount = chatData?.messageCount || 0;
         
         if (currentCount >= 10 && currentCount !== lastMessageCountChat) {
             lastMessageCountChat = currentCount;
@@ -3181,6 +3221,12 @@ function startReminderTracking(chatId, otherUserId) {
         
         const twoDaysAgo = new Date();
         twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        const messagesSnapshot = await firebase.firestore()
+            .collection('chats').doc(chatId)
+            .collection('messages')
+            .orderBy('timestamp', 'desc')
+            .limit(1)
+            .get();
         const lastMessage = messagesSnapshot.docs[0]?.data();
         if (lastMessage && lastMessage.timestamp?.toDate() < twoDaysAgo) {
             clearInterval(reminderIntervalChat);
@@ -3587,7 +3633,8 @@ window.sendMessage = async function() {
             lastMessage: text,
             lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
             lastMessageSender: currentUserId,
-            lastMessageRead: false
+            lastMessageRead: false,
+            messageCount: firebase.firestore.FieldValue.increment(1)
         });
         
         loadMessages(currentChatId);
