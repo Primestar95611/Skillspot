@@ -1,4 +1,4 @@
-/* =========================
+/=========================
    RESET
 ========================= /
 * {
@@ -26,7 +26,7 @@
   --radius: 14px;
 
   --shadow-soft: 0 4px 12px rgba(0,0,0,0.06);
-  --shadow-hover: 0 6px 18px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 20px rgba(0,0,0,0.08);
 }
 
 / =========================
@@ -83,6 +83,12 @@ button,
   transition: all 0.2s ease;
 }
 
+button:hover,
+.btn:hover,
+.button:hover {
+  box-shadow: var(--shadow-hover);
+}
+
 button:active,
 .btn:active,
 .button:active {
@@ -102,6 +108,7 @@ textarea {
   font-size: 14px;
   margin-bottom: 12px;
   outline: none;
+  background: #fff;
 }
 
 input:focus,
@@ -118,24 +125,42 @@ textarea:focus {
   padding: 16px;
   margin-bottom: 16px;
   box-shadow: var(--shadow-soft);
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-hover);
 }
 
 / =========================
-   PROVIDER CARD
+   PROVIDER CARD (KEY UPGRADE)
 ========================= /
 .provider-card {
-  background: #fff;
+  background: #ffffff;
   border-radius: var(--radius);
   padding: 16px;
   margin-bottom: 16px;
   box-shadow: var(--shadow-soft);
-  border: 1px solid var(--primary-red-light);
+  border: 1px solid var(--border-color);
+  position: relative;
   transition: all 0.2s ease;
 }
 
-.provider-card:active {
-  transform: scale(0.98);
+/ subtle red accent line /
+.provider-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: var(--primary-red);
+  border-radius: 4px 0 0 4px;
+}
+
+.provider-card:hover {
   box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
 }
 
 / =========================
