@@ -332,7 +332,7 @@ function loadHomeTab() {
     loadProviders(true);
     // Setup pull to refresh
 if (window.ptrHomeCleanup) window.ptrHomeCleanup();
-window.ptrHomeCleanup = setupPullToRefresh('providers-grid', async () => {
+window.ptrHomeCleanup = setupPullToRefresh('home-scrollable', async () => {
     await refreshProviders();
 });
     
@@ -2972,9 +2972,9 @@ function loadSearchTab() {
     // Setup pull to refresh (no auto-refresh on tab switch)
 setTimeout(() => {
     if (window.ptrSearchCleanup) window.ptrSearchCleanup();
-    window.ptrSearchCleanup = setupPullToRefresh('provider-list', async () => {
-        await loadNearbyProviders(true);
-    });
+    window.ptrSearchCleanup = setupPullToRefresh('provider-drawer', async () => {
+    await loadNearbyProviders(true);
+});
 }, 500);
 }
 
@@ -3900,10 +3900,9 @@ function loadMessagesTab() {
     
     // Setup pull to refresh
 setTimeout(() => {
-    if (window.ptrMessagesCleanup) window.ptrMessagesCleanup();
-    window.ptrMessagesCleanup = setupPullToRefresh('conversations-list', async () => {
-        await loadConversations();
-    });
+    window.ptrMessagesCleanup = setupPullToRefresh('messages-scrollable', async () => {
+    await loadConversations();
+});
 }, 500);
 }
 
