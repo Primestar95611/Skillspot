@@ -1597,10 +1597,10 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
 <div class="profile-container">
     <div class="profile-fixed-header">
         ${hideTabBar ? `
-<div class="profile-sticky-header">
-    <button class="profile-back-btn" onclick="goBack()">
-        ← <span>${profile.businessName || 'Profile'}</span>
-    </button>
+<div class="profile-sticky-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 12px 16px;">
+    <button class="profile-back-btn" onclick="goBack()" style="background: none; border: none; font-size: 28px; cursor: pointer; padding: 0;">←</button>
+    <span style="font-size: 18px; font-weight: 600; flex: 1; text-align: center;">${profile.businessName || 'Profile'}</span>
+    <button class="history-btn" onclick="openJobHistory()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 0;">⏱️</button>
 </div>
 ` : ''}
 <div class="profile-stats-row" style="${hideTabBar ? 'margin-top: 0;' : ''}">
@@ -1609,9 +1609,6 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
                 ${isOwnProfile ? '<div class="camera-icon" onclick="openImageUpload()">📷</div>' : ''}
             </div>
             <div class="profile-info-right">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h1 class="profile-business-name">${profile.businessName || 'Business Name'}</h1>
-                </div>
                 <div class="stats-grid">
                     <div class="stat-item"><span class="stat-number">${profile.jobsDone || 0}</span><span class="stat-label">Gigs</span></div>
                     <div class="stat-item clickable" onclick="showProviderReviews('${profile.id}')"><span class="stat-number">${profile.rating || 0}</span><span class="stat-label">★ Rating</span></div>
@@ -1658,6 +1655,25 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
             checkIfSaved(profile.id);
             setupContactNowButtonV2(profile.id, profile.phoneNumber);
         }
+        
+        // Restore scroll position if exists
+        const savedScroll = sessionStorage.getItem(`profile_scroll_${targetUserId}`);
+        if (savedScroll && container.scrollTop === 0) {
+            setTimeout(() => {
+                container.scrollTop = parseInt(savedScroll);
+            }, 100);
+        }
+        
+        // Save scroll position on scroll
+        const saveScrollHandler = () => {
+            sessionStorage.setItem(`profile_scroll_${targetUserId}`, container.scrollTop);
+        };
+        container.addEventListener('scroll', saveScrollHandler);
+        
+        // Clean up listener when profile is hidden
+        window.currentProfileCleanup = () => {
+            container.removeEventListener('scroll', saveScrollHandler);
+        };
         
     } catch (error) {
         console.error('Error loading profile:', error);
