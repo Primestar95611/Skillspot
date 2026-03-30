@@ -1620,7 +1620,6 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
                     <div class="stat-item clickable" onclick="showProviderReviews('${profile.id}')"><span class="stat-number">${profile.rating || 0}</span><span class="stat-label">★ Rating</span></div>
                     ${isOwnProfile ? `<div class="stat-item clickable" onclick="openSavedModal()"><span class="stat-number">${savedCount}</span><span class="stat-label">Saved</span></div>` : ''}
                     <div class="stat-item ${isOwnProfile ? 'clickable' : ''}" onclick="${isOwnProfile ? 'openSavesModal()' : ''}"><span class="stat-number">${savesCount}</span><span class="stat-label">Saves</span></div>
-                    ${isOwnProfile ? `<div class="stat-item clickable" onclick="openJobHistory()"><span class="stat-number">⏱️</span><span class="stat-label">History</span></div>` : ''}
                 </div>
             </div>
         </div>
