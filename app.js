@@ -694,7 +694,7 @@ function setupPullToRefresh(containerId, refreshCallback) {
         
         if (diff > 0) {
             e.preventDefault();
-            let pullDistance = Math.min(diff * 0.6, pullMax);
+            let pullDistance = Math.min(diff * 0.3, pullMax);
             animateContentPull(pullDistance);
         }
     }
@@ -703,7 +703,7 @@ function setupPullToRefresh(containerId, refreshCallback) {
         if (!isPulling) return;
         
         let diff = pullCurrentY - pullStartY;
-        let pullDistance = Math.min(diff * 0.6, pullMax);
+        let pullDistance = Math.min(diff * 0.3, pullMax);
         
         if (pullDistance >= pullThreshold && !isRefreshing) {
             triggerRefresh();
