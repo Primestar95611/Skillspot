@@ -3455,3 +3455,17 @@ body,
 @keyframes ptr-spin {
     to { transform: translateX(-50%) rotate(360deg); }
 }
+
+/* PTR Spinner Animation */
+@keyframes ptr-spin {
+    from {
+        transform: translateX(-50%) rotate(0deg);
+    }
+    to {
+        transform: translateX(-50%) rotate(360deg);
+    }
+}
+
+.ptr-spinner-modern.spinning {
+    animation: ptr-spin 0.8s linear infinite;
+}
