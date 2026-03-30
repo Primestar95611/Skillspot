@@ -890,6 +890,15 @@ body {
     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
 }
 
+/* Scrollable containers - required for pull-to-refresh */
+.home-scrollable,
+.provider-drawer,
+.messages-scrollable {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y pinch-zoom;
+}
+
 /* ========== PROFILE TAB STYLES ========== */
 .profile-container {
     max-width: 600px;
