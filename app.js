@@ -576,6 +576,7 @@ function setupPullToRefresh() {
     container.addEventListener('touchstart', (e) => {
         if (window.scrollY === 0) {
             startY = e.touches[0].clientY;
+            pullStartTime = Date.now(); 
             pulling = true;
         }
     }, { passive: true });
@@ -689,6 +690,7 @@ function setupModernPullToRefresh(containerId, refreshCallback) {
     let threshold = 60;
     let maxPull = 120;
     let isRefreshing = false;
+    let pullStartTime = 0;
     
     // Create spinner element
     const spinner = document.createElement('div');
@@ -807,23 +809,22 @@ function setupModernPullToRefresh(containerId, refreshCallback) {
     }
     
     function onTouchEnd(e) {
-        if (!pulling) return;
-        
-        let diff = currentY - startY;
-        let pullDistance = Math.min(diff * 0.6, maxPull);
-        
-        if (pullDistance >= threshold && !isRefreshing) {
-            // User pulled past threshold - trigger refresh
-            startRefresh();
-        } else {
-            // Not enough pull - just snap back
-            snapBackContent();
-        }
-        
-        pulling = false;
-        startY = 0;
-        currentY = 0;
+    if (!pulling) return;
+    
+    let diff = currentY - startY;
+    let pullDistance = Math.min(diff * 0.4, maxPull);
+    let pullDuration = Date.now() - pullStartTime;   // <-- ADD THIS LINE
+    
+    if (pullDistance >= threshold && !isRefreshing && pullDuration > 150) {   // <-- MODIFIED LINE
+        startRefresh();
+    } else {
+        snapBackContent();
     }
+    
+    pulling = false;
+    startY = 0;
+    currentY = 0;
+}
     
     function onTouchCancel() {
         if (pulling) {
