@@ -302,6 +302,10 @@ function loadHomeTab() {
     </div>
     
     <div class="home-scrollable">
+        <div id="pull-to-refresh-indicator" class="ptr-indicator">
+            <span class="ptr-spinner"></span>
+            <span class="ptr-text">Pull to refresh</span>
+        </div>
         
         <div id="providers-grid" class="providers-grid">
             <!-- Providers will load here -->
@@ -336,9 +340,9 @@ function loadHomeTab() {
     loadProviders(true);
     // Replace old pull-to-refresh with modern version
     if (window.ptrHomeCleanup) window.ptrHomeCleanup();
-    window.ptrHomeCleanup = setupModernPullToRefresh('home-scrollable', async () => {
-    await refreshProviders();
-});
+    window.ptrHomeCleanup = setupModernPullToRefresh('providers-grid', async () => {
+        await refreshProviders();
+    });
     
     const enableBtn = document.getElementById('enable-notify-btn');
     if (enableBtn) {
@@ -3068,9 +3072,9 @@ function loadSearchTab() {
     // Add modern pull to refresh to provider list
     setTimeout(() => {
         if (window.ptrSearchCleanup) window.ptrSearchCleanup();
-        window.ptrSearchCleanup = setupModernPullToRefresh('provider-drawer', async () => {
-    await loadNearbyProviders(true);
-});
+        window.ptrSearchCleanup = setupModernPullToRefresh('provider-list', async () => {
+            await loadNearbyProviders(true);
+        });
     }, 500);
 }
 
@@ -3999,9 +4003,10 @@ function loadMessagesTab() {
     
     // Add modern pull to refresh to conversations list
     setTimeout(() => {
-        window.ptrMessagesCleanup = setupModernPullToRefresh('messages-scrollable', async () => {
-    await loadConversations();
-});
+        if (window.ptrMessagesCleanup) window.ptrMessagesCleanup();
+        window.ptrMessagesCleanup = setupModernPullToRefresh('conversations-list', async () => {
+            await loadConversations();
+        });
     }, 500);
 }
 
