@@ -1595,6 +1595,8 @@ function loadMainApp() {
                 setTimeout(() => {
                     if (activeTab === tabName) {
                         handleTabTap(tabName);
+                        } else {
+                    switchTab(tabName);
                     }
                 }, 50);
             });
