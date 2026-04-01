@@ -362,17 +362,16 @@ window.saveProfile = async function() {
 
 // ========== HOME TAB ==========
    function loadHomeTab() {
-    const container = document.getElementById('tab-content');
-    if (!container) return;
+    const homePane = document.getElementById('home-tab');
+    if (!homePane) return;
     
-    // Check if home tab already exists
-    const existingHome = document.querySelector('.home-container');
-    if (existingHome) {
-        // Just restore scroll position, don't reload
-        setTimeout(() => restoreScrollPosition('home'), 200);
+    // Check if already loaded
+    if (homePane.innerHTML !== '') {
+        // Already loaded, just show it
         return;
-    } 
-container.innerHTML = `
+    }
+    
+    homePane.innerHTML = `
 <div class="home-container">
     <div class="home-header">
         <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
@@ -1545,60 +1544,65 @@ function showDirectionsToTarget() {
 }
 
 // ========== MAIN APP LOADER ==========
-function loadMainApp() {
-    document.getElementById('app').innerHTML = `
-        <div class="app-container">
-            <div id="tab-content" class="tab-content"></div>
-            
-            <div class="tab-bar">
-                <button class="tab-btn active">
-                    <span class="tab-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 3L3 9L5 9V19H9V15H15V19H19V9L21 9L12 3Z" fill="currentColor"/>
-                        </svg>
-                    </span>
-                    <span class="tab-label">Home</span>
-                </button>
-                <button class="tab-btn">
-                    <span class="tab-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-                            <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </span>
-                    <span class="tab-label">Search</span>
-                </button>
-                <button class="tab-btn">
-                    <span class="tab-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                            <path d="M22 6L12 13L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </span>
-                    <span class="tab-label">Messages</span>
-                </button>
-                <button class="tab-btn">
-                    <span class="tab-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
-                            <path d="M5 20V19C5 15.1 8.1 12 12 12C15.9 12 19 15.1 19 19V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </span>
-                    <span class="tab-label">Profile</span>
-                </button>
-                ${firebase.auth().currentUser?.email === 'agboghidiaugust@gmail.com' ? `
-                <button class="tab-btn">
-                    <span class="tab-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6-2.28 0-2.56 4-4 6-4s6 1.44 6 4c-1.57 1.46-3.97 2.28-6 2.28z" fill="currentColor"/>
-                        </svg>
-                    </span>
-                    <span class="tab-label">Admin</span>
-                </button>
-                ` : ''}
-            </div>
+function loadMainApp() {document.getElementById('app').innerHTML = `
+    <div class="app-container">
+        <div id="tab-content" class="tab-content">
+            <div id="home-tab" class="tab-pane active"></div>
+            <div id="search-tab" class="tab-pane"></div>
+            <div id="messages-tab" class="tab-pane"></div>
+            <div id="profile-tab" class="tab-pane"></div>
+            <div id="admin-tab" class="tab-pane"></div>
         </div>
-    `;
+        
+        <div class="tab-bar">
+            <button class="tab-btn active">
+                <span class="tab-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 3L3 9L5 9V19H9V15H15V19H19V9L21 9L12 3Z" fill="currentColor"/>
+                    </svg>
+                </span>
+                <span class="tab-label">Home</span>
+            </button>
+            <button class="tab-btn">
+                <span class="tab-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                        <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span class="tab-label">Search</span>
+            </button>
+            <button class="tab-btn">
+                <span class="tab-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        <path d="M22 6L12 13L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                <span class="tab-label">Messages</span>
+            </button>
+            <button class="tab-btn">
+                <span class="tab-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                        <path d="M5 20V19C5 15.1 8.1 12 12 12C15.9 12 19 15.1 19 19V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span class="tab-label">Profile</span>
+            </button>
+            ${firebase.auth().currentUser?.email === 'agboghidiaugust@gmail.com' ? `
+            <button class="tab-btn">
+                <span class="tab-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6-2.28 0-2.56 4-4 6-4s6 1.44 6 4c-1.57 1.46-3.97 2.28-6 2.28z" fill="currentColor"/>
+                    </svg>
+                </span>
+                <span class="tab-label">Admin</span>
+            </button>
+            ` : ''}
+        </div>
+    </div>
+`;
     
     loadHomeTab();
     
@@ -3976,23 +3980,20 @@ window.addEventListener('tabChange', () => {
 });
 
 window.switchTab = (tab) => {
-    // Save current tab's scroll position before leaving
+    // Save scroll position of current tab before leaving
     if (activeTab) {
         saveScrollPosition(activeTab);
     }
     
-    // Clean up intervals
-    if (window.conversationsInterval) {
-        clearInterval(window.conversationsInterval);
-        window.conversationsInterval = null;
-    }
-    if (window.messagesInterval) {
-        clearInterval(window.messagesInterval);
-        window.messagesInterval = null;
-    }
-
-    if (window.currentTab === 'home') {
-        cleanupInfiniteScroll();
+    // Hide all tab panes
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+    });
+    
+    // Show the selected tab pane
+    const activePane = document.getElementById(`${tab}-tab`);
+    if (activePane) {
+        activePane.classList.add('active');
     }
     
     // Update active tab button
@@ -4010,30 +4011,56 @@ window.switchTab = (tab) => {
     
     activeTab = tab;
     
-    // Load the selected tab
+    // Clean up intervals
+    if (window.conversationsInterval) {
+        clearInterval(window.conversationsInterval);
+        window.conversationsInterval = null;
+    }
+    if (window.messagesInterval) {
+        clearInterval(window.messagesInterval);
+        window.messagesInterval = null;
+    }
+
+    if (window.currentTab === 'home') {
+        cleanupInfiniteScroll();
+    }
+    
+    // Load the selected tab content if not already loaded
     switch(tab) {    
         case 'home':
-            loadHomeTab();
+            if (document.getElementById('home-tab').innerHTML === '') {
+                loadHomeTab();
+            }
             setTimeout(() => restoreScrollPosition('home'), 200);
             break;
         case 'search':
-            loadSearchTab();
+            if (document.getElementById('search-tab').innerHTML === '') {
+                loadSearchTab();
+            }
             setTimeout(() => restoreScrollPosition('search'), 200);
             break;
         case 'messages':
-            loadMessagesTab();
+            if (document.getElementById('messages-tab').innerHTML === '') {
+                loadMessagesTab();
+            }
             setTimeout(() => restoreScrollPosition('messages'), 200);
             break;
         case 'profile':
-            loadProfileTab();
+            if (document.getElementById('profile-tab').innerHTML === '') {
+                loadProfileTab();
+            }
             setTimeout(() => restoreScrollPosition('profile'), 200);
             break;
         case 'admin':
-            loadAdminTab();
+            if (document.getElementById('admin-tab').innerHTML === '') {
+                loadAdminTab();
+            }
             setTimeout(() => restoreScrollPosition('admin'), 200);
             break;
         default:
-            loadHomeTab();
+            if (document.getElementById('home-tab').innerHTML === '') {
+                loadHomeTab();
+            }
     }
 };
 
