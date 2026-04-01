@@ -179,6 +179,15 @@ function isActive(provider) {
     return lastJob >= sevenDaysAgo;
 }
 
+// Debounce function to limit map move events
+function debounce(func, delay) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
 // Get scrollable container for each tab
 function getScrollableContainer(tabName) {
     switch(tabName) {
@@ -3016,7 +3025,21 @@ function initializeMap() {
         
         updateRadiusCircle();
         
-        map.on('moveend', onMapMoved);
+        // Initialize marker cluster group and add to map
+        window.markerClusterGroup = L.markerClusterGroup({
+            maxClusterRadius: 50,
+            disableClusteringAtZoom: 15,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false
+        });
+        map.addLayer(window.markerClusterGroup);
+        
+        // Debounced map move handler
+const debouncedLoadProviders = debounce(() => {
+    loadNearbyProviders(true);
+}, 300);
+
+map.on('moveend', debouncedLoadProviders);
         
     }, 300);
 }
@@ -3140,7 +3163,20 @@ async function loadNearbyProviders(reset = true) {
 }
 
 function updateMapMarkers() {
-    providerMarkers.forEach(marker => map.removeLayer(marker));
+    // Clear existing markers from cluster group
+    if (window.markerClusterGroup) {
+        window.markerClusterGroup.clearLayers();
+    } else {
+        // Initialize if not exists
+        window.markerClusterGroup = L.markerClusterGroup({
+            maxClusterRadius: 50,
+            disableClusteringAtZoom: 15,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false
+        });
+        map.addLayer(window.markerClusterGroup);
+    }
+    
     providerMarkers = [];
     
     searchProviders.forEach(provider => {
@@ -3162,7 +3198,7 @@ function updateMapMarkers() {
         const lat = provider.location?.lat || userLocation.lat;
         const lng = provider.location?.lng || userLocation.lng;
         
-        const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(map);
+        const marker = L.marker([lat, lng], { icon: markerIcon });
         
         marker.bindPopup(`
             <div class="map-popup">
@@ -3173,6 +3209,7 @@ function updateMapMarkers() {
             </div>
         `);
         
+        window.markerClusterGroup.addLayer(marker);
         providerMarkers.push(marker);
     });
 }
