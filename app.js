@@ -2804,11 +2804,7 @@ function loadSearchTab() {
     window.currentTab = 'search';
     
    getUserLocation();
-    setupSearchListeners();
-    
-    setTimeout(() => {      
-        });
-    }, 500);
+    setupSearchListeners(); 
 }
 
 function getUserLocation() {
@@ -3733,9 +3729,6 @@ function loadMessagesTab() {
 `;
     
     loadConversations();
-    
-    setTimeout(() => {
-    }, 500);
 }
 
 window.addEventListener('tabChange', () => {
