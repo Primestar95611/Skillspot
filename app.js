@@ -1634,7 +1634,7 @@ function loadMainApp() {document.getElementById('app').innerHTML = `
 }
 
 // ========== PROFILE TAB ==========
-async function loadProfileTab(profileUserId = null, hideTabBar = false) {
+async function loadProfileTab(profileUserId = null, hideTabBar = false, forceReload = false) {
     if (hideTabBar) {
         const tabBar = document.querySelector('.tab-bar');
         if (tabBar) tabBar.style.display = 'none';
@@ -1648,10 +1648,11 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
     if (!profilePane) return;
     
     // Check if already loaded and no profileUserId (own profile)
-    if (profilePane.innerHTML !== '' && !profileUserId) {
-        // Already loaded, just show it
-        return;
-    }
+// BUT if we're coming from edit profile or photo upload, we need to reload
+if (profilePane.innerHTML !== '' && !profileUserId && !forceReload) {
+    // Already loaded, just show it
+    return;
+}
     
     // For other profiles, we need to load fresh
     const container = profilePane;
@@ -2307,7 +2308,7 @@ async function uploadProfileImage(event) {
                     showToast('Profile picture updated!');
                     
                     if (document.querySelector('.profile-container')) {
-                        loadProfileTab();
+                        loadProfileTab(null, false, true);  // forceReload = true
                     } else if (document.querySelector('.edit-profile-container')) {
                         window.openEditProfile();
                     }
@@ -2573,7 +2574,7 @@ window.saveEditProfile = async function() {
 
         sessionStorage.removeItem(`profile_${firebase.auth().currentUser.uid}`);
         
-        loadProfileTab(null, false);
+        loadProfileTab(null, false, true);  // forceReload = true
     } catch (error) {
         alert('Error saving profile: ' + error.message);
     }
@@ -4888,7 +4889,7 @@ window.goBackFromEditProfile = function() {
     if (profilePane && currentUserData) {
         // Clear and reload profile content with fresh data
         profilePane.innerHTML = '';
-        loadProfileTab(null, false);
+        loadProfileTab(null, false, true);  // forceReload = true
     }
     
     setTimeout(() => restoreScrollPosition('profile'), 200);
