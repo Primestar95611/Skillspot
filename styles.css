@@ -3487,3 +3487,13 @@ body,
     margin-left: 4px;
     font-size: 0.85em;
 }
+
+/* Tab Panes - Hide/Show System */
+.tab-pane {
+    display: none;
+    min-height: 100vh;
+}
+
+.tab-pane.active {
+    display: block;
+}
