@@ -3406,12 +3406,6 @@ function loadConversations() {
     
     fetchConversations();
     
-    window.conversationsInterval = setInterval(() => {
-        const activeTab = document.querySelector('.tab-btn.active');
-        if (activeTab && activeTab.textContent.includes('Messages')) {
-            fetchConversations();
-        }
-    }, 60000);
 }
 
 function loadMessages(chatId) {
@@ -3603,7 +3597,54 @@ function openChat(chatId, otherUserId, chatData, previousScreen = null) {
         </div>
     `;
     
-    loadMessages(chatId);
+    // Set up real-time listener for messages
+if (messagesListener) {
+    messagesListener();
+}
+
+const messagesRef = firebase.firestore()
+    .collection('chats').doc(chatId)
+    .collection('messages');
+
+messagesListener = messagesRef
+    .orderBy('timestamp', 'asc')
+    .onSnapshot((snapshot) => {
+        const messagesContainer = document.getElementById('chat-messages');
+        if (!messagesContainer) return;
+
+        const currentUserId = firebase.auth().currentUser.uid;
+        let html = '';
+        let lastDate = null;
+
+        snapshot.forEach(doc => {
+            const msg = doc.data();
+            msg.id = doc.id;
+
+            const msgDate = msg.timestamp?.toDate().toLocaleDateString();
+            if (msgDate !== lastDate) {
+                html += `<div class="chat-date-separator">${msg.timestamp?.toDate().toLocaleDateString()}</div>`;
+                lastDate = msgDate;
+            }
+
+            html += renderMessage(msg, currentUserId);
+
+            if (msg.senderId !== currentUserId && !msg.read) {
+                markMessageAsRead(chatId, msg.id);
+            }
+        });
+
+        // Save review button if exists
+        const existingReviewBtn = document.getElementById('review-button-container');
+
+        messagesContainer.innerHTML = html;
+
+        // Restore review button if it existed
+        if (existingReviewBtn && !document.getElementById('review-button-container')) {
+            messagesContainer.insertBefore(existingReviewBtn, messagesContainer.firstChild);
+        }
+
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
     
     setTimeout(() => {
         const registerBtn = document.getElementById('register-job-chat-btn');
@@ -4598,6 +4639,10 @@ window.goBack = function() {
 };
     
 window.goBackFromChat = function() {
+    if (messagesListener) {
+    messagesListener();
+    messagesListener = null;
+}
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) {
         tabBar.style.display = 'flex';
