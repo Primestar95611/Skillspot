@@ -552,13 +552,12 @@ async function loadProviders(reset = true) {
             
             const cached = getCachedProviders(cacheLat, cacheLng, 10);
             if (cached && cached.length > 0) {
-                providers = cached;
-                renderProviders();
-                // Refresh in background
-                setTimeout(() => refreshProviders(), 100);
-                loading = false;
-                return;
-            }
+    providers = cached;
+    renderProviders();
+    // setTimeout(() => refreshProviders(), 100);  // COMMENT OUT OR DELETE
+    loading = false;
+    return;
+}
         }
         
         let userLat = 6.5244;
